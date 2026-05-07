@@ -11,8 +11,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
     
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -30,7 +28,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        /* ESTILOS GLOBALES - ORIGINALES DE DECO.HTML */
+        /* ESTILOS GLOBALES */
         script { display: none !important; }
         body { background-color: #0a0a0a; color: white; margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; user-select: none; touch-action: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -93,6 +91,21 @@
             const ls = document.getElementById('loading-screen'); const ed = document.getElementById('error-msg');
             if(ls && ed) { ls.style.zIndex="10000"; ls.style.display="flex"; ls.style.opacity="1"; ed.style.display="block"; ed.innerHTML=`<strong>Error Detectado:</strong><br>${msg}<br><small>Línea: ${line}</small>`; }
             return false;
+        };
+        
+        // GESTOR ÚNICO DE MEMORIA PARA GLTF/DRACO
+        let sharedGLTFLoader = null;
+        const getSharedGLTFLoader = () => {
+            if (sharedGLTFLoader) return sharedGLTFLoader;
+            if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') return null;
+            sharedGLTFLoader = new THREE.GLTFLoader();
+            if (typeof THREE.DRACOLoader !== 'undefined') {
+                const dracoLoader = new THREE.DRACOLoader();
+                dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+                dracoLoader.setWorkerLimit(2); 
+                sharedGLTFLoader.setDRACOLoader(dracoLoader);
+            }
+            return sharedGLTFLoader;
         };
     </script>
 
@@ -177,6 +190,21 @@
                 copy: "Copiar Código",
                 localMode: "MODO LOCAL / ENTRENAMIENTO",
                 rival: "RIVAL",
+                laneChange1: "CAMBIO DE",
+                laneChange2: "CARRIL",
+                pitEntry1: "ENTRADA",
+                pitEntry2: "BOXES",
+                manualControl: "Control Manual",
+                slide: "DESLIZA",
+                slideTitle: "Desliza hacia arriba para acelerar tu coche",
+                mode2d: "MODO 2D",
+                objects: "OBJETOS",
+                forest: "BOSQUE",
+                screen: "PANTALLA",
+                pilot: "PILOTO",
+                chase: "SEGUIMIENTO",
+                pilotLabel: "Piloto",
+                telemetry: "TELEMETRÍA",
                 auth: { loginBtn: 'INICIAR SESIÓN', logoutBtn: 'CERRAR SESIÓN', titleLogin: 'ACCESO PILOTOS', titleReg: 'NUEVA LICENCIA', email: 'Correo Electrónico', pass: 'Contraseña', name: 'Alias de Piloto', submitLogin: 'ENTRAR A BOXES', submitReg: 'OBTENER LICENCIA', switchReg: '¿No tienes cuenta? Regístrate', switchLogin: '¿Ya tienes cuenta? Entra aquí', reqLogin: 'Debes iniciar sesión para publicar en la comunidad.', forgotPass: '¿Olvidaste tu contraseña?', resetMsg: 'Te hemos enviado un enlace para recuperar tu contraseña.', verifyMsg: '¡Bienvenido a Track Telemetry! Revisa tu bandeja de entrada para verificar tu cuenta.', enterEmail: 'Introduce tu correo arriba para recuperar la contraseña.' }
             },
             en: {
@@ -248,7 +276,7 @@
                 matGrass: "GRASS",
                 matWood: "WOOD",
                 matAsphalt: "CARPET",
-                controller: "CONTROLLER",
+                controller: "CONTROL",
                 multiTitle: "ONLINE COMPETITION",
                 createRoom: "CREATE ROOM (HOST)",
                 joinRoom: "JOIN",
@@ -257,6 +285,21 @@
                 copy: "Copy Code",
                 localMode: "LOCAL MODE / PRACTICE",
                 rival: "RIVAL",
+                laneChange1: "LANE",
+                laneChange2: "CHANGE",
+                pitEntry1: "PIT",
+                pitEntry2: "ENTRY",
+                manualControl: "Manual Control",
+                slide: "SLIDE",
+                slideTitle: "Slide up to accelerate your car",
+                mode2d: "2D MODE",
+                objects: "OBJECTS",
+                forest: "FOREST",
+                screen: "SCREEN",
+                pilot: "PILOT",
+                chase: "CHASE",
+                pilotLabel: "Racer",
+                telemetry: "TELEMETRY",
                 auth: { loginBtn: 'LOGIN', logoutBtn: 'LOGOUT', titleLogin: 'RACER ACCESS', titleReg: 'NEW LICENSE', email: 'Email', pass: 'Password', name: 'Racer Alias', submitLogin: 'ENTER PITLANE', submitReg: 'GET LICENSE', switchReg: 'No account? Register', switchLogin: 'Already have an account? Login', reqLogin: 'You must log in to publish tracks.', forgotPass: 'Forgot your password?', resetMsg: 'We have sent you a password recovery link.', verifyMsg: 'Welcome to Track Telemetry! Check your inbox to verify your account.', enterEmail: 'Enter your email above to recover your password.' }
             }
         };
@@ -310,16 +353,6 @@
             const [showFileMenu, setShowFileMenu] = useState(false);
 
             useEffect(() => {
-                if (carAssets && carAssets[currentTargetId]) {
-                    const asset = carAssets[currentTargetId];
-                    const newTransform = { x: asset.offset ? asset.offset[0] : 0, y: asset.offset ? asset.offset[1] : 0, z: asset.offset ? asset.offset[2] : 0, rotX: asset.rotation ? asset.rotation[0] : 0, rotY: asset.rotation ? asset.rotation[1] : 180, rotZ: asset.rotation ? asset.rotation[2] : 0, scale: asset.scale !== undefined ? asset.scale : 1 };
-                    setTransform(newTransform);
-                    setScatterCount(asset.scatterCount || 1);
-                    if (modelRef.current) { modelRef.current.rotation.set( newTransform.rotX * Math.PI / 180, newTransform.rotY * Math.PI / 180, newTransform.rotZ * Math.PI / 180 ); if(modelRef.current.userData.baseScale) { modelRef.current.scale.copy(modelRef.current.userData.baseScale).multiplyScalar(newTransform.scale); } }
-                }
-            }, [currentTargetId, carAssets]);
-
-            useEffect(() => {
                 if (!showFileMenu) return;
                 if (!ghConfig.owner || !ghConfig.repo) { setIsEditingConfig(true); return; }
                 if (!isEditingConfig) {
@@ -359,14 +392,28 @@
                 if (asset && asset.glb) {
                     if (modelRef.current.userData.loadedGlb === asset.glb) return;
                     setStatus(lang === 'en' ? "LOADING IN VIEWER..." : "CARGANDO EN VISOR...");
-                    const loader = new THREE.GLTFLoader();
-                    if (typeof THREE.DRACOLoader !== 'undefined') { const dracoLoader = new THREE.DRACOLoader(); dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/'); loader.setDRACOLoader(dracoLoader); }
+                    const loader = getSharedGLTFLoader() || new THREE.GLTFLoader();
                     loader.load(asset.glb, (gltf) => {
                         if (!modelRef.current) return;
                         const modelGroup = modelRef.current;
                         while (modelGroup.children.length > 0) modelGroup.remove(modelGroup.children[0]);
                         const model = gltf.scene;
-                        model.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = false; if (child.material) { if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) { const newMat = new THREE.MeshLambertMaterial({ map: child.material.map, color: child.material.color, transparent: child.material.transparent, opacity: child.material.opacity, alphaTest: child.material.alphaTest, side: THREE.FrontSide }); child.material.dispose(); child.material = newMat; } else { child.material.side = THREE.FrontSide; } } } });
+                        model.traverse(child => { 
+                            if (child.isMesh) { 
+                                child.castShadow = true; 
+                                child.receiveShadow = false; 
+                                child.frustumCulled = false; // Evita parpadeos en 3D
+                                if (child.material) { 
+                                    if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) { 
+                                        const newMat = new THREE.MeshLambertMaterial({ map: child.material.map, color: child.material.color, transparent: child.material.transparent, opacity: child.material.opacity, alphaTest: child.material.alphaTest, side: THREE.FrontSide }); 
+                                        child.material.dispose(); 
+                                        child.material = newMat; 
+                                    } else { 
+                                        child.material.side = THREE.FrontSide; 
+                                    } 
+                                } 
+                            } 
+                        });
                         const box = new THREE.Box3().setFromObject(model); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3()); model.position.sub(center); 
                         const maxDim = Math.max(size.x, size.y, size.z); const scale = maxDim > 0 ? 2.5 / maxDim : 1; model.scale.setScalar(scale);
                         modelGroup.userData.baseScale = new THREE.Vector3(scale, scale, scale); modelGroup.userData.loadedGlb = asset.glb; modelGroup.add(model);
@@ -393,11 +440,11 @@
 
             const updateScatterCount = (newCount) => { const count = Math.max(1, Math.min(60, parseInt(newCount))); setScatterCount(count); if (onTransform) onTransform(currentTargetId, { offset: [transform.x, transform.y, transform.z], rotation: [transform.rotX, transform.rotY, transform.rotZ], scale: transform.scale, yOffset: transform.y, scatterCount: count }); };
             const processLoadedModel = (model, fileName, url) => { setStatus(`${lang === 'en' ? "READY" : "LISTO"}: ${fileName.split('.')[0].toUpperCase()}`); if (url) { fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); }).then(blob => { const file = new File([blob], fileName, { type: 'model/gltf-binary' }); if (onLoad) onLoad(file, currentTargetId, loadingTypeRef.current); }).catch(err => { console.warn("Error descargando blob:", err); setStatus("ERROR BLOB"); }); } };
-            const loadFromGitHub = (fileData) => { setShowFileMenu(false); setStatus(`${lang === 'en' ? "DOWNLOADING" : "BAJANDO"}: ${fileData.name || fileData.file}...`); let activePath = ghConfig.path ? ghConfig.path : ''; if (loadingTypeRef.current === 'car') { activePath = activePath ? `${activePath}/coches` : 'coches'; } else if (loadingTypeRef.current === 'decor') { activePath = activePath ? `${activePath}/decora` : 'decora'; } const fileName = fileData.file || fileData.name; let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${activePath ? activePath + '/' : ''}${fileName}`; if(ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') { rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/${activePath ? activePath + '/' : ''}${fileName}`; } const loader = new THREE.GLTFLoader(); if (typeof THREE.DRACOLoader !== 'undefined') { const dracoLoader = new THREE.DRACOLoader(); dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/'); loader.setDRACOLoader(dracoLoader); } loader.load( rawUrl, (gltf) => processLoadedModel(gltf.scene, fileData.name, rawUrl), (xhr) => setStatus(`${lang === 'en' ? "LOADING" : "CARGANDO"} ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`), (err) => { console.warn("Error GLTFLoader (Viewer):", err); setStatus("ERROR 404/RED"); } ); };
+            const loadFromGitHub = (fileData) => { setShowFileMenu(false); setStatus(`${lang === 'en' ? "DOWNLOADING" : "BAJANDO"}: ${fileData.name || fileData.file}...`); let activePath = ghConfig.path ? ghConfig.path : ''; if (loadingTypeRef.current === 'car') { activePath = activePath ? `${activePath}/coches` : 'coches'; } else if (loadingTypeRef.current === 'decor') { activePath = activePath ? `${activePath}/decora` : 'decora'; } const fileName = fileData.file || fileData.name; let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${activePath ? activePath + '/' : ''}${fileName}`; if(ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') { rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/${activePath ? activePath + '/' : ''}${fileName}`; } const loader = getSharedGLTFLoader() || new THREE.GLTFLoader(); loader.load( rawUrl, (gltf) => processLoadedModel(gltf.scene, fileData.name, rawUrl), (xhr) => setStatus(`${lang === 'en' ? "LOADING" : "CARGANDO"} ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`), (err) => { console.warn("Error GLTFLoader (Viewer):", err); setStatus("ERROR 404/RED"); } ); };
             const loadDirectFile = (fileName) => { if(!fileName) return; const cleanName = fileName.trim(); loadFromGitHub({ name: cleanName }); };
             const handleFileChange = (e) => { const file = e.target.files[0]; if (!file) return; setStatus(lang === 'en' ? "PROCESSING..." : "PROCESANDO..."); if (onLoad) onLoad(file, currentTargetId, loadingTypeRef.current); e.target.value = ''; }; 
             const triggerFileSelect = () => { if (inputRef.current) inputRef.current.click(); }; 
-            const setLoadType = (type) => { loadingTypeRef.current = type; if (type === 'decor' && currentTargetId === 1) { setTargetId(3); } };
+            const setLoadType = (type) => { loadingTypeRef.current = type; if (type === 'decor' && currentTargetId === 1) { setTargetId(2); } };
 
             return ( 
                 <div className="w-96 h-[500px] bg-[#0f172a] border-2 border-[#39ff14] rounded-xl shadow-[0_0_40px_rgba(57,255,20,0.2)] flex flex-col overflow-hidden animate-in z-50 pointer-events-auto relative">
@@ -410,7 +457,7 @@
                             <div className="flex items-center gap-2 bg-black/60 border border-[#39ff14]/30 rounded px-3 py-1.5" >
                                 <span className="text-[10px] font-bold text-gray-400">{t.editing}</span>
                                 <span className="text-xs font-mono font-bold text-[#39ff14] uppercase">
-                                    {currentTargetId === 1 ? `${t.mainCar}` : `${t.decoration} ${currentTargetId}`}
+                                    {currentTargetId === 1 ? `${t.mainCar}` : `${t.decoration}`}
                                 </span>
                             </div> 
                             <button onClick={onClose} className="text-[#39ff14] hover:text-white transition hover:scale-125 bg-black/20 p-1 rounded-full ml-auto">
@@ -466,7 +513,7 @@
                             )} 
                         </div>
                     </div>
-                    {currentTargetId > 2 && (
+                    {currentTargetId > 1 && (
                         <div className="bg-emerald-900/20 border-b border-emerald-500/20 p-2">
                              <div className="flex justify-between items-center mb-1">
                                 <span className="text-[8px] font-bold text-emerald-400 uppercase">{t.scatter}</span>
@@ -492,7 +539,7 @@
                         </button>
                     </div>
                     <div className="bg-black/60 p-2 border-b border-[#39ff14]/20 flex justify-center items-center gap-4 py-3 min-h-[4rem]">
-                        {editMode === 'translate' && (currentTargetId > 2) && (
+                        {editMode === 'translate' && (currentTargetId > 1) && (
                             <>
                                 <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 font-bold mb-1">{t.posX}</span><div className="flex"><button onClick={()=>updateTransform('x',-1.0)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-l hover:bg-gray-700 text-sm font-bold">-</button><button onClick={()=>updateTransform('x',1.0)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-r hover:bg-gray-700 text-sm font-bold">+</button></div></div>
                                 <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 font-bold mb-1">{t.posY}</span><div className="flex"><button onClick={()=>updateTransform('y',-0.1)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-l hover:bg-gray-700 text-sm font-bold">-</button><button onClick={()=>updateTransform('y',0.1)} className="px-4 py-1.5 bg-gray-800 border border-orange-600 rounded-r hover:bg-gray-700 text-sm font-bold">+</button></div></div>
@@ -501,14 +548,14 @@
                         )}
                         {editMode === 'rotate' && (
                             <>
-                                {(currentTargetId > 2) && (
+                                {(currentTargetId > 1) && (
                                     <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 font-bold mb-1">{t.axisX}</span><div className="flex"><button onClick={()=>updateTransform('rotX',-15)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-l hover:bg-gray-700 text-sm font-bold">-</button><button onClick={()=>updateTransform('rotX',15)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-r hover:bg-gray-700 text-sm font-bold">+</button></div></div>
                                 )}
                                 {currentTargetId === 1 && (
                                     <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 font-bold mb-1">{t.posY}</span><div className="flex"><button onClick={()=>updateTransform('y',-0.05)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-l hover:bg-gray-700 text-sm font-bold">-</button><button onClick={()=>updateTransform('y',0.05)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-r hover:bg-gray-700 text-sm font-bold">+</button></div></div>
                                 )}
                                 <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 font-bold mb-1">{t.axisY} {currentTargetId === 1 ? '(90°)' : ''}</span><div className="flex"><button onClick={()=>updateTransform('rotY', currentTargetId === 1 ? -90 : -15)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-l hover:bg-gray-700 text-sm font-bold">-</button><button onClick={()=>updateTransform('rotY', currentTargetId === 1 ? 90 : 15)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-r hover:bg-gray-700 text-sm font-bold">+</button></div></div>
-                                {(currentTargetId > 2) && (
+                                {(currentTargetId > 1) && (
                                     <div className="flex flex-col items-center"><span className="text-[8px] text-gray-500 font-bold mb-1">{t.axisZ}</span><div className="flex"><button onClick={()=>updateTransform('rotZ',-15)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-l hover:bg-gray-700 text-sm font-bold">-</button><button onClick={()=>updateTransform('rotZ',15)} className="px-4 py-1.5 bg-gray-800 border border-gray-600 rounded-r hover:bg-gray-700 text-sm font-bold">+</button></div></div>
                                 )}
                             </>
@@ -533,19 +580,79 @@
             ); 
         };
         
-        /* --- VISOR 3D (NÚCLEO FÍSICO ACTUALIZADO CON CATMULL-ROM, MEMORY POOL Y AMORTIGUACIÓN) --- */
-        const Telemetry3DViewer = ({ circuitData, carSettings, customCarAssets, onCarAssetUpdate, onClose, lang, setLang, t, multiplayerSession, peerConn, networkData }) => {
+        /* --- VISOR 3D --- */
+        const Telemetry3DViewer = ({ circuitData, carSettings, customCarAssets, onCarAssetUpdate, onClose, lang, setLang, t }) => {
             const containerRef = useRef(null);
-            const [manualThrottle, setManualThrottle] = useState(0);
+            const [manualThrottle, setManualThrottle] = useState(40); // AUTOMÁTICO: Coche rueda por defecto
             const [sceneReady, setSceneReady] = useState(false);
             const [showBoardMenu, setShowBoardMenu] = useState(false);
             const [boardSettings, setBoardSettings] = useState({ visible: true, width: 400, depth: 300, x: 0, z: 0, material: 'grass' });
             const [showHomoViewer, setShowHomoViewer] = useState(false);
             const [isFullscreen, setIsFullscreen] = useState(false);
             const [targetId, setTargetId] = useState(1); 
-            const [cameraMode, setCameraMode] = useState('ORBIT'); 
-            const cameraModeRef = useRef('ORBIT');
+            const [cameraMode, setCameraMode] = useState('CHASE'); 
+            const cameraModeRef = useRef('CHASE');
             
+            const [showTrees, setShowTrees] = useState(true); // BOSQUE AUTO ON
+            const forestGroupRef = useRef(null);
+            
+            // ESTADO PARA ARRASTRAR EL MANDO (CONTROLLER)
+            const [ctrlPos, setCtrlPos] = useState({ x: window.innerWidth - 140, y: window.innerHeight / 2 - 120 });
+            const [isDraggingCtrl, setIsDraggingCtrl] = useState(false);
+            const dragCtrlOffset = useRef({ x: 0, y: 0 });
+            const [selectedCarId, setSelectedCarId] = useState(1);
+            const [laneChangePressed, setLaneChangePressed] = useState(false);
+            const [pitPressed, setPitPressed] = useState(false);
+            
+            const laneChangePressedRef = useRef(false);
+            useEffect(() => { laneChangePressedRef.current = laneChangePressed; }, [laneChangePressed]);
+            
+            const pitPressedRef = useRef(false);
+            useEffect(() => { pitPressedRef.current = pitPressed; }, [pitPressed]);
+
+            const numCars = 8;
+
+            useEffect(() => {
+                if (forestGroupRef.current) {
+                    forestGroupRef.current.visible = showTrees;
+                }
+            }, [showTrees]);
+
+            const handleCtrlDown = (e) => {
+                e.stopPropagation();
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                if (clientX !== undefined) {
+                    setIsDraggingCtrl(true);
+                    dragCtrlOffset.current = { x: clientX - ctrlPos.x, y: clientY - ctrlPos.y };
+                }
+            };
+
+            useEffect(() => {
+                const onMove = (e) => {
+                    if(!isDraggingCtrl) return;
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                    if(clientX !== undefined && clientY !== undefined) {
+                        setCtrlPos({ x: clientX - dragCtrlOffset.current.x, y: clientY - dragCtrlOffset.current.y });
+                    }
+                };
+                const onUp = () => setIsDraggingCtrl(false);
+                
+                if(isDraggingCtrl) {
+                    window.addEventListener('mousemove', onMove);
+                    window.addEventListener('mouseup', onUp);
+                    window.addEventListener('touchmove', onMove, {passive: false});
+                    window.addEventListener('touchend', onUp);
+                }
+                return () => {
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                    window.removeEventListener('touchmove', onMove);
+                    window.removeEventListener('touchend', onUp);
+                };
+            }, [isDraggingCtrl]);
+
             const [isPaused, setIsPaused] = useState(false);
             const isPausedRef = useRef(false);
             useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
@@ -576,7 +683,7 @@
                 try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); setIsFullscreen(true); } else { if (document.exitFullscreen) { await document.exitFullscreen(); setIsFullscreen(false); } } } catch (err) { console.warn("Fullscreen blocked:", err); }
             };
 
-            const manualThrottleRef = useRef(0);
+            const manualThrottleRef = useRef(40);
             const carMeshesRef = useRef([]);
             const decorMeshesRef = useRef({}); 
             const pieceMapRef = useRef([]);
@@ -585,16 +692,12 @@
             const trackGroupRef = useRef(null);
             const sceneRef = useRef(null);
             
-            // LÓGICA MULTIJUGADOR: 1 SOLO COCHE POR AHORA
+            // LÓGICA COCHE ÚNICO MEJORADA
             const physicsState = useRef([
-                { id: 1, currentLane: 0, distance: 0, speed: 0, worldPos: new THREE.Vector3(0,0,0) }
+                { id: 1, currentLane: 0, distance: 0, speed: 0, worldPos: new THREE.Vector3(0,0,0), lastValidDir: new THREE.Vector3(0,0,1) }
             ]);
 
             const myCarIdx = 0; 
-            const rivalIdx = 1; 
-            const remoteStateRef = useRef({ throttle: 0, distance: 0, speed: 0 });
-            
-            useEffect(() => { if (networkData) remoteStateRef.current = networkData; }, [networkData]);
 
             const carAssetsRef = useRef(customCarAssets);
             useEffect(() => { carAssetsRef.current = customCarAssets; }, [customCarAssets]);
@@ -634,20 +737,22 @@
             const createWoodTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#654321'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 600; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#5C4033' : '#3e2723'; const x = Math.random() * 512; const y = Math.random() * 512; const w = Math.random() * 100 + 50; const h = Math.random() * 4 + 1; ctx.fillRect(x, y, w, h); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
             const createStoneTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#6b7280'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#4b5563' : '#9ca3af'; const x = Math.random() * 600 - 50; const y = Math.random() * 600 - 50; const w = Math.random() * 160 + 60; const h = Math.random() * 80 + 30; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 4; ctx.strokeRect(x,y,w,h); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(0.5, 0.5); return texture; };
             const createKerbTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 64; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ef4444'; ctx.fillRect(0, 0, 64, 64); ctx.fillStyle = '#ffffff'; ctx.fillRect(64, 0, 64, 64); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
-            const createCar = (id, color) => { const pg = new THREE.Group(), vg = new THREE.Group(); pg.add(vg); const bm = new THREE.MeshLambertMaterial({ color }); const bg = new THREE.BoxGeometry(4.5, 1.2, 9), b = new THREE.Mesh(bg, bm); b.position.y = 0.8; b.castShadow = true; vg.add(b); const cg = new THREE.BoxGeometry(3.5, 0.8, 4), cm = new THREE.MeshLambertMaterial({ color: 0x111111 }), c = new THREE.Mesh(cg, cm); c.position.y = 1.8; vg.add(c); const wg = new THREE.CylinderGeometry(1.2, 1.2, 0.8, 16); wg.rotateZ(Math.PI/2); const wm = new THREE.MeshLambertMaterial({ color: 0x222222 }); [[-2.5, 3], [2.5, 3], [-2.5, -3], [2.5, -3]].forEach(p => { const w = new THREE.Mesh(wg, wm); w.position.set(p[0], 1.2, p[1]); vg.add(w); }); return pg; };
+            
+            // Creamos solo los contenedores vacíos para que no haya ningún coche rojo por defecto, solo el GLB
+            const createCar = (id, color) => { 
+                const pg = new THREE.Group(), vg = new THREE.Group(); 
+                pg.add(vg); 
+                return pg; 
+            };
 
             useEffect(() => {
                 if (!circuitData || !containerRef.current || typeof THREE === 'undefined') return;
                 
-                // --- OPTIMIZACIÓN GC: POOL DE MEMORIA MATEMÁTICO ---
                 const _origin = new THREE.Vector3(0,0,0);
                 const _camPos = new THREE.Vector3();
                 const _fpos = new THREE.Vector3();
                 const _flook = new THREE.Vector3();
-                const _tan = new THREE.Vector3();
                 const _yOffset = new THREE.Vector3(0, -0.20, 0); 
-                const _zAxis = new THREE.Vector3(0, 0, 1);
-                const _rallyOffset = new THREE.Vector3(0, 0.2, 0);
                 const _targetMatrix = new THREE.Matrix4();
                 const _targetRotation = new THREE.Quaternion();
                 const _up = new THREE.Vector3(0, 1, 0);
@@ -728,7 +833,6 @@
                     const easeSine = (t) => (1 - Math.cos(t * Math.PI)) / 2;
                     const cubicBezier = (p0, p1, p2, p3, t) => { const u = 1 - t; return (u*u*u * p0) + (3*u*u*t * p1) + (3*u*t*t * p2) + (t*t*t * p3); };
 
-                    // RESOLUCIÓN GEOMÉTRICA OPTIMIZADA PARA FÍSICAS FLUIDAS
                     const resMult = 1.5;
 
                     circuitData.pieces.forEach((p, index) => {
@@ -737,6 +841,7 @@
                             const rotVertexIndex = rails.lane1.length;
                             rails.lane1.push(null); rails.lane2.push(null); rails.pit.push(null); vertexDistances.push(accumulatedDist);
                             const loopRailPoints = []; const loopArcLength = Math.PI * r; const straightParts = loopCenterX * 2; const totalPieceLen = straightLen + straightLen + loopArcLength + straightParts; const loopStepDist = (loopArcLength + straightParts) / steps;
+                            
                             const startRailX = startX + (Math.cos(startAngle + Math.PI/2) * -laneOffVal); const startRailZ = startZ + (Math.sin(startAngle + Math.PI/2) * -laneOffVal); loopRailPoints.push(new THREE.Vector3(startRailX, 0.2, startRailZ));
                             const singleLaneWidth = 4.5; addAsphaltSlice(startX, startZ, startAngle, 9.0, 9.0, accumulatedDist, false, false, false);
                             
@@ -769,10 +874,7 @@
                         }
 
                         const startDist = accumulatedDist; const startVertexIdx = rails.lane1.length - 1;
-                        
-                        // IA REPARADORA: Aumento de resolución
                         const steps = (p.type === 'curve') ? Math.max(12, Math.ceil(Math.abs(p.angle) * 1.5 * resMult)) : Math.max(10, Math.ceil((p.length / 3.0) * resMult));
-                        
                         const stepLen = p.length / steps; const totalSweep = (p.type==='curve') ? (p.angle * Math.PI / 180) * (p.direction==='left'?-1:1) : 0; const stepAngle = totalSweep / steps;
                         let stepPhysDist = stepLen; if (p.type === 'curve') stepPhysDist = (2 * Math.PI * p.radius) * (Math.abs(p.angle) / 360) / steps;
 
@@ -813,8 +915,8 @@
                                 if (p.subtype !== 'change_right') d21.push(new THREE.Vector3(curX+px*o21, 0.2, curZ+pz*o21)); 
                             }
                         }
-                        if (d12.length > 0) rails.changes.push({ points: d12, refIdx: startVertexIdx, count: steps });
-                        if (d21.length > 0) rails.changes.push({ points: d21, refIdx: startVertexIdx, count: steps });
+                        if (d12.length > 0) rails.changes.push({ points: d12, refIdx: startVertexIdx, count: steps, type: '1to2' });
+                        if (d21.length > 0) rails.changes.push({ points: d21, refIdx: startVertexIdx, count: steps, type: '2to1' });
                         pieceMapRef.current.push({ index, distStart: accumulatedDist-p.length, distEnd: accumulatedDist, type: p.type, subtype: p.subtype, invert: p.invert, elevation: p.elevation || 0 });
                     });
                     
@@ -828,12 +930,49 @@
                         let getElevationAtDist;
 
                         if (hasManualElevation) {
-                            const MANUAL_LEVEL_HEIGHT = 12.0; const TRACK_RESOLUTION = 1.0; const numSamples = Math.max(10, Math.ceil(totalTrackLength / TRACK_RESOLUTION)); const rawHeights = new Float32Array(numSamples);
-                            for (let i = 0; i < numSamples; i++) { const dist = i * TRACK_RESOLUTION; const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist < p.distEnd) || pieceMapRef.current[0]; rawHeights[i] = (piece.elevation || 0) * MANUAL_LEVEL_HEIGHT; }
-                            const applyBlur = (input, windowRadius) => { const output = new Float32Array(numSamples); for(let i = 0; i < numSamples; i++) { let sum = 0; for(let j = -windowRadius; j <= windowRadius; j++) { const idx = (i + j + numSamples) % numSamples; sum += input[idx]; } output[i] = sum / (windowRadius * 2 + 1); } return output; };
+                            const MANUAL_LEVEL_HEIGHT = 10.0; 
+                            const TRACK_RESOLUTION = 1.0; 
+                            const numSamples = Math.max(10, Math.ceil(totalTrackLength / TRACK_RESOLUTION)); 
+                            const rawHeights = new Float32Array(numSamples);
+                            for (let i = 0; i < numSamples; i++) { 
+                                const dist = i * TRACK_RESOLUTION; 
+                                const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist <= p.distEnd) || pieceMapRef.current[0]; 
+                                rawHeights[i] = (piece.elevation || 0) * MANUAL_LEVEL_HEIGHT; 
+                            }
+                            
+                            const applyBlur = (input, windowRadius) => { 
+                                const output = new Float32Array(numSamples); 
+                                for(let i = 0; i < numSamples; i++) { 
+                                    let sum = 0; 
+                                    let count = 0;
+                                    for(let j = -windowRadius; j <= windowRadius; j++) { 
+                                        const idx = i + j;
+                                        if (idx >= 0 && idx < numSamples) {
+                                            sum += input[idx]; 
+                                            count++;
+                                        }
+                                    } 
+                                    output[i] = sum / count; 
+                                } 
+                                return output; 
+                            };
+                            
                             const blurRadius = Math.max(1, Math.floor(25.0 / TRACK_RESOLUTION)); 
-                            let smoothHeights = rawHeights; smoothHeights = applyBlur(smoothHeights, blurRadius); smoothHeights = applyBlur(smoothHeights, blurRadius); smoothHeights = applyBlur(smoothHeights, blurRadius); smoothHeights = applyBlur(smoothHeights, blurRadius);
-                            getElevationAtDist = (queryDist) => { if (queryDist < 0) queryDist += totalTrackLength; queryDist = queryDist % totalTrackLength; const exactIndex = queryDist / TRACK_RESOLUTION; const index0 = Math.floor(exactIndex) % numSamples; const index1 = (index0 + 1) % numSamples; const ratio = exactIndex - Math.floor(exactIndex); return smoothHeights[index0] * (1 - ratio) + smoothHeights[index1] * ratio; };
+                            let smoothHeights = rawHeights; 
+                            smoothHeights = applyBlur(smoothHeights, blurRadius); 
+                            smoothHeights = applyBlur(smoothHeights, blurRadius); 
+                            smoothHeights = applyBlur(smoothHeights, blurRadius); 
+                            smoothHeights = applyBlur(smoothHeights, blurRadius); 
+                            
+                            getElevationAtDist = (queryDist) => { 
+                                if (queryDist < 0) queryDist = 0; 
+                                if (queryDist >= totalTrackLength) queryDist = totalTrackLength - 0.01; 
+                                const exactIndex = queryDist / TRACK_RESOLUTION; 
+                                const index0 = Math.floor(exactIndex); 
+                                const index1 = Math.min(numSamples - 1, index0 + 1); 
+                                const ratio = exactIndex - index0; 
+                                return smoothHeights[index0] * (1 - ratio) + smoothHeights[index1] * ratio; 
+                            };
                         } else {
                             const centerPoints = [];
                             for(let i=0; i<stepCount; i++) {
@@ -1021,11 +1160,16 @@
                                 if (guardrails.outer[s]) guardrails.outer[s].y += y;
                             }
                         }
-                        
+
                         rails.changes.forEach(changeItem => {
                             if (!changeItem.points) return;
                             if (changeItem.isRotonda) {
-                                return;
+                                changeItem.points.forEach((pt, pi) => {
+                                    const fraction = pi / (changeItem.points.length - 1 || 1);
+                                    const ptDist = changeItem.baseDist + (fraction * changeItem.totalLen);
+                                    const y = getElevationAtDist(ptDist);
+                                    if (Math.abs(y) > 0.001) pt.y += y;
+                                });
                             } else {
                                 const dStart = vertexDistances[changeItem.refIdx] || 0;
                                 const dEnd = vertexDistances[changeItem.refIdx + changeItem.count] || (dStart + 50);
@@ -1038,32 +1182,25 @@
                             }
                         });
 
-                        // Laplacian Smoothing (8 Passes para máxima suavidad)
                         let passes = 8; 
-                        if (passes > 0) {
-                            for (let p = 0; p < passes; p++) {
-                                const smoothSpline = (arr) => {
-                                    const temp = arr.map(v => v ? v.y : null);
-                                    for (let i = 1; i < arr.length - 1; i++) {
-                                        if (arr[i] && arr[i-1] && arr[i+1]) {
-                                            arr[i].y = (temp[i-1] + temp[i] * 2 + temp[i+1]) / 4.0;
-                                        }
+                        for (let p = 0; p < passes; p++) {
+                            const smoothSpline = (arr) => {
+                                const temp = arr.map(v => v ? v.y : null);
+                                for (let i = 1; i < arr.length - 1; i++) {
+                                    if (arr[i] && arr[i-1] && arr[i+1]) {
+                                        arr[i].y = (temp[i-1] + temp[i] * 2 + temp[i+1]) / 4.0;
                                     }
-                                };
-                                smoothSpline(rails.lane1);
-                                smoothSpline(rails.lane2);
-                                smoothSpline(rails.pit);
-                                smoothSpline(borders.inner);
-                                smoothSpline(borders.outer);
-                                smoothSpline(guardrails.inner);
-                                smoothSpline(guardrails.outer);
-                                
-                                const tempAsp = new Float32Array(asphaltVerts.length);
-                                for(let i=0; i<asphaltVerts.length; i++) tempAsp[i] = asphaltVerts[i];
-                                for (let i = 6; i < aspVertCount * 6 - 6; i += 6) {
-                                    asphaltVerts[i+1] = (tempAsp[i-5] + tempAsp[i+1]*2 + tempAsp[i+7]) / 4.0; 
-                                    asphaltVerts[i+4] = (tempAsp[i-2] + tempAsp[i+4]*2 + tempAsp[i+10]) / 4.0; 
                                 }
+                            };
+                            smoothSpline(rails.lane1); smoothSpline(rails.lane2); smoothSpline(rails.pit);
+                            smoothSpline(borders.inner); smoothSpline(borders.outer);
+                            smoothSpline(guardrails.inner); smoothSpline(guardrails.outer);
+                            
+                            const tempAsp = new Float32Array(asphaltVerts.length);
+                            for(let i=0; i<asphaltVerts.length; i++) tempAsp[i] = asphaltVerts[i];
+                            for (let i = 6; i < aspVertCount * 6 - 6; i += 6) {
+                                asphaltVerts[i+1] = (tempAsp[i-5] + tempAsp[i+1]*2 + tempAsp[i+7]) / 4.0; 
+                                asphaltVerts[i+4] = (tempAsp[i-2] + tempAsp[i+4]*2 + tempAsp[i+10]) / 4.0; 
                             }
                         }
                     };
@@ -1164,18 +1301,93 @@
                     };
                     buildWallsAndTunnels();
 
+                    const buildContinuousLane = (laneArray, distArray) => {
+                        const pts = []; const dst = [];
+                        for(let i=0; i<laneArray.length; i++){
+                            if(laneArray[i]){ pts.push(laneArray[i].clone()); dst.push(distArray[i]); }
+                        }
+                        if(dst.length > 0) dst[0] = 0;
+                        for(let i=1; i<dst.length; i++) { 
+                            if(dst[i] <= dst[i-1]) dst[i] = dst[i-1] + pts[i].distanceTo(pts[i-1]); 
+                        }
+                        return { pts, dst };
+                    };
+                    const physLane1 = buildContinuousLane(rails.lane1, vertexDistances);
+                    const physLane2 = buildContinuousLane(rails.lane2, vertexDistances);
+                    const physPit = buildContinuousLane(rails.pit, vertexDistances);
+                    trackGroup.userData.physLane1 = physLane1;
+                    trackGroup.userData.physLane2 = physLane2;
+                    trackGroup.userData.physPit = physPit;
+                    trackGroup.userData.railsData = rails;
+                    trackGroup.userData.vertexDistances = vertexDistances;
+
                     let finalRallyPath = []; let rallyDists = [0]; let currentRallyDist = 0;
                     if (hasRotonda) {
-                        const rotondas = rails.changes.filter(c => c.isRotonda).sort((a, b) => a.refIdx - b.refIdx); const startRotondaRef = rotondas.length > 0 ? rotondas[0].refIdx : -1; const endRotondaRef = rotondas.length > 0 ? rotondas[rotondas.length - 1].refIdx : -1;
-                        const appendPath = (points) => { if (points.length === 0) return; const newPoints = points.map(p => p.clone()); if (finalRallyPath.length > 0) { const lastP = finalRallyPath[finalRallyPath.length - 1]; const firstP = newPoints[0]; if (lastP.distanceTo(firstP) < 10.0) { firstP.copy(lastP); } else { finalRallyPath.push(new THREE.Vector3().lerpVectors(lastP, firstP, 0.5)); } } newPoints.forEach(p => finalRallyPath.push(p)); };
-                        let currentSegment = [];
-                        for (let i = 0; i < rails.lane1.length; i++) { if (rails.lane1[i]) { currentSegment.push(rails.lane1[i]); } else { if (currentSegment.length > 0) { appendPath(currentSegment); currentSegment = []; } const rotChange = rails.changes.find(c => c.isRotonda && Math.abs(c.refIdx - i) < 3); if (rotChange) { if (rotChange.refIdx >= endRotondaRef && i > 5) { appendPath(rotChange.points); } while(i < rails.lane1.length - 1 && rails.lane1[i+1] === null) { i++; } } } } if (currentSegment.length > 0) appendPath(currentSegment);
-                        currentSegment = [];
-                        for (let i = rails.lane2.length - 1; i >= 0; i--) { if (rails.lane2[i]) { currentSegment.push(rails.lane2[i]); } else { if (currentSegment.length > 0) { appendPath(currentSegment); currentSegment = []; } const rotChange = rails.changes.find(c => c.isRotonda && Math.abs(c.refIdx - i) < 3); if (rotChange) { if (rotChange.refIdx <= startRotondaRef) { appendPath(rotChange.points); } while(i > 0 && rails.lane2[i-1] === null) { i--; } } } } if (currentSegment.length > 0) appendPath(currentSegment);
-                        const cleanPath = (points) => { if (points.length < 2) return points; const cleaned = [points[0]]; for (let i = 1; i < points.length; i++) { if (points[i].distanceTo(cleaned[cleaned.length - 1]) > 0.05) { cleaned.push(points[i]); } } return cleaned; }; finalRallyPath = cleanPath(finalRallyPath);
-                        if (finalRallyPath.length > 0) { const first = finalRallyPath[0]; const last = finalRallyPath[finalRallyPath.length - 1]; if (first.distanceTo(last) > 0.5) { finalRallyPath.push(new THREE.Vector3().lerpVectors(last, first, 0.33)); finalRallyPath.push(new THREE.Vector3().lerpVectors(last, first, 0.66)); finalRallyPath.push(first.clone()); } }
-                        if (finalRallyPath.length > 10) { for (let iter = 0; iter < 10; iter++) { const smoothed = []; const len = finalRallyPath.length; for (let i = 0; i < len; i++) { const prev = finalRallyPath[(i - 1 + len) % len]; const curr = finalRallyPath[i]; const next = finalRallyPath[(i + 1) % len]; const x = (prev.x + curr.x + next.x) / 3; const y = curr.y; const z = (prev.z + curr.z + next.z) / 3; smoothed.push(new THREE.Vector3(x, y, z)); } finalRallyPath = smoothed; } }
-                        for(let i=1; i<finalRallyPath.length; i++) { const d = finalRallyPath[i].distanceTo(finalRallyPath[i-1]); currentRallyDist += d; rallyDists.push(currentRallyDist); }
+                        const rotondas = rails.changes.filter(c => c.isRotonda).sort((a, b) => a.refIdx - b.refIdx);
+                        const startRotonda = rotondas.find(r => r.refIdx < rails.lane1.length / 3);
+                        const endRotonda = rotondas.find(r => r.refIdx > (rails.lane1.length * 2) / 3) || (rotondas.length === 1 && !startRotonda ? rotondas[0] : null);
+
+                        let l1Start = startRotonda ? startRotonda.refIdx + 1 : 0;
+                        let l1End = endRotonda ? endRotonda.refIdx : rails.lane1.length;
+                        
+                        let l2Start = startRotonda ? startRotonda.refIdx + 1 : 0;
+                        let l2End = endRotonda ? endRotonda.refIdx : rails.lane2.length;
+
+                        const l1Clean = [];
+                        for (let i = l1Start; i < l1End; i++) {
+                            if (rails.lane1[i]) l1Clean.push(rails.lane1[i].clone());
+                        }
+                        
+                        const l2Clean = [];
+                        for (let i = l2Start; i < l2End; i++) {
+                            if (rails.lane2[i]) l2Clean.push(rails.lane2[i].clone());
+                        }
+
+                        if (startRotonda && startRotonda.points) {
+                            for (let i = 0; i < startRotonda.points.length; i++) finalRallyPath.push(startRotonda.points[i].clone());
+                        }
+                        
+                        for (let i = 0; i < l1Clean.length; i++) {
+                            finalRallyPath.push(l1Clean[i].clone());
+                        }
+                        
+                        if (endRotonda && endRotonda.points) {
+                            for (let i = 0; i < endRotonda.points.length; i++) finalRallyPath.push(endRotonda.points[i].clone());
+                        }
+                        
+                        for (let i = l2Clean.length - 1; i >= 0; i--) {
+                            finalRallyPath.push(l2Clean[i].clone());
+                        }
+
+                        const cleanPath = (points) => {
+                            if (points.length < 2) return points;
+                            const cleaned = [points[0]];
+                            for (let i = 1; i < points.length; i++) { if (points[i].distanceTo(cleaned[cleaned.length - 1]) > 0.05) cleaned.push(points[i]); }
+                            return cleaned;
+                        }; 
+                        finalRallyPath = cleanPath(finalRallyPath);
+
+                        if (finalRallyPath.length > 0) { 
+                            const first = finalRallyPath[0]; const last = finalRallyPath[finalRallyPath.length - 1]; 
+                            if (first.distanceTo(last) > 0.5 && first.distanceTo(last) < 20.0) { 
+                                finalRallyPath.push(new THREE.Vector3().lerpVectors(last, first, 0.33)); 
+                                finalRallyPath.push(new THREE.Vector3().lerpVectors(last, first, 0.66)); 
+                            } 
+                        }
+
+                        if (finalRallyPath.length > 10) { 
+                            for (let iter = 0; iter < 10; iter++) { 
+                                const smoothed = []; const len = finalRallyPath.length; 
+                                for (let i = 0; i < len; i++) { 
+                                    const prev = finalRallyPath[(i - 1 + len) % len]; 
+                                    const curr = finalRallyPath[i]; 
+                                    const next = finalRallyPath[(i + 1) % len]; 
+                                    smoothed.push(new THREE.Vector3((prev.x + curr.x + next.x) / 3, (prev.y + curr.y + next.y) / 3, (prev.z + curr.z + next.z) / 3)); 
+                                } 
+                                finalRallyPath = smoothed; 
+                            } 
+                        }
+                        for(let i=1; i<finalRallyPath.length; i++) { currentRallyDist += finalRallyPath[i].distanceTo(finalRallyPath[i-1]); rallyDists.push(currentRallyDist); }
                     }
                     rallyPathRef.current = finalRallyPath; rallyDistancesRef.current = rallyDists;
 
@@ -1192,35 +1404,171 @@
                          else guardrailPoints.outer.push(null);
                     }
 
-                    const createSingleGuardrailMesh = (points) => {
-                        if (points.length < 2) return;
-                        const curve = new THREE.CatmullRomCurve3(points);
+                    // --- GENERADOR DE TEXTURAS PARA VALLAS MODERNAS ---
+                    const createFenceTexture = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 512;
+                        canvas.height = 128;
+                        const ctx = canvas.getContext('2d');
                         
-                        const railMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.6, roughness: 0.4 }); 
+                        // Fondo base gris metálico
+                        ctx.fillStyle = '#64748b';
+                        ctx.fillRect(0, 0, 512, 128);
                         
-                        [0.35, 0.75].forEach(hOffset => {
-                            const geom = new THREE.TubeGeometry(curve, Math.max(10, points.length * 2), 0.1, 8, false);
-                            const mesh = new THREE.Mesh(geom, railMat);
-                            mesh.position.y = hOffset;
-                            mesh.castShadow = true;
-                            trackGroup.add(mesh);
-                        });
-
-                        const postGeom = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 8); 
-                        const postMat = new THREE.MeshStandardMaterial({ color: 0x52525b, metalness: 0.8, roughness: 0.3 }); 
-                        let curveLen = curve.getLength();
-                        let numPosts = Math.max(2, Math.floor(curveLen / 1.5)); 
-                        
-                        for(let i=0; i<=numPosts; i++) {
-                            let t = i / numPosts;
-                            let pt = curve.getPointAt(t);
-                            let post = new THREE.Mesh(postGeom, postMat);
-                            post.position.copy(pt);
-                            
-                            post.position.y += 0.15; 
-                            post.castShadow = true;
-                            trackGroup.add(post);
+                        // Patrón sutil diagonal oscuro
+                        ctx.strokeStyle = '#475569';
+                        ctx.lineWidth = 4;
+                        for(let i = -128; i < 512; i += 24) {
+                            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 128, 128); ctx.stroke();
                         }
+
+                        // Estructura superior (perfil metálico más claro)
+                        ctx.fillStyle = '#cbd5e1'; 
+                        ctx.fillRect(0, 0, 512, 12);
+                        
+                        // Sombra de oclusión bajo el perfil superior
+                        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                        ctx.fillRect(0, 12, 512, 6);
+                        
+                        // Relieve y reflejos glossy para dar volumen 3D al material
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 128);
+                        gradient.addColorStop(0, 'rgba(255,255,255,0.4)');
+                        gradient.addColorStop(0.2, 'rgba(255,255,255,0.0)');
+                        gradient.addColorStop(0.8, 'rgba(0,0,0,0.2)');
+                        gradient.addColorStop(1, 'rgba(0,0,0,0.6)');
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, 512, 128);
+                        
+                        const tex = new THREE.CanvasTexture(canvas);
+                        tex.wrapS = THREE.RepeatWrapping;
+                        tex.wrapT = THREE.RepeatWrapping;
+                        return tex;
+                    };
+                    const fenceTexture = createFenceTexture();
+                    
+                    const createGridTexture = () => {
+                        const gridCanvas = document.createElement('canvas');
+                        gridCanvas.width = 128; gridCanvas.height = 128;
+                        const gCtx = gridCanvas.getContext('2d');
+                        gCtx.fillStyle = 'rgba(0,0,0,0)'; gCtx.fillRect(0,0,128,128);
+                        
+                        // Alambrada fina y elegante en forma de rombos (diamante)
+                        gCtx.strokeStyle = 'rgba(255,255,255,0.45)'; 
+                        gCtx.lineWidth = 2;
+                        gCtx.beginPath(); 
+                        gCtx.moveTo(64,0); gCtx.lineTo(128,64); gCtx.lineTo(64,128); gCtx.lineTo(0,64); 
+                        gCtx.closePath();
+                        gCtx.stroke();
+                        
+                        const gridTex = new THREE.CanvasTexture(gridCanvas);
+                        gridTex.wrapS = THREE.RepeatWrapping; gridTex.wrapT = THREE.RepeatWrapping;
+                        return gridTex;
+                    };
+                    const gridTexture = createGridTexture();
+
+                    const cleanPathPoints = (pts) => {
+                        if (!pts || pts.length === 0) return [];
+                        const res = [pts[0]];
+                        for (let i = 1; i < pts.length; i++) {
+                            // Aumentado el margen de limpieza a 0.5 para evitar colapso de vértices en curvas
+                            if (pts[i] && pts[i].distanceTo(res[res.length - 1]) > 0.5) {
+                                res.push(pts[i]);
+                            }
+                        }
+                        return res;
+                    };
+
+                    const createSingleGuardrailMesh = (points) => {
+                        const cp = cleanPathPoints(points);
+                        if (cp.length < 2) return;
+                        // Usar modo centripetal para evitar bucles o sobre-extensiones en curvas cerradas
+                        const curve = new THREE.CatmullRomCurve3(cp, false, 'centripetal');
+                        const curveLen = curve.getLength();
+                        const segments = Math.max(20, Math.floor(curveLen * 4));
+                        const pts = curve.getPoints(segments);
+                        
+                        const verts = []; const uvs = []; const indices = [];
+                        
+                        // Medidas de la valla base plástica/metálica
+                        const HEIGHT = 2.2; // Valla base más alta (antes 1.6)
+                        const THICKNESS = 0.12; // Un poco más gruesa
+                        let accumulatedLength = 0;
+
+                        // 1. GENERAR MURO SÓLIDO ELEGANTE
+                        for (let i = 0; i <= segments; i++) {
+                            const curr = pts[i];
+                            const next = i < segments ? pts[i+1] : pts[i];
+                            const prev = i > 0 ? pts[i-1] : pts[i];
+                            
+                            if (i > 0) accumulatedLength += curr.distanceTo(prev);
+                            const T = new THREE.Vector3().subVectors(next, prev);
+                            if (T.lengthSq() < 0.0001) T.set(0, 0, 1);
+                            T.normalize();
+                            const S = new THREE.Vector3(T.z, 0, -T.x).normalize();
+                            
+                            const bi = new THREE.Vector3().copy(curr).addScaledVector(S, THICKNESS);
+                            const bo = new THREE.Vector3().copy(curr).addScaledVector(S, -THICKNESS);
+                            const ti = new THREE.Vector3().copy(curr).addScaledVector(S, THICKNESS/2); ti.y += HEIGHT;
+                            const to = new THREE.Vector3().copy(curr).addScaledVector(S, -THICKNESS/2); to.y += HEIGHT;
+                            
+                            verts.push(bi.x, bi.y, bi.z); // 0 (Base Interior)
+                            verts.push(bo.x, bo.y, bo.z); // 1 (Base Exterior)
+                            verts.push(ti.x, ti.y, ti.z); // 2 (Arriba Interior)
+                            verts.push(to.x, to.y, to.z); // 3 (Arriba Exterior)
+                            
+                            const u = accumulatedLength / 4.0; // Escalado de textura
+                            uvs.push(u, 0,  u, 0,  u, 1,  u, 1);
+                            
+                            if (i > 0) {
+                                const b = (i - 1) * 4; const c = i * 4;
+                                indices.push(b+0, c+2, b+2); indices.push(b+0, c+0, c+2); // Cara Interior
+                                indices.push(b+1, b+3, c+3); indices.push(b+1, c+3, c+1); // Cara Exterior
+                                indices.push(b+2, c+3, b+3); indices.push(b+2, c+2, c+3); // Tapa Superior
+                            }
+                        }
+                        
+                        const geom = new THREE.BufferGeometry();
+                        geom.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+                        geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+                        geom.setIndex(indices);
+                        geom.computeVertexNormals();
+                        
+                        const mat = new THREE.MeshStandardMaterial({
+                            map: fenceTexture, color: 0xcccccc, roughness: 0.3, metalness: 0.2, side: THREE.DoubleSide
+                        });
+                        const mesh = new THREE.Mesh(geom, mat);
+                        mesh.castShadow = true; mesh.receiveShadow = true;
+                        trackGroup.add(mesh);
+                        
+                        // 2. GENERAR RED METÁLICA DE SEGURIDAD (Catch Fence superior)
+                        const topRailVerts = []; const topRailIndices = []; const topRailUVs = [];
+                        let accLen = 0;
+                        for (let i = 0; i <= segments; i++) {
+                            const curr = pts[i];
+                            const prev = i > 0 ? pts[i-1] : pts[i];
+                            if(i > 0) accLen += curr.distanceTo(prev);
+                            
+                            topRailVerts.push(curr.x, curr.y + HEIGHT - 0.1, curr.z); 
+                            topRailVerts.push(curr.x, curr.y + HEIGHT + 3.0, curr.z); // Red mucho más alta (3.0 en lugar de 2.5)
+                            
+                            const u = accLen * 1.5; 
+                            topRailUVs.push(u, 0, u, 1);
+                            
+                            if (i > 0) {
+                                const b = (i - 1) * 2; const c = i * 2;
+                                topRailIndices.push(b, c+1, b+1); topRailIndices.push(b, c, c+1);
+                            }
+                        }
+                        const topRailGeom = new THREE.BufferGeometry();
+                        topRailGeom.setAttribute('position', new THREE.Float32BufferAttribute(topRailVerts, 3));
+                        topRailGeom.setAttribute('uv', new THREE.Float32BufferAttribute(topRailUVs, 2));
+                        topRailGeom.setIndex(topRailIndices);
+                        
+                        const topRailMat = new THREE.MeshBasicMaterial({
+                            map: gridTexture, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false
+                        });
+                        const topRailMesh = new THREE.Mesh(topRailGeom, topRailMat);
+                        trackGroup.add(topRailMesh);
                     };
 
                     const createGuardrailMeshes = (guardrailArray) => {
@@ -1244,13 +1592,102 @@
                     for (let i = 0; i < borders.outer.length; i++) { if (borders.outer[i] && borders.outer[i].y > MAX_KERB_HEIGHT) borders.outer[i] = null; }
 
                     const kerbTexture = createKerbTexture();
-                    const createSingleBorderMesh = (points) => { if (points.length < 2) return; const curve = new THREE.CatmullRomCurve3(points); const geometry = new THREE.TubeGeometry(curve, Math.max(10, points.length * 2), 1.4, 8, false); const material = new THREE.MeshLambertMaterial({ map: kerbTexture }); kerbTexture.repeat.set(points.length / 4, 1); const mesh = new THREE.Mesh(geometry, material); mesh.scale.y = 0.15; mesh.position.y = 0.05; mesh.castShadow = true; mesh.receiveShadow = true; trackGroup.add(mesh); };
+                    const createSingleBorderMesh = (points) => { 
+                        const cp = cleanPathPoints(points);
+                        if (cp.length < 2) return; 
+                        const curve = new THREE.CatmullRomCurve3(cp, false, 'centripetal'); 
+                        const geometry = new THREE.TubeGeometry(curve, Math.max(10, cp.length * 2), 1.4, 8, false); 
+                        const material = new THREE.MeshLambertMaterial({ map: kerbTexture }); 
+                        kerbTexture.repeat.set(cp.length / 4, 1); 
+                        const mesh = new THREE.Mesh(geometry, material); 
+                        mesh.scale.y = 0.15; mesh.position.y = 0.05; 
+                        mesh.castShadow = true; mesh.receiveShadow = true; 
+                        trackGroup.add(mesh); 
+                    };
                     const createBorderMeshes = (borderArray) => { let currentSegment = []; for (let i = 0; i < borderArray.length; i++) { if (borderArray[i] !== null) { currentSegment.push(borderArray[i]); } else { if (currentSegment.length > 1) createSingleBorderMesh(currentSegment); currentSegment = []; } } if (currentSegment.length > 1) createSingleBorderMesh(currentSegment); };
                     createBorderMeshes(borders.inner); createBorderMeshes(borders.outer);
 
                     const centers = []; for(let k=0; k<rails.lane1.length; k++) { if(rails.lane1[k] && rails.lane2[k]) { centers.push(new THREE.Vector3().lerpVectors(rails.lane1[k], rails.lane2[k], 0.5)); } } trackCenterPointsRef.current = centers;
                     
-                    const createRailMesh = (pts) => { const cp = pts.filter(p => p !== null); if(cp.length < 2) return; const path = new THREE.CatmullRomCurve3(cp); const g = new THREE.TubeGeometry(path, Math.max(10, cp.length * 2), 0.35, 4, false); const m = new THREE.MeshLambertMaterial({ color: 0xcccccc }); const mesh = new THREE.Mesh(g, m); mesh.castShadow = false; trackGroup.add(mesh); };
+                    const createRailMesh = (pts) => { 
+                        const cp = cleanPathPoints(pts.filter(p => p !== null)); 
+                        if(cp.length < 2) return; 
+                        
+                        // Utilizamos CatmullRomCurve3 centripetal para suavizar la trayectoria sin bucles
+                        const path = new THREE.CatmullRomCurve3(cp, false, 'centripetal'); 
+                        const segments = Math.max(20, cp.length * 4);
+                        const smoothPts = path.getPoints(segments);
+                        
+                        const railVerts = []; const railIndices = [];
+                        const slotVerts = []; const slotIndices = [];
+                        
+                        // Medidas: grosor del raíl (aumentado visualmente) y mitad de la ranura
+                        const railW = 0.35; 
+                        const slotHalfW = 0.12; 
+                        
+                        for(let i=0; i<=segments; i++) {
+                            const curr = smoothPts[i];
+                            const prev = i > 0 ? smoothPts[i-1] : curr;
+                            const next = i < segments ? smoothPts[i+1] : curr;
+                            
+                            // Vector Tangente
+                            const T = new THREE.Vector3().subVectors(next, prev);
+                            if (T.lengthSq() < 0.0001) T.set(0, 0, 1);
+                            T.normalize();
+                            
+                            // Vector Lateral (Binormal) - Siempre horizontal para evitar giros extraños
+                            const S = new THREE.Vector3(T.z, 0, -T.x).normalize(); 
+                            
+                            // Elevación ligerísima para evitar Z-Fighting con el asfalto
+                            const yRail = curr.y + 0.045; // Un pelín más alto para atrapar mejor la luz
+                            const ySlot = curr.y + 0.02;
+                            
+                            // Vértices de los carriles desplazados lateralmente
+                            const rOut = new THREE.Vector3(curr.x + S.x * (slotHalfW + railW), yRail, curr.z + S.z * (slotHalfW + railW));
+                            const rIn  = new THREE.Vector3(curr.x + S.x * slotHalfW, yRail, curr.z + S.z * slotHalfW);
+                            const lIn  = new THREE.Vector3(curr.x - S.x * slotHalfW, yRail, curr.z - S.z * slotHalfW);
+                            const lOut = new THREE.Vector3(curr.x - S.x * (slotHalfW + railW), yRail, curr.z - S.z * (slotHalfW + railW));
+                            
+                            railVerts.push(lOut.x, lOut.y, lOut.z,  lIn.x, lIn.y, lIn.z);
+                            railVerts.push(rIn.x, rIn.y, rIn.z,     rOut.x, rOut.y, rOut.z);
+                            
+                            slotVerts.push(lIn.x, ySlot, lIn.z, rIn.x, ySlot, rIn.z);
+                            
+                            // Generación de caras (Triángulos)
+                            if (i > 0) {
+                                const b = (i - 1) * 4; const c = i * 4;
+                                railIndices.push(b, b+1, c); railIndices.push(b+1, c+1, c);
+                                railIndices.push(b+2, b+3, c+2); railIndices.push(b+3, c+3, c+2);
+                                
+                                const sb = (i - 1) * 2; const sc = i * 2;
+                                slotIndices.push(sb, sb+1, sc); slotIndices.push(sb+1, sc+1, sc);
+                            }
+                        }
+                        
+                        // Geometría de los raíles metálicos
+                        const railGeom = new THREE.BufferGeometry();
+                        railGeom.setAttribute('position', new THREE.Float32BufferAttribute(railVerts, 3));
+                        railGeom.setIndex(railIndices);
+                        railGeom.computeVertexNormals();
+                        
+                        // Geometría del slot (ranura central)
+                        const slotGeom = new THREE.BufferGeometry();
+                        slotGeom.setAttribute('position', new THREE.Float32BufferAttribute(slotVerts, 3));
+                        slotGeom.setIndex(slotIndices);
+                        slotGeom.computeVertexNormals();
+                        
+                        // Materiales realistas (Usando Phong para que el metal brille fuertemente bajo la luz direccional)
+                        const railMat = new THREE.MeshPhongMaterial({ color: 0xdddddd, specular: 0xffffff, shininess: 90, side: THREE.DoubleSide });
+                        const slotMat = new THREE.MeshBasicMaterial({ color: 0x020202, side: THREE.DoubleSide });
+                        
+                        const railMesh = new THREE.Mesh(railGeom, railMat);
+                        railMesh.receiveShadow = true;
+                        
+                        const slotMesh = new THREE.Mesh(slotGeom, slotMat);
+                        
+                        trackGroup.add(railMesh);
+                        trackGroup.add(slotMesh);
+                    };
                     const createMultiSegmentRailMesh = (points) => { let currentSegment = []; for (let p of points) { if (p === null) { if (currentSegment.length > 1) createRailMesh(currentSegment); currentSegment = []; } else { currentSegment.push(p); } } if (currentSegment.length > 1) createRailMesh(currentSegment); };
                     createMultiSegmentRailMesh(rails.lane1); createMultiSegmentRailMesh(rails.lane2); createMultiSegmentRailMesh(rails.pit);
                     rails.changes.forEach(changeItem => { if(changeItem.points) createRailMesh(changeItem.points); else createRailMesh(changeItem); });
@@ -1270,63 +1707,291 @@
                     if (!b.isEmpty()) { 
                         const center = b.getCenter(new THREE.Vector3()); const size = b.getSize(new THREE.Vector3()); trackGroup.position.sub(center); trackGroup.position.y = 0.8; 
                         pathPoints.forEach(p => p.sub(center)); pathPointsRef.current = pathPoints;
+                        
                         trackBaseSizeRef.current = { width: size.x, depth: size.z };
-                        const bWidth = size.x + 300; const bDepth = size.z + 300;
+                        
+                        // AJUSTE AUTOMÁTICO DEL TABLERO AL TAMAÑO DEL CIRCUITO
+                        const bWidth = Math.ceil(size.x) + 30; const bDepth = Math.ceil(size.z) + 30;
+                        
                         const grassTex = createGrassTexture(); const woodTex = createWoodTexture();
                         const boardGeo = new THREE.BoxGeometry(1, 1, 1); 
+                        
                         const topMat = new THREE.MeshLambertMaterial({ map: grassTex }); topMat.userData.grassMap = grassTex; topMat.userData.woodMap = woodTex;
-                        const sideMat = new THREE.MeshLambertMaterial({ map: woodTex }); const bottomMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+                        const sideMat = new THREE.MeshLambertMaterial({ map: woodTex }); 
+                        const bottomMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
                         const boardMaterials = [ sideMat, sideMat, topMat, bottomMat, sideMat, sideMat ];
-                        const boardMesh = new THREE.Mesh(boardGeo, boardMaterials); boardMesh.scale.set(bWidth, 2.0, bDepth); boardMesh.position.y = -0.5; boardMesh.receiveShadow = true; scene.add(boardMesh); boardMeshRef.current = boardMesh; 
+                        
+                        const boardMesh = new THREE.Mesh(boardGeo, boardMaterials); 
+                        boardMesh.scale.set(bWidth, 2.0, bDepth); 
+                        boardMesh.position.y = -0.5; 
+                        boardMesh.receiveShadow = true; 
+                        scene.add(boardMesh); 
+                        boardMeshRef.current = boardMesh; 
                         setBoardSettings(prev => ({ ...prev, width: bWidth, depth: bDepth, x: 0, z: 0, material: 'grass' }));
+                        
+                        // GENERADOR DE BOSQUE (ÁRBOLES DE DECORACIÓN) AUTOMÁTICO
+                        const forestGroup = new THREE.Group();
+                        forestGroup.name = "FOREST_GROUP";
+                        forestGroup.visible = showTrees;
+                        trackGroup.add(forestGroup);
+                        forestGroupRef.current = forestGroup;
+
+                        // 1. Recopilar bordes exactos de la pista para una colisión perfecta
+                        const trackEdges = [];
+                        for(let i=0; i<rails.lane1.length; i+=2) { 
+                            let pL = rails.lane1[i];
+                            let pR = rails.lane2[i];
+                            if (pL) trackEdges.push({ x: pL.x, z: pL.z });
+                            if (pR) trackEdges.push({ x: pR.x, z: pR.z });
+                        }
+                        
+                        // ¡CRUCIAL PARA DECO.HTML! Añadir los puntos de rotondas y cambios de carril
+                        rails.changes.forEach(c => {
+                            const pts = c.points || c;
+                            if (Array.isArray(pts)) {
+                                for(let i=0; i<pts.length; i+=2) {
+                                    if(pts[i]) trackEdges.push({ x: pts[i].x, z: pts[i].z });
+                                }
+                            }
+                        });
+                        trackGroup.userData.trackEdges = trackEdges;
+
+                        // Margen de seguridad relajado: mitad de la pista + 6 uds (Permite árboles más cerca del borde)
+                        const safeMargin = (trackWidth / 2) + 6.0;
+                        const safeDistanceSq = safeMargin * safeMargin;
+
+                        const isSafe = (tx, tz) => {
+                            // Que el árbol no se salga volando por el borde del tablero de madera (Margen de 15)
+                            if (tx < center.x - bWidth/2 + 15 || tx > center.x + bWidth/2 - 15) return false;
+                            if (tz < center.z - bDepth/2 + 15 || tz > center.z + bDepth/2 - 15) return false;
+                            
+                            // Que no colisione con NINGÚN borde de la pista
+                            for(let i=0; i<trackEdges.length; i++) {
+                                const dx = trackEdges[i].x - tx;
+                                const dz = trackEdges[i].z - tz;
+                                if ((dx*dx + dz*dz) < safeDistanceSq) return false;
+                            }
+                            return true;
+                        };
+
+                        const maxTrees = 100;
+                        const validPositions = [];
+                        const minTreeDistSq = 9.0 * 9.0;
+                        const numClusters = 12;
+                        const forestCenters = [];
+                        for(let i=0; i<numClusters; i++) {
+                            forestCenters.push({
+                                x: center.x + (Math.random() - 0.5) * (bWidth * 0.9),
+                                z: center.z + (Math.random() - 0.5) * (bDepth * 0.9)
+                            });
+                        }
+                        
+                        for(let i=0; i<maxTrees * 300; i++) { 
+                            const cluster = forestCenters[Math.floor(Math.random() * forestCenters.length)];
+                            const angle = Math.random() * Math.PI * 2;
+                            const radius = Math.sqrt(Math.random()) * 55; 
+                            
+                            const tx = cluster.x + Math.cos(angle) * radius;
+                            const tz = cluster.z + Math.sin(angle) * radius;
+                            
+                            if (isSafe(tx, tz)) {
+                                let tooClose = false;
+                                for(let j=0; j<validPositions.length; j++) {
+                                    const dx = validPositions[j].x - tx;
+                                    const dz = validPositions[j].z - tz;
+                                    if ((dx*dx + dz*dz) < minTreeDistSq) {
+                                        tooClose = true;
+                                        break;
+                                    }
+                                }
+                                if (!tooClose) {
+                                    validPositions.push({ x: tx, z: tz });
+                                    if (validPositions.length >= maxTrees) break;
+                                }
+                            }
+                        }
+
+                        const loadRealTrees = (fileList) => {
+                            const loader = getSharedGLTFLoader() || new THREE.GLTFLoader();
+                            const loadedTrees = [];
+                            let loadedCount = 0;
+
+                            const finalizeTrees = () => {
+                                if (loadedTrees.length === 0) return; 
+                                const treeTransforms = loadedTrees.map(() => []); 
+                                
+                                validPositions.forEach(pos => {
+                                    const typeIdx = Math.floor(Math.random() * loadedTrees.length);
+                                    const scaleBase = 0.5 + Math.random() * 0.7; 
+                                    const rotY = Math.random() * Math.PI * 2;
+                                    const rotX = (Math.random() - 0.5) * 0.1;
+                                    const rotZ = (Math.random() - 0.5) * 0.1;
+                                    
+                                    const matrix = new THREE.Matrix4();
+                                    const position = new THREE.Vector3(pos.x, -0.1, pos.z);
+                                    const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(rotX, rotY, rotZ));
+                                    const scaleVector = new THREE.Vector3(scaleBase, scaleBase, scaleBase);
+                                    
+                                    matrix.compose(position, quaternion, scaleVector);
+                                    treeTransforms[typeIdx].push(matrix);
+                                });
+
+                                loadedTrees.forEach((treeModel, typeIdx) => {
+                                    const instances = treeTransforms[typeIdx];
+                                    if (instances.length === 0) return;
+
+                                    const shadowMat = new THREE.MeshBasicMaterial({
+                                        color: 0x000000,
+                                        transparent: true,
+                                        opacity: 0.45,
+                                        depthWrite: false
+                                    });
+
+                                    const projMatrix = new THREE.Matrix4().set(
+                                        1, 0.7, 0, 0,
+                                        0, 0.001, 0, -0.09,
+                                        0, 0.3, 1, 0,
+                                        0, 0,   0, 1
+                                    );
+
+                                    treeModel.traverse(child => {
+                                        if (child.isMesh) {
+                                            const instancedMesh = new THREE.InstancedMesh(child.geometry, child.material, instances.length);
+                                            instancedMesh.castShadow = false;
+                                            instancedMesh.receiveShadow = false;
+                                            instancedMesh.frustumCulled = false;
+                                            instancedMesh.matrixAutoUpdate = false;
+
+                                            const shadowMesh = new THREE.InstancedMesh(child.geometry, shadowMat, instances.length);
+                                            shadowMesh.castShadow = false;
+                                            shadowMesh.receiveShadow = false;
+                                            shadowMesh.frustumCulled = false;
+                                            shadowMesh.matrixAutoUpdate = false;
+
+                                            const finalMatrix = new THREE.Matrix4();
+                                            const shadowMatrix = new THREE.Matrix4();
+
+                                            for (let i = 0; i < instances.length; i++) {
+                                                finalMatrix.multiplyMatrices(instances[i], child.matrixWorld);
+                                                instancedMesh.setMatrixAt(i, finalMatrix);
+                                                shadowMatrix.multiplyMatrices(projMatrix, finalMatrix);
+                                                shadowMesh.setMatrixAt(i, shadowMatrix);
+                                            }
+                                            
+                                            instancedMesh.instanceMatrix.needsUpdate = true;
+                                            shadowMesh.instanceMatrix.needsUpdate = true;
+
+                                            forestGroup.add(instancedMesh);
+                                            forestGroup.add(shadowMesh);
+                                        }
+                                    });
+                                });
+                            };
+
+                            fileList.forEach(fileName => {
+                                const url = `https://slotcarhome-star.github.io/Circuitos3d/decora/${fileName}`;
+                                loader.load(url, (gltf) => {
+                                    const treeModel = gltf.scene;
+                                    treeModel.position.set(0, 0, 0);
+                                    treeModel.scale.set(1, 1, 1);
+                                    treeModel.updateMatrixWorld(true);
+
+                                    const boxOriginal = new THREE.Box3().setFromObject(treeModel);
+                                    const centerOriginal = boxOriginal.getCenter(new THREE.Vector3());
+                                    
+                                    treeModel.position.x -= centerOriginal.x;
+                                    treeModel.position.z -= centerOriginal.z;
+
+                                    const sizeOriginal = boxOriginal.getSize(new THREE.Vector3());
+                                    const targetHeight = 22.0; 
+                                    const scale = targetHeight / (sizeOriginal.y || 1);
+                                    treeModel.scale.set(scale, scale, scale);
+                                    treeModel.updateMatrixWorld(true);
+
+                                    const boxScaled = new THREE.Box3().setFromObject(treeModel);
+                                    treeModel.position.y -= boxScaled.min.y;
+
+                                    treeModel.traverse(c => {
+                                        if (c.isMesh) {
+                                            c.castShadow = false;
+                                            c.receiveShadow = false;
+                                            if (c.material) {
+                                                const basicMat = new THREE.MeshBasicMaterial({
+                                                    map: c.material.map || null,
+                                                    color: c.material.color || 0xffffff,
+                                                    side: THREE.DoubleSide,
+                                                    transparent: c.material.transparent,
+                                                    alphaTest: c.material.alphaTest || 0.5
+                                                });
+                                                c.material = basicMat;
+                                            }
+                                        }
+                                    });
+                                    
+                                    loadedTrees.push(treeModel);
+                                    loadedCount++;
+                                    if(loadedCount === fileList.length) finalizeTrees();
+                                }, undefined, (e) => {
+                                    console.warn("Fallo carga arbol:", e);
+                                    loadedCount++;
+                                    if(loadedCount === fileList.length) finalizeTrees();
+                                });
+                            });
+                        };
+
+                        fetch('https://api.github.com/repos/slotcarhome-star/Circuitos3d/contents/decora')
+                            .then(res => res.ok ? res.json() : Promise.reject())
+                            .then(data => {
+                                const glbFiles = data.filter(f => {
+                                    const n = f.name.toLowerCase();
+                                    return (n.includes('pino') || n.includes('alamo')) && (n.endsWith('.glb') || n.endsWith('.gltf'));
+                                }).map(f => f.name);
+                                
+                                if (glbFiles.length > 0) loadRealTrees(glbFiles);
+                                else loadRealTrees(['pino.glb', 'alamo.glb']);
+                            })
+                            .catch(err => {
+                                loadRealTrees(['pino.glb', 'alamo.glb']);
+                            });
+
                         const maxDim = Math.max(size.x, size.z); spherical.radius = maxDim * 1.5; spherical.phi = Math.PI / 6; 
                     } 
                     scene.add(trackGroup);
 
-                    // --- IA REPARADORA: GET POSITION AT DISTANCE CON CATMULL-ROM (OPTIMIZADO) ---
-                    const getPositionAtDistance = (pa, d, outVec = new THREE.Vector3()) => {
-                        let i = 0, min = 0, max = vertexDistances.length - 1;
+                    const getPositionAtDistance = (laneObj, d, outVec = new THREE.Vector3()) => {
+                        if(!laneObj || !laneObj.pts || laneObj.pts.length < 2) return outVec.set(0,0,0);
+                        const {pts, dst} = laneObj;
+                        
+                        let i = 0, min = 0, max = dst.length - 1;
                         while (min <= max) {
                             let mid = Math.floor((min + max) / 2);
-                            if (vertexDistances[mid] <= d) {
-                                i = mid; min = mid + 1;
-                            } else {
-                                max = mid - 1;
-                            }
+                            if (dst[mid] <= d) { i = mid; min = mid + 1; } 
+                            else { max = mid - 1; }
                         }
-                        if (i >= vertexDistances.length - 1) i = vertexDistances.length - 2;
-                        const r = (d - vertexDistances[i]) / (vertexDistances[i+1] - vertexDistances[i]);
+                        if (i >= dst.length - 1) i = dst.length - 2;
+                        if (i < 0) i = 0;
 
-                        const p1 = pa[i];
-                        const p2 = pa[i+1];
+                        const segmentLen = dst[i+1] - dst[i];
+                        const r = segmentLen > 0.00001 ? (d - dst[i]) / segmentLen : 0;
+
+                        const p1 = pts[i];
+                        const p2 = pts[i+1];
 
                         if (!p1 || !p2) {
                             const fallback = p1 || p2;
-                            if (fallback) {
-                                outVec.copy(fallback);
-                                return outVec;
-                            }
-                            return null;
+                            if (fallback) return outVec.copy(fallback);
+                            return outVec.set(0,0,0);
                         }
 
-                        // Catmull-Rom Spline para evitar saltos en rampas y puentes
-                        const p0 = pa[Math.max(0, i - 1)] || p1;
-                        const p3 = pa[Math.min(pa.length - 1, i + 2)] || p2;
-
-                        const t2 = r * r;
-                        const t3 = t2 * r;
-
-                        outVec.x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * r + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
-                        outVec.y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * r + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
-                        outVec.z = 0.5 * ((2 * p1.z) + (-p0.z + p2.z) * r + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3);
-
-                        return outVec;
+                        return outVec.lerpVectors(p1, p2, r);
                     };
 
                     const getRallyPositionByDist = (dist, outVec = new THREE.Vector3()) => {
                         const path = rallyPathRef.current; const dists = rallyDistancesRef.current;
                         if (!path || path.length < 2 || dists.length < 2) return outVec.set(0,0,0);
                         const totalLen = dists[dists.length - 1];
+                        if (totalLen <= 0.0001) return outVec.set(0,0,0);
+
                         let safeDist = dist;
                         while (safeDist < 0) safeDist += totalLen;
                         safeDist = safeDist % totalLen;
@@ -1336,31 +2001,25 @@
                             if (dists[mid] <= safeDist) { idx = mid; min = mid + 1; } else { max = mid - 1; }
                         }
                         if (idx >= dists.length - 1) idx = dists.length - 2;
-                        const dStart = dists[idx]; const dEnd = dists[idx+1];
+                        
+                        const dStart = dists[idx];
+                        const dEnd = dists[idx+1];
                         const segmentLen = dEnd - dStart;
                         const ratio = segmentLen > 0.00001 ? (safeDist - dStart) / segmentLen : 0;
-                        const p1 = path[idx]; const p2 = path[idx+1];
                         
-                        // Catmull-Rom Cíclico
-                        const p0 = path[(idx - 1 + path.length) % path.length];
-                        const p3 = path[(idx + 2) % path.length];
-
-                        const t2 = ratio * ratio; const t3 = t2 * ratio;
-
-                        outVec.x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * ratio + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
-                        outVec.y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * ratio + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
-                        outVec.z = 0.5 * ((2 * p1.z) + (-p0.z + p2.z) * ratio + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3);
-
-                        return outVec;
+                        const p1 = path[idx]; const p2 = path[idx+1];
+                        if (!p1 || !p2) return outVec.set(0,0,0);
+                        return outVec.lerpVectors(p1, p2, ratio);
                     };
-
-                    let lastNetTime = 0;
 
                     const animate = () => { 
                         animationId = requestAnimationFrame(animate); 
-                        const rawDt = clock.current.getDelta(); const dt = Math.min(rawDt, 0.04); // Límite de Frame para estabilidad de físicas
+                        const rawDt = clock.current.getDelta(); const dt = Math.min(rawDt, 0.04);
                         const nowTime = performance.now() / 1000;
-                        const totalDist = accumulatedDist; const currentTrackLen = (hasRotonda && rallyDistancesRef.current.length > 0) ? rallyDistancesRef.current[rallyDistancesRef.current.length - 1] : totalDist;
+                        
+                        const phys1Dst = trackGroupRef.current?.userData?.physLane1?.dst;
+                        const totalDist = (phys1Dst && phys1Dst.length > 0) ? phys1Dst[phys1Dst.length - 1] : 100; 
+                        const currentTrackLen = (hasRotonda && rallyDistancesRef.current.length > 0) ? rallyDistancesRef.current[rallyDistancesRef.current.length - 1] : totalDist;
 
                         if (raceStateRef.current.lapStartTime === 0) raceStateRef.current.lapStartTime = nowTime;
                         if (isPausedRef.current) raceStateRef.current.lapStartTime += rawDt;
@@ -1375,27 +2034,16 @@
 
                             let targetSpeed = 0;
                             if (ci === myCarIdx) {
-                                targetSpeed = 150 * (manualThrottleRef.current / 100.0);
-                            } else if (multiplayerSession) {
-                                targetSpeed = 150 * (remoteStateRef.current.throttle / 100.0);
+                                targetSpeed = 220 * (manualThrottleRef.current / 100.0);
                             }
 
                             if (!isPausedRef.current) {
-                                if (car.speed < targetSpeed) car.speed += 80 * dt;
-                                else if (car.speed > targetSpeed) car.speed -= 120 * dt;
+                                if (car.speed < targetSpeed) car.speed += 120 * dt;
+                                else if (car.speed > targetSpeed) car.speed -= 150 * dt;
                                 if (car.speed < 0) car.speed = 0;
                                 
                                 if (car.speed > 0) {
                                     car.distance += car.speed * dt;
-                                    
-                                    if (ci === rivalIdx && multiplayerSession) {
-                                        const diff = remoteStateRef.current.distance - car.distance;
-                                        if (Math.abs(diff) > 0.5 && Math.abs(diff) < currentTrackLen / 2) {
-                                            car.distance += diff * 5.0 * dt; 
-                                        } else if (Math.abs(diff) > currentTrackLen / 2) {
-                                            car.distance = remoteStateRef.current.distance; 
-                                        }
-                                    }
 
                                     if (car.distance >= currentTrackLen) {
                                         car.distance -= currentTrackLen;
@@ -1412,19 +2060,127 @@
                                 }
                             }
 
-                            const railToFollow = (ci === 0) ? rails.lane1 : rails.lane2;
-                            const lookAhead = Math.max(3.5, car.speed * 0.05); // Dinámico para evitar trompicones en curvas
+                            // FIX: Mantener un lookAhead fijo evita que a alta velocidad 
+                            // el vector de visión cruce las curvas y cause trompos (spinning)
+                            const lookAhead = 3.0;
                             
                             if (hasRotonda && rallyPathRef.current.length > 0 && rallyDistancesRef.current.length > 0) {
                                 p1 = getRallyPositionByDist(car.distance, _rallyPos);
                                 p2 = getRallyPositionByDist((car.distance + lookAhead) % currentTrackLen, _rallyTangent);
                             } else {
-                                p1 = getPositionAtDistance(railToFollow, car.distance, _posL1); 
-                                p2 = getPositionAtDistance(railToFollow, (car.distance + lookAhead) % currentTrackLen, _posFL1);
+                                const tData = trackGroupRef.current.userData;
+                                
+                                // HELPER PARA OBTENER EL CARRIL ACTUAL
+                                const getLaneObj = (laneIdx) => {
+                                    if (laneIdx === 0) return tData.physLane1;
+                                    if (laneIdx === 1) return tData.physLane2;
+                                    return tData.physPit;
+                                };
+
+                                // LÓGICA DE DETECCIÓN DE ENTRADA A BOXES
+                                if (!car.isChanging && ci === myCarIdx && pitPressedRef.current) {
+                                    const currentPiece = pieceMapRef.current.find(p => car.distance >= p.distStart && car.distance < p.distEnd);
+                                    if (currentPiece && currentPiece.type === 'pit_entry') {
+                                        const pitSide = currentPiece.invert ? 'left' : 'right';
+                                        const targetMainLane = pitSide === 'right' ? 1 : 0;
+                                        if (car.currentLane === targetMainLane && (car.distance - currentPiece.distStart < 15.0)) {
+                                            car.currentLane = 2; // 2 es el ID para el carril de boxes
+                                        }
+                                    }
+                                }
+
+                                // LÓGICA DE SALIDA DE BOXES (AUTOMÁTICA)
+                                if (car.currentLane === 2) {
+                                    const currentPiece = pieceMapRef.current.find(p => car.distance >= p.distStart && car.distance < p.distEnd);
+                                    if (currentPiece && currentPiece.type === 'pit_exit') {
+                                        if (car.distance >= currentPiece.distEnd - 5.0) { 
+                                            const pitSide = currentPiece.invert ? 'left' : 'right';
+                                            car.currentLane = pitSide === 'right' ? 1 : 0;
+                                        }
+                                    } else if (currentPiece && currentPiece.type !== 'pit_entry' && currentPiece.type !== 'pit_exit' && (!currentPiece.subtype || !currentPiece.subtype.includes('pit'))) {
+                                        car.currentLane = 1; // Failsafe para devolverlo a un carril válido si la pista se corta
+                                    }
+                                }
+
+                                // LÓGICA DE DETECCIÓN Y CAMBIO DE CARRIL
+                                if (!car.isChanging && ci === myCarIdx && laneChangePressedRef.current) {
+                                    const currentPiece = pieceMapRef.current.find(p => car.distance >= p.distStart && car.distance < p.distEnd);
+                                    if (currentPiece && currentPiece.type === 'straight') {
+                                        const isX = currentPiece.subtype === 'digital_x';
+                                        const isCR = currentPiece.subtype === 'change_right';
+                                        const isCL = currentPiece.subtype === 'change_left';
+                                        const isDoubleX = currentPiece.subtype === 'pit_parallel_double_x';
+                                        
+                                        let canChange = false;
+                                        let targetLane = car.currentLane;
+                                        let reqType = '';
+                                        
+                                        if (car.currentLane === 0 && (isX || isCR || isDoubleX)) { canChange = true; targetLane = 1; reqType = '1to2'; }
+                                        if (car.currentLane === 1 && (isX || isCL || isDoubleX)) { canChange = true; targetLane = 0; reqType = '2to1'; }
+                                        
+                                        // Detecta pulsación solo al principio del cruce para ejecutar la trayectoria
+                                        if (canChange && (car.distance - currentPiece.distStart < 20.0)) { 
+                                            car.isChanging = true;
+                                            car.changeTargetLane = targetLane;
+                                            car.changeStartDist = currentPiece.distStart;
+                                            car.changeEndDist = currentPiece.distEnd;
+                                            
+                                            // Extraer la ruta de la curva desde 'rails.changes'
+                                            const targetChange = tData.railsData.changes.find(c => c.type === reqType && Math.abs(tData.vertexDistances[c.refIdx] - currentPiece.distStart) < 1.0);
+                                            
+                                            if (targetChange && targetChange.points) {
+                                                let cdists = [0];
+                                                let cpts = [];
+                                                targetChange.points.forEach(pt => { if(pt) cpts.push(pt); });
+                                                for(let k=1; k<cpts.length; k++) cdists.push(cdists[k-1] + cpts[k].distanceTo(cpts[k-1]));
+                                                
+                                                car.changePath = { pts: cpts, dst: cdists };
+                                                car.changeTotalLen = cdists[cdists.length-1];
+                                            } else {
+                                                car.isChanging = false;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // EJECUCIÓN FÍSICA DE LA TRAYECTORIA
+                                if (car.isChanging && car.changePath) {
+                                    const progressDist = car.distance - car.changeStartDist;
+                                    // Comprobar si hemos terminado la transición
+                                    if (progressDist >= car.changeTotalLen || car.distance > car.changeEndDist || progressDist < -10.0) {
+                                        car.isChanging = false;
+                                        car.currentLane = car.changeTargetLane;
+                                        const laneObj = getLaneObj(car.currentLane);
+                                        p1 = getPositionAtDistance(laneObj, car.distance, _posL1);
+                                        p2 = getPositionAtDistance(laneObj, (car.distance + lookAhead) % currentTrackLen, _posFL1);
+                                    } else {
+                                        // Moviéndose por el raíl intermedio
+                                        p1 = getPositionAtDistance(car.changePath, progressDist, _posL1);
+                                        p2 = getPositionAtDistance(car.changePath, progressDist + lookAhead, _posFL1);
+                                        if (!p2 || (p2.x === 0 && p2.z === 0)) {
+                                            const nextLane = getLaneObj(car.changeTargetLane);
+                                            p2 = getPositionAtDistance(nextLane, car.changeEndDist + lookAhead, _posFL1);
+                                        }
+                                    }
+                                } else {
+                                    // Circulando normal por su carril actual
+                                    const laneObj = getLaneObj(car.currentLane);
+                                    p1 = getPositionAtDistance(laneObj, car.distance, _posL1); 
+                                    p2 = getPositionAtDistance(laneObj, (car.distance + lookAhead) % currentTrackLen, _posFL1);
+                                }
                             }
                             
-                            if (p1 && p2) {
-                                _dir.subVectors(p2, p1).normalize();
+                            if (p1 && p2 && (p1.x !== 0 || p1.z !== 0)) {
+                                _dir.subVectors(p2, p1);
+                                if (_dir.lengthSq() > 100.0) {
+                                     if (car.lastValidDir) _dir.copy(car.lastValidDir);
+                                     else _dir.set(0,0,1);
+                                } else {
+                                     _dir.normalize();
+                                     if (!car.lastValidDir) car.lastValidDir = new THREE.Vector3();
+                                     car.lastValidDir.copy(_dir);
+                                }
+
                                 car.worldPos.copy(p1);
                                 const cas = carAssetsRef.current[ci + 1]; 
                                 const isDecor = cas?.isDecor;
@@ -1432,7 +2188,6 @@
                                 _fpos.copy(p1);
                                 if (!isDecor) _fpos.add(_yOffset);
 
-                                // SUSPENSIÓN VISUAL (AMORTIGUACIÓN EJE Y PARA CERO TROMIPCONES)
                                 if (!pg.userData.initPos || Math.abs(pg.position.y - _fpos.y) > 2.0) {
                                     pg.position.copy(_fpos);
                                     pg.userData.initPos = true;
@@ -1442,27 +2197,31 @@
                                     pg.position.y += (_fpos.y - pg.position.y) * Math.min(1.0, 20.0 * dt);
                                 }
 
-                                // ROTACIÓN FLUIDA
                                 _flook.copy(_dir).negate();
                                 _targetMatrix.lookAt(_origin, _flook, _up);
                                 _targetRotation.setFromRotationMatrix(_targetMatrix);
                                 
+                                if (pg.quaternion.dot(_targetRotation) < 0) {
+                                    _targetRotation.set(-_targetRotation.x, -_targetRotation.y, -_targetRotation.z, -_targetRotation.w);
+                                }
+                                
                                 if (car.speed < 5.0) {
-                                    pg.quaternion.copy(_targetRotation);
+                                    pg.quaternion.slerp(_targetRotation, Math.min(1.0, 10.0 * dt));
                                 } else {
-                                    pg.quaternion.slerp(_targetRotation, Math.min(1.0, 18.0 * dt));
+                                    // Aumentamos la fuerza de rotación a alta velocidad para mantenerlo anclado al carril
+                                    pg.quaternion.slerp(_targetRotation, Math.min(1.0, 28.0 * dt));
                                 }
 
-                                if (ci === myCarIdx && vg) {
+                                if (ci === myCarIdx && vg && camera) {
                                     vg.visible = cameraModeRef.current !== 'PILOT';
                                     if (cameraModeRef.current === 'PILOT') {
-                                        const worldOffset = trackGroup.position; const worldP1 = p1.clone().add(worldOffset); const worldP2 = p2.clone().add(worldOffset);
+                                        const worldOffset = trackGroupRef.current.position; const worldP1 = p1.clone().add(worldOffset); const worldP2 = p2.clone().add(worldOffset);
                                         const dirW = new THREE.Vector3().subVectors(worldP2, worldP1).normalize();
                                         const targetPos = new THREE.Vector3().copy(worldP1).add(dirW.clone().multiplyScalar(1.5)).add(new THREE.Vector3(0, 2.8, 0));   
                                         const lookTarget = targetPos.clone().add(dirW.clone().multiplyScalar(50));
                                         camera.position.lerp(targetPos, 1 - Math.exp(-15 * dt)); camera.lookAt(lookTarget);
                                     } else if (cameraModeRef.current === 'CHASE') {
-                                        const worldOffset = trackGroup.position; const worldP1 = p1.clone().add(worldOffset); const worldP2 = p2.clone().add(worldOffset);
+                                        const worldOffset = trackGroupRef.current.position; const worldP1 = p1.clone().add(worldOffset); const worldP2 = p2.clone().add(worldOffset);
                                         const dirW = new THREE.Vector3().subVectors(worldP2, worldP1).normalize();
                                         const targetPos = new THREE.Vector3().copy(worldP1).sub(dirW.clone().multiplyScalar(50)).add(new THREE.Vector3(0, 30, 0));     
                                         camera.position.lerp(targetPos, 1 - Math.exp(-5 * dt)); cameraTarget.lerp(worldP1, 1 - Math.exp(-10 * dt)); camera.lookAt(cameraTarget); 
@@ -1482,13 +2241,6 @@
                             }
                         }
 
-                        if (peerConn && peerConn.open) {
-                            if (nowTime - lastNetTime > 0.05) { 
-                                peerConn.send({ throttle: manualThrottleRef.current, distance: physicsState.current[myCarIdx].distance, speed: physicsState.current[myCarIdx].speed });
-                                lastNetTime = nowTime;
-                            }
-                        }
-                        
                         Object.keys(decorMeshesRef.current).forEach(id => {
                             const group = decorMeshesRef.current[id]; const cas = carAssetsRef.current[id];
                             if (group && cas) {
@@ -1501,23 +2253,46 @@
                         
                         const myCarForHUD = physicsState.current[myCarIdx];
                         if (telemetryRefs.speed.current) telemetryRefs.speed.current.textContent = Math.floor(myCarForHUD.speed * 1.5).toString().padStart(3, '0');
-                        if (telemetryRefs.rpmBar.current) telemetryRefs.rpmBar.current.style.width = `${Math.min(100, (myCarForHUD.speed / 150) * 100)}%`;
+                        if (telemetryRefs.rpmBar.current) telemetryRefs.rpmBar.current.style.width = `${Math.min(100, (myCarForHUD.speed / 220) * 100)}%`;
                         if (telemetryRefs.throttleBar.current) telemetryRefs.throttleBar.current.style.width = `${manualThrottleRef.current}%`;
-                        if (telemetryRefs.progress.current) telemetryRefs.progress.current.style.width = `${(myCarForHUD.distance / currentTrackLen) * 100}%`;
-                        if (telemetryRefs.lap.current) telemetryRefs.lap.current.textContent = `${tRef.current.lap} ${raceStateRef.current.laps}`;
+                        if (telemetryRefs.progress.current && currentTrackLen > 0) telemetryRefs.progress.current.style.width = `${(myCarForHUD.distance / currentTrackLen) * 100}%`;
+                        if (telemetryRefs.lap.current) telemetryRefs.lap.current.textContent = raceStateRef.current.laps;
                         if (telemetryRefs.currentTime.current) telemetryRefs.currentTime.current.textContent = currentLapTime.toFixed(2);
                         if (telemetryRefs.bestTime.current) telemetryRefs.bestTime.current.textContent = raceStateRef.current.bestTime === 999999 ? '--.--' : raceStateRef.current.bestTime.toFixed(2);
                         
                         renderer.render(scene, camera); 
                     };
-                    animate(); 
+                    
+                    window.addEventListener('resize', onResize); 
+                    renderer.domElement.addEventListener('mousedown', onMouseDown); 
+                    window.addEventListener('mousemove', onMouseMove); 
+                    window.addEventListener('mouseup', onMouseUp); 
+                    renderer.domElement.addEventListener('wheel', onWheel, {passive:false}); 
+                    renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false}); 
+                    window.addEventListener('touchmove', onTouchMove, {passive: false}); 
+                    window.addEventListener('touchend', onTouchEnd);
 
-                    window.addEventListener('resize', onResize); renderer.domElement.addEventListener('mousedown', onMouseDown); window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp); renderer.domElement.addEventListener('wheel', onWheel, {passive:false}); renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false}); window.addEventListener('touchmove', onTouchMove, {passive: false}); window.addEventListener('touchend', onTouchEnd);
+                    animate();
                     setSceneReady(true);
 
-                    return () => { window.removeEventListener('resize', onResize); if(renderer){ renderer.domElement.removeEventListener('mousedown', onMouseDown); if(animationId) cancelAnimationFrame(animationId); renderer.dispose(); } };
+                    return () => { 
+                        window.removeEventListener('resize', onResize); 
+                        window.removeEventListener('mousemove', onMouseMove); 
+                        window.removeEventListener('mouseup', onMouseUp); 
+                        window.removeEventListener('touchmove', onTouchMove); 
+                        window.removeEventListener('touchend', onTouchEnd);
+                        if(renderer){ 
+                            renderer.domElement.removeEventListener('mousedown', onMouseDown); 
+                            renderer.domElement.removeEventListener('wheel', onWheel); 
+                            renderer.domElement.removeEventListener('touchstart', onTouchStart); 
+                            if(animationId) cancelAnimationFrame(animationId); 
+                            renderer.dispose(); 
+                        } 
+                    };
                 };
-                init3D(); 
+                
+                const cleanup = init3D(); 
+                return cleanup;
             }, [circuitData]); 
             
             useEffect(() => {
@@ -1526,7 +2301,7 @@
                     const targetId = parseInt(id);
                     if (!asset || !asset.glb) return;
                     
-                    const isDecor = targetId > 2; 
+                    const isDecor = targetId > 1; 
                     
                     let container;
                     if (!isDecor) {
@@ -1546,12 +2321,27 @@
                     if (!needsLoad && !needsScatter) return;
                     
                     container.userData.currentGLB = asset.glb; container.userData.scatterCount = count;
-                    const loader = new THREE.GLTFLoader(); if (typeof THREE.DRACOLoader !== 'undefined') { const dracoLoader = new THREE.DRACOLoader(); dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/'); loader.setDRACOLoader(dracoLoader); }
+                    const loader = getSharedGLTFLoader() || new THREE.GLTFLoader();
                     
                     if (needsLoad) {
                          loader.load(asset.glb, (gltf) => {
                             const model = gltf.scene;
-                            model.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = false; if (child.material) { if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) { const newMat = new THREE.MeshLambertMaterial({ map: child.material.map, color: child.material.color, transparent: child.material.transparent, opacity: child.material.opacity, alphaTest: child.material.alphaTest, side: THREE.FrontSide }); child.material.dispose(); child.material = newMat; } else { child.material.side = THREE.FrontSide; } } } });
+                            model.traverse(child => { 
+                                if (child.isMesh) { 
+                                    child.castShadow = true; 
+                                    child.receiveShadow = false; 
+                                    child.frustumCulled = false; 
+                                    if (child.material) { 
+                                        if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) { 
+                                            const newMat = new THREE.MeshLambertMaterial({ map: child.material.map, color: child.material.color, transparent: child.material.transparent, opacity: child.material.opacity, alphaTest: child.material.alphaTest, side: THREE.FrontSide }); 
+                                            child.material.dispose(); 
+                                            child.material = newMat; 
+                                        } else { 
+                                            child.material.side = THREE.FrontSide; 
+                                        } 
+                                    } 
+                                } 
+                            });
                             container.userData.originalModel = model.clone(); applyScatter(container, model, count, isDecor);
                         }, undefined, (err) => console.warn("Error loading GLB in main scene", err));
                     } else if (needsScatter && container.userData.originalModel) { applyScatter(container, container.userData.originalModel.clone(), count, isDecor); }
@@ -1566,68 +2356,111 @@
                 if (!isDecor) { const originalWidth = Math.min(size.z, size.x); if ((originalWidth * scale) > 6.5) scale = 6.5 / originalWidth; model.rotation.y = Math.PI; } else { if (size.z > size.y * 1.5) model.rotation.x = -Math.PI / 2; else model.rotation.y = Math.PI; }
                 model.scale.set(scale, scale, scale); model.userData.baseScale = new THREE.Vector3(scale, scale, scale);
                 if (count <= 1) { container.add(model); } else {
-                    const bRef = boardSettingsRef.current; const centers = pathPointsRef.current || []; const minSafeDistSq = 24.0 * 24.0; 
+                    const bRef = boardSettingsRef.current; 
+                    const trackEdges = trackGroupRef.current && trackGroupRef.current.userData.trackEdges ? trackGroupRef.current.userData.trackEdges : [];
+                    const safeMarginDecor = 14.0;
+                    const minSafeDistSq = safeMarginDecor * safeMarginDecor;
+                    
                     for(let i=0; i<count; i++) {
                         const clone = model.clone(); let validPos = false; let attempts = 0; let rX = 0, rZ = 0;
                         while(!validPos && attempts < 150) { 
                             rX = bRef.x + (Math.random() - 0.5) * bRef.width; rZ = bRef.z + (Math.random() - 0.5) * bRef.depth; validPos = true;
-                            for (let j = 0; j < centers.length; j += 5) { const c = centers[j]; if (!c) continue; const dx = rX - c.x; const dz = rZ - c.z; if (dx * dx + dz * dz < minSafeDistSq) { validPos = false; break; } }
+                            
+                            if (trackEdges.length > 0) {
+                                for (let j = 0; j < trackEdges.length; j += 3) { 
+                                    const dx = rX - trackEdges[j].x; const dz = rZ - trackEdges[j].z; 
+                                    if (dx * dx + dz * dz < minSafeDistSq) { validPos = false; break; } 
+                                }
+                            } else {
+                                const centers = pathPointsRef.current || [];
+                                for (let j = 0; j < centers.length; j += 3) { 
+                                    const c = centers[j]; 
+                                    if (!c) continue; 
+                                    const dx = rX - c.x; 
+                                    const dz = rZ - c.z; 
+                                    if (dx * dx + dz * dz < minSafeDistSq) { validPos = false; break; } 
+                                }
+                            }
                             attempts++;
                         }
-                        if(validPos) { clone.position.x = rX; clone.position.z = rZ; clone.rotation.y = Math.random() * Math.PI * 2; clone.userData.baseScale = new THREE.Vector3(scale, scale, scale); container.add(clone); }
+                    if(validPos) { 
+                        clone.position.x = rX; 
+                        clone.position.z = rZ; 
+                        clone.rotation.y = Math.random() * Math.PI * 2; 
+                        clone.userData.baseScale = new THREE.Vector3(scale, scale, scale); 
+                        clone.updateMatrix();
+                        clone.matrixAutoUpdate = false;
+                        container.add(clone); 
                     }
                 }
-            };
+            }
+        };
 
-            return ( 
+        return ( 
                 <div className="absolute inset-0 z-50 bg-[#3b5f7d] text-white font-sans overflow-hidden animate-in"> 
                     <div ref={containerRef} className="absolute inset-0 w-full h-full" /> 
                     
-                    <div className="absolute top-6 right-6 z-[80] flex gap-2 pointer-events-auto items-center">
-                        <div className="flex flex-col gap-1 mr-2 bg-black/40 p-1.5 rounded-xl backdrop-blur border border-white/10">
-                            <button onClick={() => setLang('es')} className={`w-8 h-8 flex items-center justify-center rounded-lg text-lg transition-all ${lang === 'es' ? 'bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-110' : 'opacity-40 hover:opacity-100 hover:bg-white/10'}`} title="Español">🇪🇸</button>
-                            <button onClick={() => setLang('en')} className={`w-8 h-8 flex items-center justify-center rounded-lg text-lg transition-all ${lang === 'en' ? 'bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-110' : 'opacity-40 hover:opacity-100 hover:bg-white/10'}`} title="English">🇬🇧</button>
-                        </div>
-
-                        <button onClick={() => setCameraMode('PILOT')} className={`flex flex-col items-center justify-center w-24 h-14 rounded-lg bg-black/60 border-2 ${cameraMode === 'PILOT' ? 'border-[#39ff14] text-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'border-gray-500 text-gray-500'} hover:bg-gray-800 hover:text-white transition-all duration-300 backdrop-blur-md group`}>
-                            <Eye size={20} className="group-hover:scale-110 transition-transform"/>
-                            <span className="text-[8px] font-black tracking-widest mt-1 text-center leading-tight px-1">{t.pilotView}</span>
-                        </button>
+                    {/* BARRA DE HERRAMIENTAS SUPERIOR MINIMALISTA Y DESCRIPTIVA */}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto flex items-center gap-3 bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#39ff14]/50 shadow-[0_0_40px_rgba(57,255,20,0.2)] rounded-2xl px-4 py-2.5 transition-all">
                         
-                        <button onClick={() => setCameraMode(prev => prev === 'ORBIT' ? 'CHASE' : 'ORBIT')} className={`flex flex-col items-center justify-center w-24 h-14 rounded-lg bg-black/60 border-2 ${cameraMode !== 'PILOT' ? 'border-indigo-500 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'border-gray-500 text-gray-500'} hover:bg-indigo-900/50 hover:text-white transition-all duration-300 backdrop-blur-md group`}>
-                            {cameraMode === 'ORBIT' ? <Move3d size={20} className="group-hover:scale-110 transition-transform"/> : <Video size={20} className="group-hover:scale-110 transition-transform animate-pulse"/>}
-                            <span className="text-[8px] font-black tracking-widest mt-1 text-center leading-tight px-1">{t.birdView}</span>
-                        </button>
-
-                        <button onClick={toggleFullscreen} className="w-14 h-14 flex items-center justify-center rounded-lg bg-black/60 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black transition-all duration-300 backdrop-blur-md shadow-[0_0_15px_rgba(249,115,22,0.5)] group animate-pulse hover:animate-none">
-                            {isFullscreen ? <Minimize size={24}/> : <Maximize size={24}/>}
-                        </button>
-                    </div>
-                    
-                    <div className="absolute top-6 left-6 z-[80] flex flex-col gap-2">
-                        <div className="flex gap-2">
-                             <button onClick={onClose} className="flex items-center justify-center gap-2 bg-red-600/90 hover:bg-red-500 text-white border border-red-400 px-4 py-2 rounded-full font-bold text-xs h-10 transition shadow-lg"><XIcon size={16}/> {t.exit}</button>
-                             <button onClick={() => window.location.href = 'circuitos.html'} className="flex items-center justify-center gap-2 bg-blue-600/90 hover:bg-blue-500 text-white border border-blue-400 px-4 py-2 rounded-full font-bold text-xs h-10 transition shadow-lg"><Layers size={16}/> 2D</button>
+                        {/* Navegación */}
+                        <div className="flex items-center gap-2 pr-3 border-r border-gray-700/50">
+                            <button onClick={onClose} className="group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl bg-black/60 border border-red-500/30 hover:border-red-500 hover:bg-red-500/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] transition-all">
+                                <XIcon size={18} className="text-red-500 group-hover:scale-110 transition-transform mb-1"/>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-300">{t.exit}</span>
+                            </button>
+                            <button onClick={() => window.location.href = 'circuitos.html'} className="group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl bg-black/60 border border-blue-500/30 hover:border-blue-500 hover:bg-blue-500/10 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all">
+                                <Layers size={18} className="text-blue-400 group-hover:scale-110 transition-transform mb-1"/>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-blue-400 group-hover:text-blue-300">{t.mode2d}</span>
+                            </button>
                         </div>
-                        {multiplayerSession && (
-                            <div className="bg-cyan-500/90 text-black px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter shadow-[0_0_15px_#06b6d4] flex items-center gap-2">
-                                <Bluetooth size={12} />
-                                SALA: {multiplayerSession.id}
+
+                        {/* Herramientas de Edición */}
+                        <div className="flex items-center gap-2 pr-3 border-r border-gray-700/50">
+                            <button onClick={() => { if (showHomoViewer && targetId === 1) setShowHomoViewer(false); else { setTargetId(1); setShowHomoViewer(true); setShowBoardMenu(false); } }} className={`group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl transition-all border ${showHomoViewer && targetId === 1 ? 'bg-red-500/20 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-black/60 border-red-500/30 hover:border-red-400 hover:bg-red-500/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]'}`}>
+                                <span className="text-xl mb-0.5 group-hover:scale-110 transition-transform drop-shadow-md">🏎️</span>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-300">{t.car}</span>
+                            </button>
+                            <button onClick={() => { if (showHomoViewer && targetId === 2) setShowHomoViewer(false); else { setTargetId(2); setShowHomoViewer(true); setShowBoardMenu(false); } }} className={`group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl transition-all border ${showHomoViewer && targetId === 2 ? 'bg-cyan-500/20 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'bg-black/60 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)]'}`}>
+                                <User size={18} className={`${showHomoViewer && targetId === 2 ? 'text-cyan-300' : 'text-cyan-500'} group-hover:scale-110 transition-transform mb-1`}/>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-cyan-400 group-hover:text-cyan-300">{t.objects}</span>
+                            </button>
+                            <button onClick={() => { setShowBoardMenu(!showBoardMenu); setShowHomoViewer(false); }} className={`group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl transition-all border ${showBoardMenu ? 'bg-emerald-500/20 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-black/60 border-emerald-500/30 hover:border-emerald-400 hover:bg-emerald-500/10 hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`}>
+                                <LayoutTemplate size={18} className={`${showBoardMenu ? 'text-emerald-300' : 'text-emerald-500'} group-hover:scale-110 transition-transform mb-1`}/>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-emerald-400 group-hover:text-emerald-300">{t.board}</span>
+                            </button>
+                            <button onClick={() => setShowTrees(!showTrees)} className={`group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl transition-all border ${showTrees ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-black/60 border-[#39ff14]/30 hover:border-[#39ff14] hover:bg-[#39ff14]/10 hover:shadow-[0_0_15px_rgba(57,255,20,0.4)]'}`}>
+                                <TreePine size={18} className={`${showTrees ? 'text-[#39ff14]' : 'text-green-600'} group-hover:scale-110 transition-transform mb-1`}/>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-[#39ff14] group-hover:text-[#39ff14]">{t.forest}</span>
+                            </button>
+                        </div>
+
+                        {/* Vistas de Cámara */}
+                        <div className="flex items-center gap-2 pr-3 border-r border-gray-700/50">
+                            <button onClick={() => setCameraMode('PILOT')} className={`group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl transition-all border ${cameraMode === 'PILOT' ? 'bg-yellow-500/20 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'bg-black/60 border-yellow-500/30 hover:border-yellow-400 hover:bg-yellow-500/10 hover:shadow-[0_0_15px_rgba(234,179,8,0.4)]'}`}>
+                                <Eye size={18} className={`${cameraMode === 'PILOT' ? 'text-yellow-300' : 'text-yellow-500'} group-hover:scale-110 transition-transform mb-1`}/>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-yellow-400 group-hover:text-yellow-300">{t.pilot}</span>
+                            </button>
+                            <button onClick={() => setCameraMode(prev => prev === 'ORBIT' ? 'CHASE' : 'ORBIT')} className={`group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl transition-all border ${cameraMode !== 'PILOT' ? 'bg-indigo-500/20 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-black/60 border-indigo-500/30 hover:border-indigo-400 hover:bg-indigo-500/10 hover:shadow-[0_0_15px_rgba(99,102,241,0.4)]'}`}>
+                                {cameraMode === 'ORBIT' ? <Move3d size={18} className="text-indigo-400 group-hover:scale-110 transition-transform mb-1"/> : <Video size={18} className="text-indigo-400 group-hover:scale-110 transition-transform mb-1"/>}
+                                <span className="text-[7px] font-black uppercase tracking-widest text-indigo-400 group-hover:text-indigo-300">{t.chase}</span>
+                            </button>
+                        </div>
+
+                        {/* Sistema e Idioma */}
+                        <div className="flex items-center gap-2">
+                            <button onClick={toggleFullscreen} className="group relative w-16 h-14 flex flex-col items-center justify-center rounded-xl bg-black/60 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/10 hover:shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all">
+                                {isFullscreen ? <Minimize size={18} className="text-orange-400 group-hover:scale-110 transition-transform mb-1"/> : <Maximize size={18} className="text-orange-400 group-hover:scale-110 transition-transform mb-1"/>}
+                                <span className="text-[7px] font-black uppercase tracking-widest text-orange-400 group-hover:text-orange-300">{t.screen}</span>
+                            </button>
+                            <div className="flex flex-col gap-1 bg-black/50 rounded-xl p-1 border border-gray-800 h-14 justify-center">
+                                <button onClick={() => setLang('es')} className={`w-8 h-5 flex items-center justify-center rounded text-xs transition-all ${lang === 'es' ? 'bg-[#39ff14]/20 border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'opacity-40 hover:opacity-100 border border-transparent'}`} title="Español">🇪🇸</button>
+                                <button onClick={() => setLang('en')} className={`w-8 h-5 flex items-center justify-center rounded text-xs transition-all ${lang === 'en' ? 'bg-[#39ff14]/20 border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'opacity-40 hover:opacity-100 border border-transparent'}`} title="English">🇬🇧</button>
                             </div>
-                        )}
+                        </div>
                     </div>
 
-                    <div className="absolute right-8 top-24 z-[90] pointer-events-auto flex flex-col items-center gap-3">
-                        <button onClick={() => { setShowHomoViewer(!showHomoViewer); setShowBoardMenu(false); }} className={`flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group ${showHomoViewer ? 'bg-cyan-900/50 border-cyan-400 text-white' : 'hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]'}`}>
-                            <User size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[8px] font-black tracking-widest text-center">{t.glbTitle.split(' ')[0]}<br/>{t.glbTitle.split(' ')[1] || ''}</span>
-                        </button>
-                        
-                        <button onClick={() => { setShowBoardMenu(!showBoardMenu); setShowHomoViewer(false); }} className={`flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] rounded-lg text-emerald-400 hover:bg-emerald-950/50 active:scale-95 active:shadow-none transition-all group ${showBoardMenu ? 'bg-emerald-900/50 border-emerald-400 text-white' : 'hover:shadow-[0_0_25px_rgba(16,185,129,0.6)]'}`}>
-                            <LayoutTemplate size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.board}</span>
-                        </button>
-                    </div>
-
-                    {showHomoViewer && ( <div className="absolute right-32 top-24 pointer-events-auto animate-in slide-in-right duration-300"> <GLBViewer onClose={() => setShowHomoViewer(false)} onLoad={handleModelAssign} onTransform={handleCarTransform} carAssets={customCarAssets} currentTargetId={targetId} setTargetId={setTargetId} lang={lang} t={t} /> </div> )}
+                    {showHomoViewer && ( <div className="absolute right-6 top-24 pointer-events-auto animate-in slide-in-right duration-300"> <GLBViewer onClose={() => setShowHomoViewer(false)} onLoad={handleModelAssign} onTransform={handleCarTransform} carAssets={customCarAssets} currentTargetId={targetId} setTargetId={setTargetId} lang={lang} t={t} /> </div> )}
 
                     {showBoardMenu && (
                         <div className="absolute right-1/2 translate-x-1/2 top-24 w-80 bg-[#0f172a]/95 backdrop-blur-xl border-2 border-emerald-500 rounded-xl shadow-[0_0_60px_rgba(16,185,129,0.3)] flex flex-col overflow-hidden animate-in z-[100] pointer-events-auto">
@@ -1687,101 +2520,141 @@
                         </div>
                     )}
 
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[80] flex gap-2 bg-[#0f172a]/80 backdrop-blur-xl p-2 rounded-2xl border border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.2)] pointer-events-auto overflow-x-auto max-w-full hide-scrollbar transition-all">
-                        {[1, 3, 4, 5, 6, 7, 8].map(id => {
-                            const asset = customCarAssets[id];
-                            const hasModel = !!asset?.glb;
-                            const isCar = id === 1; 
-                            const isSelected = targetId === id && showHomoViewer;
-                            return (
-                                <button
-                                    key={id}
-                                    onClick={() => { setTargetId(id); setShowHomoViewer(true); setShowBoardMenu(false); }}
-                                    className={`relative w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border-2 ${isSelected ? 'bg-cyan-500/20 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.5)] scale-110 z-10' : hasModel ? 'bg-gray-800/80 border-gray-500 hover:border-gray-300 hover:bg-gray-700' : 'bg-gray-900/50 border-gray-700 border-dashed hover:border-gray-500 hover:bg-gray-800'} group shrink-0`}
-                                >
-                                    {isCar ? <span className="text-xl drop-shadow-md group-hover:scale-110 transition-transform">🏎️</span> : <TreePine size={20} className={`${hasModel ? 'text-emerald-400' : 'text-gray-600'} group-hover:scale-110 transition-transform`} />}
-                                    <span className="text-[7px] font-bold text-center leading-tight truncate w-full px-1 text-gray-400 group-hover:text-white">
-                                        {hasModel ? (asset.glbName ? asset.glbName.replace('.glb','').replace('.gltf','').toUpperCase() : t.loaded) : (isCar ? `${t.car} ${id}` : `${t.decor} ${id}`)}
-                                    </span>
-                                    {hasModel && <div className={`absolute top-1 right-1 w-2 h-2 rounded-full shadow-[0_0_5px_currentColor] ${isCar ? 'bg-red-500 text-red-500' : 'bg-emerald-500 text-emerald-500'}`}></div>}
-                                </button>
-                            )
-                        })}
-                    </div>
-
                     <div className="absolute left-8 bottom-8 z-[90] pointer-events-none flex flex-col gap-4">
-                        <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-500/40 rounded-xl p-4 shadow-[0_0_30px_rgba(6,182,212,0.2)] w-72 flex flex-col gap-3">
-                            <div className="flex justify-between items-end border-b border-cyan-500/20 pb-2">
-                                <div>
-                                    <span className="text-[10px] text-cyan-500 font-bold uppercase tracking-widest block mb-1">
-                                        {t.speed}
-                                    </span>
-                                    <div className="flex items-baseline gap-1">
-                                        <span ref={telemetryRefs.speed} className="font-timer tabular-nums text-4xl text-white leading-none drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"></span>
-                                        <span className="text-[10px] text-gray-400 font-bold">KM/H</span>
-                                    </div>
+                        <div className="w-60 bg-[#050a05]/95 border-2 border-[#39ff14] rounded-xl shadow-[0_0_40px_rgba(57,255,20,0.2)] backdrop-blur-xl animate-in flex flex-col pointer-events-auto">
+                            <div className="bg-[#39ff14] text-black px-3 py-1.5 flex justify-between items-center rounded-t-lg">
+                                <div className="flex items-center gap-1.5 pointer-events-none">
+                                    <Activity size={14} className="animate-pulse"/>
+                                    <h2 className="font-black text-[10px] tracking-[0.2em] uppercase">{t.telemetry}</h2>
                                 </div>
-                                <div className="text-right">
-                                    <span ref={telemetryRefs.lap} className="text-xs text-[#39ff14] font-black uppercase tracking-widest block bg-[#39ff14]/10 px-2 py-1 rounded"></span>
+                                <div className="relative">
+                                    <button className="font-mono font-bold text-[9px] bg-black/20 hover:bg-black/40 px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer" title="Cambiar coche seleccionado">
+                                        {t.car || 'COCHE'} 1 <ChevronDown size={10} />
+                                    </button>
                                 </div>
                             </div>
-
-                            <div className="flex flex-col gap-2">
-                                <div className="flex justify-between items-center bg-black/50 px-2 py-1.5 rounded">
-                                    <span className="text-[9px] text-gray-400 font-bold tracking-wider">{t.currentTime}</span>
-                                    <span ref={telemetryRefs.currentTime} className="font-timer tabular-nums text-lg text-white"></span>
-                                </div>
-                                <div className="flex justify-between items-center bg-black/50 px-2 py-1.5 rounded border border-yellow-500/30">
-                                    <span className="text-[9px] text-yellow-500 font-bold tracking-wider flex items-center gap-1"><Trophy size={10}/> {t.bestLap}</span>
-                                    <span ref={telemetryRefs.bestTime} className="font-timer tabular-nums text-lg text-yellow-400"></span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 mt-1">
-                                <div>
-                                    <div className="flex justify-between text-[7px] font-bold text-gray-500 mb-0.5"><span>{t.rpmPower}</span><span>{t.gas}</span></div>
-                                    <div className="w-full h-1.5 bg-gray-900 rounded-full overflow-hidden flex gap-0.5">
-                                        <div className="h-full w-2/3 bg-gray-800 relative">
-                                            <div ref={telemetryRefs.rpmBar} className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-cyan-500 to-blue-500 w-0 transition-all duration-75"></div>
+                            
+                            <div className="p-3 grid grid-cols-2 gap-3 relative overflow-hidden rounded-b-lg pointer-events-none">
+                                <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'linear-gradient(transparent 9px, #39ff14 1px), linear-gradient(90deg, transparent 9px, #39ff14 1px)', backgroundSize: '20px 20px'}}></div>
+                                
+                                <div className="col-span-2 flex items-end justify-between border-b border-[#39ff14]/30 pb-2 relative z-10">
+                                    <div>
+                                        <span className="text-[8px] text-[#39ff14]/60 font-bold uppercase block tracking-wider">{t.speed || 'VELOCIDAD'}</span>
+                                        <div className="flex items-baseline">
+                                            <span ref={telemetryRefs.speed} className="font-digital text-4xl text-white drop-shadow-[0_0_10px_rgba(57,255,20,0.8)] leading-none">0</span>
+                                            <span className="text-[10px] text-[#39ff14] font-bold ml-1">Km/h</span>
                                         </div>
-                                        <div className="h-full w-1/3 bg-gray-800 relative">
-                                            <div ref={telemetryRefs.throttleBar} className="absolute left-0 top-0 bottom-0 bg-[#39ff14] w-0 transition-all duration-75"></div>
+                                    </div>
+                                    <div className="w-20 flex flex-col items-end">
+                                        <div className="w-full h-1.5 bg-gray-900 rounded-full overflow-hidden border border-[#39ff14]/30">
+                                            <div ref={telemetryRefs.rpmBar} className="h-full bg-gradient-to-r from-[#39ff14]/40 via-[#39ff14] to-white transition-all duration-75" style={{width: '0%'}}></div>
+                                        </div>
+                                        <span className="text-[8px] text-[#39ff14] font-mono mt-1">RPM</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-1.5 relative z-10 flex flex-col justify-center">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[8px] text-gray-400 font-bold uppercase">{t.lap || 'VUELTA'}</span>
+                                        <span ref={telemetryRefs.lap} className="text-[8px] text-[#39ff14] font-mono border border-[#39ff14]/30 px-1.5 py-0.5 rounded">0</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[8px] text-gray-400 font-bold uppercase">{t.progress || 'PROGRESO'}</span>
+                                        <div className="w-16 h-2 bg-black border border-[#39ff14]/30 rounded overflow-hidden">
+                                            <div ref={telemetryRefs.progress} className="h-full bg-[#39ff14] transition-all duration-75"></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[8px] text-gray-400 font-bold uppercase">{t.gas || 'GAS'}</span>
+                                        <div className="w-16 h-2 bg-black border border-[#39ff14]/30 rounded overflow-hidden">
+                                            <div ref={telemetryRefs.throttleBar} className="h-full bg-[#39ff14] transition-all duration-75"></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <div className="flex justify-between text-[7px] font-bold text-gray-500 mb-0.5"><span>{t.progress}</span><Flag size={8}/></div>
-                                    <div className="w-full h-1 bg-gray-900 rounded-full overflow-hidden relative">
-                                        <div ref={telemetryRefs.progress} className="absolute left-0 top-0 bottom-0 bg-white w-0 shadow-[0_0_5px_white]"></div>
+                                
+                                <div className="text-right space-y-1 relative z-10">
+                                    <div>
+                                        <span className="text-[7px] text-gray-500 block uppercase font-bold">{t.currentTime || 'TIEMPO ACTUAL'}</span>
+                                        <span ref={telemetryRefs.currentTime} className="font-digital text-sm text-white">0.00</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[7px] text-[#39ff14]/80 block uppercase font-bold">{t.bestLap || 'MEJOR VUELTA'}</span>
+                                        <span ref={telemetryRefs.bestTime} className="font-digital text-sm text-[#39ff14] drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]">--.--</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        {peerConn && (
-                            <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-blue-500/40 rounded-xl p-3 shadow-[0_0_30px_rgba(59,130,246,0.2)] w-72 flex justify-between items-center opacity-80">
-                                <div>
-                                    <span className="text-[9px] text-blue-400 font-bold uppercase tracking-widest block">{multiplayerSession?.rivalName || t.rival} {rivalIdx === 0 ? '(ROJO)' : '(AZUL)'}</span>
-                                </div>
-                                <span className="font-timer text-2xl text-white">{Math.floor(physicsState.current[rivalIdx].speed * 1.5).toString().padStart(3, '0')} <small className="text-[10px] text-gray-400">KM/H</small></span>
-                            </div>
-                        )}
                     </div>
 
-                    <div className="absolute right-8 bottom-8 z-[90] pointer-events-auto">
-                        <div className="bg-[#0f172a]/95 backdrop-blur-xl border-2 border-gray-700 rounded-[2rem] p-3 shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col gap-3 w-[100px] relative">
-                            
-                            <button onClick={() => setIsPaused(!isPaused)} className={`w-full h-14 flex flex-col items-center justify-center rounded-xl border-2 transition-all group ${isPaused ? 'bg-[#39ff14]/20 border-[#39ff14] text-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.4)] hover:bg-[#39ff14]/40' : 'bg-yellow-500/20 border-yellow-500 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)] hover:bg-yellow-500/40'}`}>
-                                {isPaused ? <Play size={20} className="group-hover:scale-110 transition-transform fill-current ml-1" /> : <Pause size={20} className="group-hover:scale-110 transition-transform fill-current" />}
-                                <span className="text-[7px] font-black uppercase mt-1 tracking-widest">{isPaused ? t.play : t.pause}</span>
-                            </button>
+                    <div 
+                        style={{ left: ctrlPos.x, top: ctrlPos.y, position: 'absolute', zIndex: 85, cursor: isDraggingCtrl ? 'grabbing' : 'grab' }}
+                        onMouseDown={handleCtrlDown}
+                        onTouchStart={handleCtrlDown}
+                        className="bg-[#0f172a]/95 backdrop-blur-xl border-2 border-gray-700 rounded-[2rem] p-3 shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col gap-3 w-[100px] pointer-events-auto touch-none select-none animate-in fade-in"
+                    >
+                        <button onClick={() => setIsPaused(!isPaused)} onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} className={`w-full h-10 flex flex-col items-center justify-center rounded-xl border-2 transition-all group ${isPaused ? 'bg-[#39ff14]/20 border-[#39ff14] text-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.4)] hover:bg-[#39ff14]/40' : 'bg-yellow-500/20 border-yellow-500 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)] hover:bg-yellow-500/40'}`}>
+                            {isPaused ? <Play size={16} className="group-hover:scale-110 transition-transform fill-current ml-1" /> : <Pause size={16} className="group-hover:scale-110 transition-transform fill-current" />}
+                            <span className="text-[7px] font-black uppercase mt-0.5 tracking-widest">{isPaused ? t.play : t.pause}</span>
+                        </button>
 
-                            <div className="relative w-full h-[240px] bg-black/50 rounded-xl overflow-hidden border border-gray-800 z-10">
-                                <div className="absolute bottom-0 left-0 w-full" style={{ height: `${manualThrottle}%`, background: `linear-gradient(to top, ${manualThrottle>90?'#ef4444':'#39ff14'} 0%, transparent 100%)`, boxShadow: `0 0 20px ${manualThrottle>90?'#ef4444':'#39ff14'}` }}></div>
-                                <input type="range" min="0" max="100" value={manualThrottle} onChange={(e)=>setManualThrottle(parseFloat(e.target.value))} className="absolute -bottom-[85px] -left-[90px] w-[280px] h-[240px] opacity-0 cursor-pointer z-20" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}/>
-                                <div className="absolute top-2 left-0 w-full text-center pointer-events-none"><span className="font-timer tabular-nums text-xl font-bold">{Math.round(manualThrottle)}</span><span className="text-[6px] block text-gray-500 font-bold uppercase">{t.gas}</span></div>
-                                <div className="absolute bottom-3 left-0 w-full text-center pointer-events-none"><span className="text-[7px] font-black tracking-[0.2em] text-white/40 uppercase">{t.controller}</span></div>
+                        <div className="w-full bg-black/60 rounded-xl p-1.5 border border-gray-800 flex justify-between items-center shadow-inner overflow-hidden relative z-30">
+                            <button onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onClick={() => setSelectedCarId(prev => Math.max(1, prev - 1))} className="w-6 h-8 flex items-center justify-center bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"><ArrowLeft size={10}/></button>
+                            <div className="flex flex-col items-center leading-none z-10 pointer-events-none"><span className="text-[6px] text-gray-500 font-bold">ID</span><span className="text-xl font-black text-[#39ff14] font-digital">{selectedCarId}</span></div>
+                            <button onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onClick={() => setSelectedCarId(prev => Math.min(numCars, prev + 1))} className="w-6 h-8 flex items-center justify-center bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"><ArrowRight size={10}/></button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-1.5 w-full relative z-30">
+                            <button 
+                                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setLaneChangePressed(true); }} 
+                                onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); setLaneChangePressed(false); }} 
+                                onPointerLeave={(e) => { e.stopPropagation(); setLaneChangePressed(false); }}
+                                className={`h-12 w-full rounded-xl flex items-center justify-center gap-1.5 border transition-all active:scale-95 touch-none select-none ${laneChangePressed?'bg-[#39ff14] text-black border-white shadow-[0_0_15px_#39ff14]':'bg-gray-800 text-gray-300 border-gray-600'}`}
+                            >
+                                <GitCommit size={16} className="rotate-90 shrink-0"/><span className="font-black text-[7px] leading-tight text-center">{t.laneChange1}<br/>{t.laneChange2}</span>
+                            </button>
+                            <button 
+                                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setPitPressed(true); }} 
+                                onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); setPitPressed(false); }}
+                                onPointerLeave={(e) => { e.stopPropagation(); setPitPressed(false); }}
+                                className={`h-10 w-full rounded-xl flex items-center justify-center gap-1.5 border transition-all active:scale-95 touch-none select-none ${pitPressed?'bg-blue-600 text-white shadow-[0_0_15px_blue]':'bg-gray-800 text-gray-400 border-gray-600'}`}
+                            >
+                                <Fuel size={14} className="shrink-0"/><span className="font-bold text-[7px] leading-tight text-center">{t.pitEntry1}<br/>{t.pitEntry2}</span>
+                            </button>
+                        </div>
+                        
+                        <div className="flex flex-col w-full items-center gap-0.5 mb-0.5 pointer-events-none">
+                            <span className="text-[9px] font-black text-[#39ff14] tracking-widest uppercase bg-[#39ff14]/10 border border-[#39ff14]/30 px-2 py-0.5 rounded-full w-full text-center drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]">{t.controller}</span>
+                            <span className="text-[6px] text-gray-400 font-bold uppercase tracking-wider">{t.manualControl}</span>
+                        </div>
+                        <div className="relative w-full h-[240px] bg-black/80 rounded-2xl overflow-hidden border border-gray-600 shadow-[inset_0_0_20px_rgba(0,0,0,1)] z-10 group pointer-events-auto">
+                            <div className="absolute bottom-0 left-0 w-full transition-all duration-75 pointer-events-none" style={{ height: `${manualThrottle}%`, background: `linear-gradient(to top, ${manualThrottle>90?'#ef4444':'#39ff14'} 0%, transparent 100%)`, boxShadow: `0 0 20px ${manualThrottle>90?'#ef4444':'#39ff14'}` }}></div>
+                            
+                            <div className="absolute inset-0 flex flex-col justify-between py-4 px-1 pointer-events-none opacity-40">
+                                {[100, 75, 50, 25, 0].map(val => (
+                                    <div key={val} className="w-full flex items-center justify-between">
+                                        <div className="w-2 border-t border-white/70"></div>
+                                        <span className="text-[5px] text-white font-mono">{val}</span>
+                                        <div className="w-2 border-t border-white/70"></div>
+                                    </div>
+                                ))}
                             </div>
+
+                            <input type="range" min="0" max="100" value={manualThrottle} 
+                                onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} 
+                                onChange={(e)=>setManualThrottle(parseFloat(e.target.value))} 
+                                className="absolute -bottom-[85px] -left-[90px] w-[280px] h-[240px] opacity-0 cursor-pointer z-20" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} title={t.slideTitle}/>
+                            
+                            <div className="absolute top-2 left-0 w-full text-center pointer-events-none">
+                                <span className="font-digital text-2xl font-black drop-shadow-md text-white">{Math.round(manualThrottle)}</span>
+                                <span className="text-[8px] text-[#39ff14] font-bold block -mt-1">%</span>
+                            </div>
+
+                            {manualThrottle < 5 && (
+                                <div className="absolute bottom-6 left-0 w-full flex flex-col items-center pointer-events-none opacity-80 animate-pulse">
+                                    <ArrowUp size={16} className="text-[#39ff14] mb-1" />
+                                    <span className="text-[7px] text-white font-bold tracking-widest bg-black/80 px-2 py-0.5 rounded border border-white/20">{t.slide}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div> 
@@ -1791,7 +2664,7 @@
         function Slot3DPlayer() {
           const [circuitData, setCircuitData] = useState(null);
           const [carSettings, setCarSettings] = useState(Array(8).fill(null).map((_, i) => ({ id: i + 1, name: `PILOTO ${i + 1}`, color: ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316', '#64748b'][i % 8] })));
-          const [customCarAssets, setCustomCarAssets] = useState(Object.fromEntries(Array.from({length: 8}, (_, i) => [i + 1, { obj: null, rotation: [0, 180, 0], yOffset: 0 }])));
+          const [customCarAssets, setCustomCarAssets] = useState(Object.fromEntries(Array.from({length: 2}, (_, i) => [i + 1, { obj: null, rotation: [0, 180, 0], yOffset: 0 }])));
           
           const [lang, setLangState] = useState(() => localStorage.getItem('slot_lang') || 'es');
           const setLang = (newLang) => { setLangState(newLang); localStorage.setItem('slot_lang', newLang); };
@@ -1806,6 +2679,30 @@
           const [authError, setAuthError] = useState('');
           const [authMessage, setAuthMessage] = useState('');
           const dbRef = useRef(null);
+
+          // AUTO LOAD DEL COCHE GLB AL CARGAR CIRCUITO
+          const autoLoadDone = useRef(false);
+          useEffect(() => {
+              if (circuitData && !autoLoadDone.current) {
+                  autoLoadDone.current = true;
+                  const apiUrl = `https://api.github.com/repos/slotcarhome-star/Circuitos3d/contents/coches`;
+                  fetch(apiUrl)
+                      .then(res => res.json())
+                      .then(data => {
+                          const glbFiles = data.filter(f => f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf'));
+                          if (glbFiles.length > 0) {
+                              const rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/coches/${glbFiles[0].name}`;
+                              fetch(rawUrl).then(r => r.blob()).then(blob => {
+                                  const file = new File([blob], glbFiles[0].name, {type: 'model/gltf-binary'});
+                                  setCustomCarAssets(prev => {
+                                      if (prev[1] && prev[1].glb) return prev;
+                                      return { ...prev, 1: { ...prev[1], glb: URL.createObjectURL(file), glbName: glbFiles[0].name } };
+                                  });
+                              });
+                          }
+                      }).catch(e => console.error(e));
+              }
+          }, [circuitData]);
 
           useEffect(() => {
               const initFirebase = () => {
@@ -1894,52 +2791,6 @@
               signOut(getAuth());
           };
 
-          const [peer, setPeer] = useState(null);
-          const [peerConn, setPeerConn] = useState(null);
-          const [myPeerID, setMyPeerID] = useState('');
-          const [joinID, setJoinID] = useState('');
-          const [networkData, setNetworkData] = useState(null);
-          const [session, setSession] = useState(null);
-
-          const startHost = () => {
-              const p = new Peer();
-              p.on('open', id => setMyPeerID(id));
-              p.on('connection', c => {
-                  setPeerConn(c);
-                  setSession({ role: 'HOST', id: p.id, isHost: true });
-                  setupNetwork(c);
-              });
-              setPeer(p);
-          };
-
-          const startJoin = () => {
-              if(!joinID) return;
-              const p = new Peer();
-              p.on('open', () => {
-                  const c = p.connect(joinID);
-                  setPeerConn(c);
-                  setSession({ role: 'CLIENT', id: joinID, isHost: false });
-                  setupNetwork(c);
-              });
-              setPeer(p);
-          };
-
-          const setupNetwork = (connection) => {
-              connection.on('data', data => {
-                  if (data.type === 'INIT') {
-                      setSession(prev => ({...prev, rivalName: data.playerName}));
-                  } else {
-                      setNetworkData(data);
-                  }
-              });
-              connection.on('open', () => {
-                  connection.send({ type: 'INIT', playerName: user?.displayName || 'Piloto' });
-                  const saved = localStorage.getItem('slot_last_circuit');
-                  if(saved) setCircuitData(JSON.parse(saved));
-                  else setCircuitData({ brand: 'NINCO', pieces: [{type:'straight', length:100}, {type:'straight', length:100}] });
-              });
-          };
-
           const handleCarAssetUpdate = (file, targetId, arg3) => {
               if (file && targetId) {
                   const url = URL.createObjectURL(file);
@@ -1969,7 +2820,7 @@
           };
 
           if (circuitData) {
-            return ( <Telemetry3DViewer circuitData={circuitData} carSettings={carSettings} customCarAssets={customCarAssets} onCarAssetUpdate={handleCarAssetUpdate} onClose={() => { setCircuitData(null); setSession(null); if(peerConn) peerConn.close(); }} lang={lang} setLang={setLang} t={t} multiplayerSession={session} peerConn={peerConn} networkData={networkData} /> );
+            return ( <Telemetry3DViewer circuitData={circuitData} carSettings={carSettings} customCarAssets={customCarAssets} onCarAssetUpdate={handleCarAssetUpdate} onClose={() => { setCircuitData(null); }} lang={lang} setLang={setLang} t={t} /> );
           }
 
           return (
@@ -1977,24 +2828,6 @@
                 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{backgroundImage: 'radial-gradient(#39ff14 1px, transparent 1px)', backgroundSize: '40px 40px'}}></div>
                 
                 <div className="absolute top-6 right-6 z-50 flex gap-2 bg-black/50 p-2 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg items-center">
-                    <div className="border-r border-white/10 pr-4 mr-1">
-                        {user && !user.isAnonymous ? (
-                            <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-gray-500 uppercase tracking-widest leading-none">Piloto</span>
-                                    <span className="text-sm font-bold text-[#39ff14]">{user.displayName || (user.email ? user.email.split('@')[0] : 'Piloto')}</span>
-                                </div>
-                                <button onClick={handleSignOut} title={t.auth.logoutBtn} className="w-8 h-8 flex items-center justify-center rounded bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition">
-                                    <XIcon size={14} />
-                                </button>
-                            </div>
-                        ) : (
-                            <button onClick={() => setShowAuthModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-800 border border-gray-600 text-gray-300 hover:text-white hover:border-[#39ff14] hover:shadow-[0_0_15px_rgba(57,255,20,0.3)] transition text-xs font-bold uppercase tracking-wider">
-                                <User size={16} className="text-[#39ff14]"/> {t.auth.loginBtn}
-                            </button>
-                        )}
-                    </div>
-
                     <button onClick={() => setLang('es')} className={`w-10 h-10 flex items-center justify-center rounded-xl text-2xl transition-all ${lang === 'es' ? 'bg-[#39ff14]/20 border border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.3)] scale-105' : 'opacity-50 hover:opacity-100 hover:bg-white/10 border border-transparent'}`} title="Español">🇪🇸</button>
                     <button onClick={() => setLang('en')} className={`w-10 h-10 flex items-center justify-center rounded-xl text-2xl transition-all ${lang === 'en' ? 'bg-[#39ff14]/20 border border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.3)] scale-105' : 'opacity-50 hover:opacity-100 hover:bg-white/10 border border-transparent'}`} title="English">🇬🇧</button>
                 </div>
@@ -2054,8 +2887,8 @@
                         <p className="text-[#39ff14] font-mono text-xl tracking-[0.5em] mt-2 font-bold mb-6">{t.subtitle}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full z-10">
-                        <div className="bg-black/50 p-8 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6">
+                    <div className="flex flex-col items-center w-full max-w-md mx-auto z-10">
+                        <div className="w-full bg-black/50 p-8 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6">
                             <h2 className="text-xl font-bold uppercase tracking-widest text-gray-400">{t.localMode}</h2>
                             <label className="w-full group relative cursor-pointer">
                                 <div className="absolute -inset-1 bg-gradient-to-r from-[#39ff14] to-emerald-600 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
@@ -2078,48 +2911,9 @@
                                 {t.clearCache}
                             </button>
                         </div>
-
-                        <div className="bg-blue-900/10 p-8 rounded-3xl border border-blue-500/30 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center backdrop-blur-sm">
-                                <div className="border-4 border-blue-500/50 bg-blue-900/80 text-blue-300 font-black text-xl md:text-2xl tracking-[0.3em] px-8 py-4 rounded-2xl transform -rotate-12 shadow-[0_0_40px_rgba(59,130,246,0.6)] uppercase">
-                                    Próximamente
-                                </div>
-                            </div>
-                            
-                            <h2 className="text-xl font-bold uppercase tracking-widest text-blue-400 flex items-center gap-2"><Gamepad2 size={24}/> {t.multiTitle}</h2>
-                            
-                            {!myPeerID && (
-                                <div className="flex flex-col w-full gap-4">
-                                    <button disabled onClick={startHost} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-xl text-xs uppercase tracking-widest transition shadow-[0_0_20px_#2563eb44] disabled:opacity-50 disabled:cursor-not-allowed">{t.createRoom}</button>
-                                    <div className="flex items-center gap-3 opacity-50"><div className="flex-1 h-px bg-white"></div><span className="text-[10px] font-bold">O</span><div className="flex-1 h-px bg-white"></div></div>
-                                    <div className="flex gap-2">
-                                        <input disabled type="text" placeholder={t.roomCode} value={joinID} onChange={e=>setJoinID(e.target.value.toUpperCase())} className="flex-1 bg-black/60 border border-white/20 rounded-xl px-4 text-center font-mono text-white focus:border-blue-500 outline-none uppercase disabled:opacity-50 disabled:cursor-not-allowed"/>
-                                        <button disabled onClick={startJoin} className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-4 rounded-xl text-xs transition uppercase disabled:opacity-50 disabled:cursor-not-allowed">{t.joinRoom}</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {myPeerID && (
-                                <div className="text-center w-full bg-black/40 p-6 rounded-2xl border border-blue-500/40 animate-in">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">{t.roomCode}:</span>
-                                    <div className="text-4xl font-mono font-black text-[#39ff14] tracking-widest mb-4 select-all">{myPeerID}</div>
-                                    <button onClick={()=>{navigator.clipboard.writeText(myPeerID); alert("ID Copiada!")}} className="text-xs text-blue-400 underline hover:text-blue-300 transition">{t.copy}</button>
-                                    <div className="mt-6 flex items-center justify-center gap-3">
-                                        <div className="w-4 h-4 border-2 border-[#39ff14] border-t-transparent rounded-full animate-spin"></div>
-                                        <span className="text-xs text-yellow-500 font-bold animate-pulse">{t.waiting}</span>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {peerConn && peerConn.open && (
-                                <div className="w-full bg-green-500/20 border border-green-500 p-3 rounded-xl text-center text-green-400 font-bold animate-pulse">
-                                    {t.connected}
-                                </div>
-                            )}
-                        </div>
                     </div>
 
-                    <div className="text-[10px] text-gray-600 font-mono absolute bottom-4 tracking-widest">SLOT STUDIO V.4.0 - DECO + MULTIPLAYER</div>
+                    <div className="text-[10px] text-gray-600 font-mono absolute bottom-4 tracking-widest">SLOT STUDIO V.4.0 - DECO</div>
                 </div>
             </div>
           );
