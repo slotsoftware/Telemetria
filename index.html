@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería Minimalista</title>
+    <!-- Importamos Tailwind CSS para un diseño rápido y limpio -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Transición suave para el cambio de imágenes */
+        .fade-transition {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-[#fcfcfc] text-gray-800 antialiased min-h-screen flex items-center justify-center font-sans selection:bg-gray-200">
+
+    <main class="w-full max-w-4xl p-6 md:p-12 flex flex-col gap-8">
+        
+        <!-- Imagen Central -->
+        <section class="w-full">
+            <a id="enlace-principal" href="https://slotcarhome-star.github.io/Demos-de-Apps/kronopersonal-demo.html" target="_blank" class="block w-full focus:outline-none focus:ring-4 focus:ring-gray-200 rounded-xl transition-all cursor-pointer">
+                <div class="aspect-[16/9] w-full overflow-hidden rounded-xl shadow-sm bg-gray-100 group relative">
+                    <img 
+                        id="imagen-principal" 
+                        src="im.png" 
+                        alt="Imagen central destacada" 
+                        class="w-full h-full object-cover"
+                    >
+                    <!-- Indicador visual de enlace al hacer hover -->
+                    <div id="indicador-enlace" class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <span class="bg-white text-gray-800 font-semibold px-4 py-2 rounded-full shadow-lg text-sm">Abrir Enlace</span>
+                    </div>
+                </div>
+            </a>
+        </section>
+
+        <!-- Cuadrícula de 4 imágenes inferiores -->
+        <!-- En móviles se muestran 2x2, en pantallas medianas/grandes 4 en línea -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
+            
+            <!-- Foto 1 -->
+            <div class="flex flex-col gap-2">
+                <button onclick="cambiarImagen(this)" class="w-full focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-lg overflow-hidden group">
+                    <div class="aspect-[9/16] w-full bg-gray-100">
+                        <img 
+                            src="im1.jpg" 
+                            data-highres="im1.jpg"
+                            data-link="https://slotcarhome-star.github.io/Demos-de-Apps/kronopersonal-demo.html"
+                            alt="Miniatura interior minimalista" 
+                            class="w-full h-full object-cover transition duration-300 group-hover:opacity-75 group-hover:scale-105"
+                        >
+                    </div>
+                </button>
+                <p class="text-center text-xs font-medium tracking-wide text-gray-500">DEMO KRONO PERSONAL</p>
+            </div>
+
+            <!-- Foto 2 -->
+            <div class="flex flex-col gap-2">
+                <button onclick="cambiarImagen(this)" class="w-full focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-lg overflow-hidden group">
+                    <div class="aspect-[9/16] w-full bg-gray-100">
+                        <img 
+                            src="im2.jpg" 
+                            data-highres="im2.jpg"
+                            data-link="https://slotcarhome-star.github.io/Demos-de-Apps/kronodual-demo.html"
+                            alt="Miniatura silla de diseño" 
+                            class="w-full h-full object-cover transition duration-300 group-hover:opacity-75 group-hover:scale-105"
+                        >
+                    </div>
+                </button>
+                <p class="text-center text-xs font-medium tracking-wide text-gray-500">DEMO KRONO DUAL</p>
+            </div>
+
+            <!-- Foto 3 -->
+            <div class="flex flex-col gap-2">
+                <button onclick="cambiarImagen(this)" class="w-full focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-lg overflow-hidden group">
+                    <div class="aspect-[9/16] w-full bg-gray-100">
+                        <img 
+                            src="im3.jpg" 
+                            data-highres="im3.jpg"
+                            data-link="https://slotcarhome-star.github.io/Demos-de-Apps/track-2d-demo.html"
+                            alt="Miniatura lámpara minimalista" 
+                            class="w-full h-full object-cover transition duration-300 group-hover:opacity-75 group-hover:scale-105"
+                        >
+                    </div>
+                </button>
+                <p class="text-center text-xs font-medium tracking-wide text-gray-500">DEMO TRACKS TELEMETRY</p>
+            </div>
+
+            <!-- Foto 4 -->
+            <div class="flex flex-col gap-2">
+                <button onclick="cambiarImagen(this)" class="w-full focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-lg overflow-hidden group">
+                    <div class="aspect-[9/16] w-full bg-gray-100">
+                        <img 
+                            src="im4.jpg" 
+                            data-highres="im4.jpg"
+                            data-link="https://slotcarhome-star.github.io/Demos-de-Apps/3dslot-game-demo.html"
+                            alt="Miniatura arquitectura" 
+                            class="w-full h-full object-cover transition duration-300 group-hover:opacity-75 group-hover:scale-105"
+                        >
+                    </div>
+                </button>
+                <p class="text-center text-xs font-medium tracking-wide text-gray-500">DEMO SLOT 3D GAME</p>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        /**
+         * Función para cambiar el enlace central al hacer clic en una miniatura.
+         * La imagen central se mantiene estática (im.png).
+         */
+        function cambiarImagen(botonElemento) {
+            const enlacePrincipal = document.getElementById('enlace-principal');
+            const indicadorEnlace = document.getElementById('indicador-enlace');
+            
+            const imagenMiniatura = botonElemento.querySelector('img');
+            const nuevoEnlace = imagenMiniatura.getAttribute('data-link');
+
+            // Actualizamos solo el enlace de la imagen principal
+            if (nuevoEnlace) {
+                enlacePrincipal.setAttribute('href', nuevoEnlace);
+                enlacePrincipal.classList.add('cursor-pointer');
+                indicadorEnlace.style.display = 'flex';
+            } else {
+                enlacePrincipal.removeAttribute('href');
+                enlacePrincipal.classList.remove('cursor-pointer');
+                indicadorEnlace.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
