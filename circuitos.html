@@ -77,6 +77,38 @@
         }
         .btn-neon-cyan { animation: neon-pulse-cyan 2.5s infinite ease-in-out; animation-delay: 1.25s; }
 
+        /* NEON ESPECTACULAR PARA 3D GAME */
+        @keyframes neon-super-pulse {
+            0% { box-shadow: 0 0 10px rgba(217,70,239,0.5), 0 0 20px rgba(217,70,239,0.3), inset 0 0 15px rgba(217,70,239,0.4); border-color: rgba(217,70,239,0.6); }
+            100% { box-shadow: 0 0 25px rgba(217,70,239,1), 0 0 45px rgba(217,70,239,0.8), inset 0 0 25px rgba(217,70,239,0.8); border-color: #f0abfc; }
+        }
+        .btn-super-neon {
+            animation: neon-super-pulse 1.2s infinite alternate ease-in-out;
+            background: linear-gradient(135deg, rgba(88,28,135,0.8) 0%, rgba(134,25,143,0.8) 100%);
+            border: 2px solid #d946ef;
+        }
+        .btn-super-neon .icon-glow {
+            filter: drop-shadow(0 0 8px #f0abfc) drop-shadow(0 0 15px #d946ef);
+        }
+        .btn-super-neon .text-glow {
+            text-shadow: 0 0 5px #f0abfc, 0 0 10px #d946ef;
+            color: #ffffff;
+        }
+        @keyframes game-shimmer {
+            0% { transform: translateX(-150%) skewX(-45deg); }
+            100% { transform: translateX(250%) skewX(-45deg); }
+        }
+        .btn-super-neon::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            transform: translateX(-150%) skewX(-45deg);
+            animation: game-shimmer 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            pointer-events: none;
+        }
+
         #error-msg { color: #ef4444; margin-top: 20px; max-width: 600px; display: none; border: 1px solid #ef4444; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.8); }
         .cursor-grab { cursor: grab; } .cursor-grabbing { cursor: grabbing; } .cursor-crosshair { cursor: crosshair; }
         
@@ -170,7 +202,7 @@
 
         // GEOMETRÍA ABSOLUTA
         const getPieceGeometry = (p) => {
-            if (!p || p.type === 'set_origin' || p.type === 'goto') return null; // FIX: Protección
+            if (!p || p.type === 'set_origin' || p.type === 'goto') return null;
             let dx = 0, dy = 0, da = 0;
             if (p.type === 'straight' || (p.type && p.type.includes('pit'))) { 
                 dx = p.length; 
@@ -183,15 +215,15 @@
                     dx = r * Math.sin(aRad); dy = r * (1 - Math.cos(aRad)); da = aRad; 
                 }
             } else if (p.type === 'rotonda' || p.subtype === 'rotonda') {
-                da = Math.PI; // Da la vuelta entera, vuelve al mismo punto pero girado
+                da = Math.PI;
             }
 
             const rot = p.rot || 0;
+            const z = p.elevation || 0;
             const exitX = p.x + dx * Math.cos(rot) - dy * Math.sin(rot);
             const exitY = p.y + dx * Math.sin(rot) + dy * Math.cos(rot);
             const exitAngle = rot + da;
 
-            // Calcular el centro visual para el Hit Test y el Gizmo
             let midX = (p.x + exitX) / 2;
             let midY = (p.y + exitY) / 2;
             let hitRadius = p.type === 'straight' ? p.length / 2 : Math.abs(p.radius || 20);
@@ -204,20 +236,19 @@
             }
 
             return {
-                inX: p.x, inY: p.y, inAngle: rot,
-                outX: exitX, outY: exitY, outAngle: exitAngle,
+                inX: p.x, inY: p.y, inZ: z, inAngle: rot,
+                outX: exitX, outY: exitY, outZ: z, outAngle: exitAngle,
                 localDx: dx, localDy: dy, localDa: da,
                 midX, midY, hitRadius
             };
         };
 
-        // Migración de circuitos viejos (secuenciales) a absolutos
         const migrateToAbsolute = (piecesList, circuitOrigin = {x:0, y:0}) => {
             let cx = circuitOrigin.x || 0, cy = circuitOrigin.y || 0, currentAngle = 0;
             const endPos = {};
 
             return piecesList.map((p, index) => {
-                if (!p) return null; // FIX: Saltar nulos
+                if (!p) return null;
                 
                 if (p.type === 'set_origin') {
                     cx = circuitOrigin.x + (p.x || 0);
@@ -263,88 +294,176 @@
             }).filter(p => p && p.type !== 'goto' && p.type !== 'set_origin'); 
         };
 
-        // Compilador para 3D (Ordena y sella matemáticamente las uniones para evitar trompicones)
+        const getAngleDiff = (a1, a2) => {
+            let diff = Math.abs((a1 - a2) % (Math.PI * 2));
+            if (diff > Math.PI) diff = Math.PI * 2 - diff;
+            return diff;
+        };
+
+        // Compilador 3D MEJORADO: ENCADENAMIENTO ESTRICTO Y CONTINUO
+        // Transforma un "puzzle" caótico en un circuito perfecto dibujado "del tirón"
         const compileCircuitFor3D = (rawPieces) => {
             if (!rawPieces || rawPieces.length === 0) return [];
             
+            const finalCompiled = [];
             const lanes = {};
+            
+            // 1. Clonamos profundamente las piezas para no corromper la memoria de React
             rawPieces.forEach(p => {
                 const laneId = p.lane || 0;
                 if (!lanes[laneId]) lanes[laneId] = [];
-                lanes[laneId].push(p);
+                lanes[laneId].push(JSON.parse(JSON.stringify(p)));
             });
 
-            let compiled = [];
-
             Object.keys(lanes).sort((a,b)=>a-b).forEach(laneId => {
-                let pool = [...lanes[laneId]];
+                let pool = lanes[laneId];
                 if (pool.length === 0) return;
 
-                let startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid' || p.subtype === 'rotonda_connect');
-                if (startIdx === -1) startIdx = 0;
+                const origGeos = new Map();
+                pool.forEach(p => {
+                    origGeos.set(p.uid, getPieceGeometry(p));
+                });
 
-                let current = pool.splice(startIdx, 1)[0];
-                compiled.push(current);
+                const findNextPiece = (searchPoint, availablePool) => {
+                    let bestIdx = -1;
+                    let bestDist = Infinity;
+                    let connectedToIn = true;
 
-                const THRESHOLD = 3.0; // 3 cm de tolerancia para coser pistas
+                    for (let i = 0; i < availablePool.length; i++) {
+                        const cand = availablePool[i];
+                        const ep = origGeos.get(cand.uid);
+                        
+                        const distIn = Math.hypot(searchPoint.x - ep.inX, searchPoint.y - ep.inY);
+                        const angleInDiff = getAngleDiff(searchPoint.angle, ep.inAngle);
+                        
+                        const distOut = Math.hypot(searchPoint.x - ep.outX, searchPoint.y - ep.outY);
+                        const angleOutDiff = getAngleDiff(searchPoint.angle, (ep.outAngle + Math.PI) % (Math.PI * 2));
 
-                while (pool.length > 0) {
-                    let nextIdx = -1;
+                        const isCandRotonda = cand.type === 'rotonda' || cand.subtype === 'rotonda' || cand.subtype === 'rotonda_connect';
 
-                    // Solo intentamos buscar la siguiente pista si la actual NO es una rotonda
-                    // (ya que la rotonda es un final de tramo de rally).
-                    if (current.type !== 'rotonda' && current.subtype !== 'rotonda') {
-                        const currentGeo = getPieceGeometry(current);
-                        if (currentGeo) {
-                            let minDistance = Infinity;
-
-                            for (let i = 0; i < pool.length; i++) {
-                                const candidate = pool[i];
-                                const candGeo = getPieceGeometry(candidate);
-                                if (!candGeo) continue;
-
-                                const dist = Math.hypot(currentGeo.outX - candGeo.inX, currentGeo.outY - candGeo.inY);
-                                if (dist < THRESHOLD && dist < minDistance) {
-                                    minDistance = dist;
-                                    nextIdx = i;
-                                }
+                        // Relajamos distancia de búsqueda (15px), la reconstrucción matemática lo enderezará perfecto
+                        if (distIn < 15.0 && angleInDiff < 0.5) {
+                            if (distIn < bestDist) {
+                                bestDist = distIn;
+                                bestIdx = i;
+                                connectedToIn = true;
+                            }
+                        }
+                        
+                        if (!isCandRotonda && distOut < 15.0 && angleOutDiff < 0.5) {
+                            if (distOut < bestDist) {
+                                bestDist = distOut;
+                                bestIdx = i;
+                                connectedToIn = false;
                             }
                         }
                     }
 
-                    if (nextIdx !== -1) {
-                        let nextPiece = { ...pool.splice(nextIdx, 1)[0] };
-                        // SANACIÓN MATEMÁTICA: Eliminamos los errores de redondeo de los decimales
-                        const currentGeo = getPieceGeometry(current);
-                        nextPiece.x = Math.round(currentGeo.outX * 10000) / 10000;
-                        nextPiece.y = Math.round(currentGeo.outY * 10000) / 10000;
-                        nextPiece.rot = Math.round(currentGeo.outAngle * 10000) / 10000;
-                        
-                        compiled.push(nextPiece);
-                        current = nextPiece;
-                    } else {
-                        // Salto, pista desconectada, o venimos de una rotonda. Continuamos con la siguiente del pool.
-                        let nextLoose = pool.splice(0, 1)[0];
-                        compiled.push(nextLoose);
-                        current = nextLoose;
+                    return { bestIdx, connectedToIn };
+                };
+
+                let bestChainForLane = [];
+
+                while(pool.length > 0) {
+                    let currentChain = [];
+
+                    let startIdx = pool.findIndex(p => p.type === 'rotonda' || p.subtype === 'rotonda' || p.subtype === 'rotonda_connect');
+                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid');
+                    
+                    if (startIdx === -1) {
+                        startIdx = pool.findIndex(p => {
+                            const ep = origGeos.get(p.uid);
+                            let hasIncoming = false;
+                            for (const other of pool) {
+                                if (other.uid === p.uid) continue;
+                                const oEp = origGeos.get(other.uid);
+                                const distFromOut = Math.hypot(ep.inX - oEp.outX, ep.inY - oEp.outY);
+                                const distFromIn = Math.hypot(ep.inX - oEp.inX, ep.inY - oEp.inY);
+                                if ((distFromOut < 15.0 && getAngleDiff(ep.inAngle, oEp.outAngle) < 0.5) || 
+                                    (distFromIn < 15.0 && getAngleDiff(ep.inAngle, (oEp.inAngle + Math.PI)) < 0.5)) {
+                                    hasIncoming = true;
+                                    break;
+                                }
+                            }
+                            return !hasIncoming;
+                        });
+                    }
+                    if (startIdx === -1) startIdx = 0;
+
+                    let current = pool.splice(startIdx, 1)[0];
+                    // NO normalizamos ángulos. Dejamos que sumen infinitamente como necesita el 3D
+                    current.inZ = current.elevation || 0;
+                    current.outZ = current.elevation || 0;
+                    currentChain.push(current);
+                    
+                    let firstGeo = getPieceGeometry(current);
+                    let currentSearchExit = { x: firstGeo.outX, y: firstGeo.outY, z: current.outZ, angle: firstGeo.outAngle };
+
+                    let chainContinues = true;
+                    while (chainContinues && pool.length > 0) {
+                        const { bestIdx, connectedToIn } = findNextPiece(currentSearchExit, pool);
+
+                        if (bestIdx !== -1) {
+                            let nextPiece = pool.splice(bestIdx, 1)[0];
+
+                            // 2. RECONSTRUCCIÓN MATEMÁTICA FÍSICA PARA EVITAR EL TELETRANSPORTE
+                            if (!connectedToIn) {
+                                // Si se montó al revés, físicamente la volvemos del derecho
+                                if (nextPiece.type === 'curve' || nextPiece.subtype === 'chicane_curve' || nextPiece.type === 'rotonda' || nextPiece.subtype === 'rotonda' || nextPiece.subtype === 'rotonda_connect') {
+                                    nextPiece.direction = nextPiece.direction === 'left' ? 'right' : 'left';
+                                }
+                                const tmpL = nextPiece.borderLeft;
+                                nextPiece.borderLeft = nextPiece.borderRight;
+                                nextPiece.borderRight = tmpL;
+                                
+                                // Intercambiamos Entradas por Salidas para que el 3D no choque
+                                if (nextPiece.subtype === 'chicane_entry') nextPiece.subtype = 'chicane_exit';
+                                else if (nextPiece.subtype === 'chicane_exit') nextPiece.subtype = 'chicane_entry';
+                                if (nextPiece.type === 'pit_entry') nextPiece.type = 'pit_exit';
+                                else if (nextPiece.type === 'pit_exit') nextPiece.type = 'pit_entry';
+                            }
+
+                            nextPiece.invert = false;
+                            nextPiece.rot = currentSearchExit.angle;
+                            
+                            const ep = getPieceGeometry(nextPiece);
+                            
+                            const newDx = ep.localDx * Math.cos(nextPiece.rot) - ep.localDy * Math.sin(nextPiece.rot);
+                            const newDy = ep.localDx * Math.sin(nextPiece.rot) + ep.localDy * Math.cos(nextPiece.rot);
+                            
+                            nextPiece.x = currentSearchExit.x;
+                            nextPiece.y = currentSearchExit.y;
+                            nextPiece.inZ = currentSearchExit.z;
+                            nextPiece.outZ = nextPiece.elevation || 0;
+                            
+                            currentSearchExit = { 
+                                x: nextPiece.x + newDx, 
+                                y: nextPiece.y + newDy, 
+                                z: nextPiece.outZ, 
+                                angle: nextPiece.rot + ep.localDa 
+                            };
+                            
+                            currentChain.push(nextPiece);
+                        } else {
+                            chainContinues = false; // Fin de este tren
+                        }
+                    }
+                    
+                    // Nos quedamos estrictamente con la cadena más larga (elimina basura suelta y ramales fallidos)
+                    if (currentChain.length > bestChainForLane.length) {
+                        bestChainForLane = currentChain;
                     }
                 }
+                
+                finalCompiled.push(...bestChainForLane);
             });
 
-            // --- MAGIA PARA EL 3D ---
-            // Simplemente aseguramos que ambas rotondas usen el subtype 'rotonda' 
-            // para que el motor 3D cargue la malla correcta de lágrima (que ya incluye la recta).
-            const finalCompiled = [];
-            compiled.forEach(p => {
-                if (p.type === 'rotonda' || p.subtype === 'rotonda' || p.subtype === 'rotonda_connect') {
-                    finalCompiled.push({ 
-                        ...p, 
-                        type: 'rotonda',
-                        subtype: 'rotonda'
-                    });
-                } else {
-                    finalCompiled.push(p);
-                }
+            // 3. MAGIA FINAL PARA EL MOTOR 3D:
+            // Engañamos al motor 3D reescribiendo los "uid" (DNI de la pista) en estricto orden secuencial.
+            // Así el motor cree que se ha construido seguido (como en tu archivo 222.json)
+            let fakeTimestamp = Date.now() - 1000000;
+            finalCompiled.forEach((p, idx) => {
+                p.uid = fakeTimestamp + (idx * 1000) + 0.1234; 
             });
 
             return finalCompiled;
@@ -403,12 +522,12 @@
 
                 // Renderizamos todas las piezas (sustituyendo la que se arrastra por su estado temporal)
                 pieces.forEach((basePiece) => {
-                    if (!basePiece) return; // FIX: Protección extra
+                    if (!basePiece) return; 
                     const p = (dragGroup && dragGroup.has(basePiece.uid)) ? dragGroup.get(basePiece.uid) : basePiece;
-                    if (!p || p.x === undefined) return; // Saltamos piezas corruptas
+                    if (!p || p.x === undefined) return; 
                     
                     const geo = getPieceGeometry(p);
-                    if (!geo) return; // FIX
+                    if (!geo) return; 
                     pieceExtents.push({ uid: p.uid, ...geo });
 
                     ctx.save(); 
@@ -542,17 +661,14 @@
                     ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
                     ctx.restore();
 
-                    // DIBUJAR GIZMO DE ROTACIÓN SI ESTÁ SELECCIONADA (EN ESPACIO MUNDO)
                     if (isSelected && selectedPieceIds.length === 1) {
                         ctx.save();
-                        // Caja blanca semi-transparente como en la foto
                         const midWorldX = view.x + geo.midX * view.scale;
                         const midWorldY = view.y + geo.midY * view.scale;
                         
                         ctx.translate(midWorldX, midWorldY);
                         ctx.rotate(p.rot);
                         
-                        // Dibujar tirador de rotación
                         const handleDist = geo.hitRadius * view.scale + 20;
                         ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
                         ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(handleDist, 0); ctx.stroke();
@@ -560,13 +676,11 @@
                         ctx.fillStyle = '#0ea5e9'; ctx.beginPath(); ctx.arc(handleDist, 0, 8, 0, Math.PI*2); ctx.fill();
                         ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
                         
-                        // Icono de flecha giratoria
                         ctx.fillStyle = '#fff'; ctx.font = "10px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("↻", handleDist, 0);
                         
                         ctx.restore();
                     }
 
-                    // INDICADOR DE SNAPPING SI ESTÁ ARRASTRANDO Y HACE CLIC
                     if (dragGroup && dragGroup.has(p.uid) && dragGroup.get(p.uid).isSnapping) {
                         ctx.save();
                         ctx.translate(view.x + p.x * view.scale, view.y + p.y * view.scale);
@@ -666,14 +780,13 @@
 
           const [view, setView] = useState({ x: window.innerWidth/2, y: window.innerHeight/2, scale: 5.0 }); 
           
-          // ESTADOS PARA OPCIÓN A (ARRASTRAR Y SOLTAR)
           const [selectedPieceIds, setSelectedPieceIds] = useState([]); 
           const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-          const [dragGroup, setDragGroup] = useState(null); // Map of dragged pieces
+          const [dragGroup, setDragGroup] = useState(null); 
           
           const [isCircuitMoveMode, setIsCircuitMoveMode] = useState(false); 
           const [isDragging, setIsDragging] = useState(false);
-          const dragMode = useRef('view'); // 'view', 'moveGroup', 'rotatePiece'
+          const dragMode = useRef('view'); 
           const dragOffset = useRef(new Map()); 
           const lastPointerPos = useRef({ x: 0, y: 0 }); 
           const clickTargetInfo = useRef(null); 
@@ -727,7 +840,6 @@
           const [isChatLoading, setIsChatLoading] = useState(false);
           const messagesEndRef = useRef(null);
 
-          // Alert de bienvenida al motor absoluto
           useEffect(() => {
               if (!localStorage.getItem('slot_absolute_welcome')) {
                   setTimeout(() => { alert((t.alerts && t.alerts.welcomeEngine) ? t.alerts.welcomeEngine : 'Welcome to Absolute Engine'); }, 1500);
@@ -743,7 +855,6 @@
               if (auth.currentUser && auth.currentUser.emailVerified) { actionFn(); } else { alert(t.auth.reqVerify); setShowAuthModal(true); }
           };
 
-          // INICIALIZACIÓN DE FIREBASE
           useEffect(() => {
               const initFirebase = () => {
                   if (!window.FirebaseAPI) { setTimeout(initFirebase, 200); return; }
@@ -771,7 +882,6 @@
               initFirebase();
           }, []);
 
-          // FUNCIONES AUTH y COMUNIDAD
           const handleAuthSubmit = async (e) => {
               e.preventDefault(); setAuthError(''); setAuthMessage('');
               const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendEmailVerification } = window.FirebaseAPI;
@@ -965,7 +1075,6 @@
           useEffect(() => { const loadingScreen = document.getElementById('loading-screen'); if (loadingScreen) { loadingScreen.style.opacity = '0'; setTimeout(() => loadingScreen.style.display = 'none', 1000); } }, []);
           const currentBrand = TRACK_DEFINITIONS[activeBrand]; const neonClass = currentBrand.uiClass;
 
-          // BUCLE PRINCIPAL DE RENDERIZADO
           useEffect(() => {
             const canvas = canvasRef.current; if (!canvas) return; const ctx = canvas.getContext('2d'); 
             const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; 
@@ -985,12 +1094,10 @@
           const pushHistory = (newPieces) => { const newHistory = history.slice(0, historyStep + 1); newHistory.push(newPieces); setHistory(newHistory); setHistoryStep(newHistory.length - 1); };
           const handleUndo = () => { if (historyStep > 0) { setHistoryStep(historyStep - 1); setSelectedPieceIds([]); } }; const handleRedo = () => { if (historyStep < history.length - 1) { setHistoryStep(historyStep + 1); setSelectedPieceIds([]); } };
           
-          // AÑADIR PIEZAS (SISTEMA ABSOLUTO)
           const addPiece = (p, d='left') => {
               let newX = 0, newY = 0, newRot = 0;
               
               if (selectedPieceIds.length > 0) {
-                  // Si hay una seleccionada, la pegamos a su salida
                   const sel = pieces.find(x => x && x.uid === selectedPieceIds[selectedPieceIds.length - 1]);
                   if (sel) {
                       const geo = getPieceGeometry(sel);
@@ -999,7 +1106,6 @@
                       }
                   }
               } else if (pieces.length > 0) {
-                  // Si no hay selección, la pegamos a la última añadida
                   const last = pieces[pieces.length - 1];
                   if (last) {
                       const geo = getPieceGeometry(last);
@@ -1008,14 +1114,13 @@
                       }
                   }
               } else {
-                  // Si está vacío, al centro de la pantalla
                   newX = ((windowSize.w/2) - view.x) / view.scale;
                   newY = ((windowSize.h/2) - view.y) / view.scale;
               }
               
               const newPiece = { ...p, direction: d, uid: Date.now() + Math.random(), elevation: workingElevation, x: newX, y: newY, rot: newRot, invert: false };
               pushHistory([...pieces, newPiece]);
-              setSelectedPieceIds([newPiece.uid]); // Auto seleccionar la nueva
+              setSelectedPieceIds([newPiece.uid]); 
           };
 
           const applyToPiece = (targetUid, newProps) => {
@@ -1103,7 +1208,7 @@
               const rect = canvasRef.current.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top };
           };
 
-          // --- LOGICA DE ARRASTRE Y SNAPPING (OPCIÓN A) ---
+          // --- LOGICA DE ARRASTRE Y SNAPPING ---
           const getRawMouse = (coords) => { return { x: (coords.x - view.x) / view.scale, y: (coords.y - view.y) / view.scale }; };
 
           const handleDown = (e) => { 
@@ -1753,7 +1858,7 @@
                           <button onClick={generateReport} title={t.tools.report} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-teal-400 border border-teal-500/50 rounded-lg hover:bg-teal-500/10 hover:border-teal-400 hover:text-teal-200 hover:shadow-[0_0_15px_rgba(20,184,166,0.4)] shadow-[0_0_10px_rgba(20,184,166,0.2)] transition-all font-bold text-xs shrink-0"><FileText size={16}/> {t.tools.report}</button>
                           <button onClick={() => { setShowBoardTools(!showBoardTools); setShowBridgesTools(false); setShowMultiLaneTools(false); setShowBordersTools(false); setIsPaintElevationMode(false); setPaintBorderMode('none'); setShowChat(false); }} title={t.tools.board} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-green-400 border border-green-500/50 rounded-lg hover:bg-green-500/10 hover:border-green-400 hover:text-green-200 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] shadow-[0_0_10px_rgba(34,197,94,0.2)] transition-all font-bold text-xs shrink-0"><Square size={16}/> {t.tools.board}</button>
                           <button onClick={() => { setShowBridgesTools(!showBridgesTools); setShowBoardTools(false); setShowMultiLaneTools(false); setShowBordersTools(false); setIsPaintElevationMode(false); setPaintBorderMode('none'); setShowChat(false); }} title={t.tools.bridges} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-indigo-400 border border-indigo-500/50 rounded-lg hover:bg-indigo-500/10 hover:border-indigo-400 hover:text-indigo-200 hover:shadow-[0_0_15px_rgba(99,102,241,0.4)] shadow-[0_0_10px_rgba(99,102,241,0.2)] transition-all font-bold text-xs shrink-0"><Layers size={16}/> {t.tools.bridges}</button>
-                          <button onClick={() => { setShowBordersTools(!showBordersTools); setShowBoardTools(false); setShowBridgesTools(false); setShowMultiLaneTools(false); setIsPaintElevationMode(false); setPaintBorderMode('none'); setShowChat(false); }} title={t.tools.borders} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-red-400 border border-red-500/50 rounded-lg hover:bg-red-500/10 hover:border-red-400 hover:text-red-200 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] shadow-[0_0_10px_rgba(239,68,68,0.2)] transition-all font-bold text-xs shrink-0"><Shield size={16}/> {t.tools.borders}</button>
+                          <button onClick={() => { setShowBordersTools(!showBordersTools); setShowBoardTools(false); setShowBridgesTools(false); setShowMultiLaneTools(false); setIsPaintElevationMode(false); setPaintBorderMode('none'); setShowChat(false); }} title={t.tools.borders} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-red-400 border border-red-500/50 rounded-lg hover:bg-red-500/10 hover:border-red-400 hover:text-red-200 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] shadow-[0_0_10px_rgba(239,68,68,0.2)] transition-all font-bold text-xs shrink-0"><Shield size={16}/> {t.borders.title}</button>
                           <button onClick={() => { setShowMultiLaneTools(!showMultiLaneTools); setShowBoardTools(false); setShowBridgesTools(false); setShowBordersTools(false); setIsPaintElevationMode(false); setPaintBorderMode('none'); setShowChat(false); }} title={t.tools.multilane} className="flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-amber-400 border border-amber-500/50 rounded-lg hover:bg-amber-500/10 hover:border-amber-400 hover:text-amber-200 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] shadow-[0_0_10px_rgba(245,158,11,0.2)] transition-all font-bold text-xs shrink-0"><Hash size={16}/> {t.tools.multilane}</button>
                           <button onClick={() => handleProtectedAction(handlePublishToCommunity)} disabled={isPublishing || pieces.length === 0} title={t.tools.publish} className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border transition-all font-bold text-xs shrink-0 ${pieces.length > 0 ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)] hover:bg-indigo-500/40 hover:text-white' : 'bg-transparent text-gray-500 border-gray-600/50 opacity-50 cursor-not-allowed'}`}> {isPublishing ? <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div> : <CloudUpload size={16}/>} {t.tools.publish}</button>
                           <button onClick={() => handleProtectedAction(() => setShowCommunityModal(true))} title={t.tools.community} className="btn-neon-purple flex items-center justify-center gap-2 px-5 py-2.5 bg-transparent text-purple-400 border rounded-lg hover:bg-purple-500/20 hover:text-purple-100 transition-all font-bold text-xs shrink-0"><Users size={16}/> {t.tools.community}</button>
@@ -1926,25 +2031,25 @@
                       </div>
                   )}
 
-                  <div className="absolute bottom-6 left-0 w-full flex justify-center md:justify-start md:left-6 md:w-auto pointer-events-none z-30"> 
-                      <div onPointerDown={(e)=>e.stopPropagation()} className="flex gap-3 pointer-events-auto bg-black/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.2)] relative"> 
-                          <button onClick={handleUndo} className={`flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group ${historyStep === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]'}`} title={t.actions.undo} disabled={historyStep === 0}> <Undo2 size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.undo}</span> </button> 
-                          <button onClick={handleRedo} className={`flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group ${historyStep < history.length - 1 ? 'hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]' : 'opacity-50 cursor-not-allowed'}`} title={t.actions.redo} disabled={historyStep === history.length - 1}> <Redo2 size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.redo}</span> </button> 
-                          <button onClick={handleZoomOut} className="flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]"> <ZoomOut size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.zoomOut}</span> </button> 
-                          <button onClick={fitToScreen} className="flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]"> <Crosshair size={24} className="mb-1 group-hover:rotate-45 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.center}</span> </button> 
-                          <button onClick={handleZoomIn} className="flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]"> <ZoomIn size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.zoomIn}</span> </button> 
-                          <button onClick={() => setIsMultiSelectMode(!isMultiSelectMode)} className={`flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border rounded-lg transition-all group active:scale-95 ${isMultiSelectMode ? 'border-cyan-300 text-white shadow-[0_0_25px_rgba(6,182,212,0.8)] bg-cyan-800/80' : 'border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:bg-cyan-950/50 hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]'}`}> <CheckSquare size={24} className={`mb-1 transition-transform ${isMultiSelectMode ? 'scale-110' : 'group-hover:scale-110'}`}/> <span className="text-[9px] font-black tracking-widest">{t.actions.multiselect}</span> </button>
+                  <div className="absolute bottom-6 left-0 w-full flex justify-center md:justify-start md:left-6 px-4 md:px-0 pointer-events-none z-30"> 
+                      <div onPointerDown={(e)=>e.stopPropagation()} className="flex gap-3 pointer-events-auto bg-black/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.2)] relative overflow-x-auto hide-scrollbar max-w-full"> 
+                          <button onClick={handleUndo} className={`shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group ${historyStep === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]'}`} title={t.actions.undo} disabled={historyStep === 0}> <Undo2 size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.undo}</span> </button> 
+                          <button onClick={handleRedo} className={`shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group ${historyStep < history.length - 1 ? 'hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]' : 'opacity-50 cursor-not-allowed'}`} title={t.actions.redo} disabled={historyStep === history.length - 1}> <Redo2 size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.redo}</span> </button> 
+                          <button onClick={handleZoomOut} className="shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]"> <ZoomOut size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.zoomOut}</span> </button> 
+                          <button onClick={fitToScreen} className="shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]"> <Crosshair size={24} className="mb-1 group-hover:rotate-45 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.center}</span> </button> 
+                          <button onClick={handleZoomIn} className="shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)] rounded-lg text-cyan-400 hover:bg-cyan-950/50 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]"> <ZoomIn size={24} className="mb-1 group-hover:scale-110 transition-transform"/> <span className="text-[9px] font-black tracking-widest">{t.actions.zoomIn}</span> </button> 
+                          <button onClick={() => setIsMultiSelectMode(!isMultiSelectMode)} className={`shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border rounded-lg transition-all group active:scale-95 ${isMultiSelectMode ? 'border-cyan-300 text-white shadow-[0_0_25px_rgba(6,182,212,0.8)] bg-cyan-800/80' : 'border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:bg-cyan-950/50 hover:shadow-[0_0_25px_rgba(6,182,212,0.6)]'}`}> <CheckSquare size={24} className={`mb-1 transition-transform ${isMultiSelectMode ? 'scale-110' : 'group-hover:scale-110'}`}/> <span className="text-[9px] font-black tracking-widest">{t.actions.multiselect}</span> </button>
                           
-                          <button onClick={goToSimulation} className="flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-[#39ff14]/50 shadow-[0_0_20px_rgba(57,255,20,0.3)] rounded-lg text-[#39ff14] hover:bg-green-950/50 transition-all group relative overflow-hidden active:scale-95"> 
-                              <div className="absolute inset-0 bg-gradient-to-t from-[#39ff14]/10 to-transparent opacity-50"></div><Play size={24} className="mb-1 transition-transform fill-current z-10 opacity-90 group-hover:scale-110"/><span className="text-[9px] font-black tracking-widest z-10 drop-shadow-[0_0_5px_rgba(0,0,0,0.8)] opacity-90">{t.actions.sim}</span> 
+                          <button onClick={goToSimulation} className="shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.4)] rounded-lg text-[#39ff14] hover:bg-[#39ff14]/20 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(57,255,20,0.6)] relative overflow-hidden"> 
+                              <div className="absolute inset-0 bg-gradient-to-t from-[#39ff14]/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div><Play size={24} className="mb-1 z-10 group-hover:scale-110 transition-transform"/><span className="text-[9px] font-black tracking-widest z-10 text-center">{t.actions.sim}</span> 
                           </button> 
 
-                          <button onClick={goToDecoration} className="flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.3)] rounded-lg text-pink-400 hover:bg-pink-950/50 transition-all group relative overflow-hidden active:scale-95"> 
-                              <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent opacity-50"></div><ImageIcon size={24} className="mb-1 transition-transform z-10 opacity-90 group-hover:scale-110"/><span className="text-[9px] font-black tracking-widest z-10 drop-shadow-[0_0_5px_rgba(0,0,0,0.8)] opacity-90">{t.actions.deco}</span> 
+                          <button onClick={goToDecoration} className="shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.4)] rounded-lg text-pink-400 hover:bg-pink-500/20 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] relative overflow-hidden"> 
+                              <div className="absolute inset-0 bg-gradient-to-t from-pink-500/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div><ImageIcon size={24} className="mb-1 z-10 group-hover:scale-110 transition-transform"/><span className="text-[9px] font-black tracking-widest z-10 text-center">{t.actions.deco}</span> 
                           </button> 
 
-                          <button onClick={goToMulti} className="flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.3)] rounded-lg text-amber-400 hover:bg-amber-950/50 transition-all group relative overflow-hidden active:scale-95"> 
-                              <div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent opacity-50"></div><Flag size={24} className="mb-1 transition-transform z-10 opacity-90 group-hover:scale-110"/><span className="text-[9px] font-black tracking-widest z-10 drop-shadow-[0_0_5px_rgba(0,0,0,0.8)] opacity-90">{t.actions.clubs}</span> 
+                          <button onClick={goToMulti} className="shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-gray-900/90 border border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)] rounded-lg text-amber-400 hover:bg-amber-500/20 active:scale-95 active:shadow-none transition-all group hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] relative overflow-hidden"> 
+                              <div className="absolute inset-0 bg-gradient-to-t from-amber-500/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div><Flag size={24} className="mb-1 z-10 group-hover:scale-110 transition-transform"/><span className="text-[9px] font-black tracking-widest z-10 text-center">{t.actions.clubs}</span> 
                           </button> 
                       </div> 
                   </div>
