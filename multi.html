@@ -409,14 +409,16 @@
             const saved = localStorage.getItem('slot_gh_config');
             if (saved) {
                 let parsed = JSON.parse(saved);
-                // Auto-migración al nuevo directorio si se usaba el anterior por defecto
-                if (parsed.owner === 'slotcarhome-star' && parsed.repo === 'Circuitos3d' && (parsed.path === '' || !parsed.path)) {
+                // Auto-migración al nuevo directorio si se usaba el anterior
+                if (parsed.owner === 'slotcarhome-star' && parsed.repo === 'Circuitos3d') {
+                    parsed.owner = 'slotsoftware';
+                    parsed.repo = 'Telemetria';
                     parsed.path = 'coches';
                     localStorage.setItem('slot_gh_config', JSON.stringify(parsed));
                 }
                 return parsed;
             }
-            return { owner: 'slotcarhome-star', repo: 'Circuitos3d', path: 'coches', branch: 'main' };
+            return { owner: 'slotsoftware', repo: 'Telemetria', path: 'coches', branch: 'main' };
         });
         const [isEditingConfig, setIsEditingConfig] = useState(false);
         const [onlineFiles, setOnlineFiles] = useState([]);
@@ -695,8 +697,8 @@
             let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${ghConfig.path ? ghConfig.path + '/' : ''}${fileData.name}`;
             
             // OPTIMIZACIÓN: Usar GitHub Pages si es el repo configurado (Más rápido y sin CORS)
-            if(ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') {
-                 rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/${ghConfig.path ? ghConfig.path + '/' : ''}${fileData.name}`;
+            if(ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria') {
+                 rawUrl = `https://slotsoftware.github.io/Telemetria/${ghConfig.path ? ghConfig.path + '/' : ''}${fileData.name}`;
             }
 
             console.log("Intentando cargar:", rawUrl); // Debug para ver URL real
@@ -831,7 +833,7 @@
                                                 </div>
 
                                                 {/* ATAJOS RÁPIDOS SUGERIDOS */}
-                                                {ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d' && (
+                                                {ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria' && (
                                                     <div className="flex flex-wrap gap-2 justify-center mt-2">
                                                         <button onClick={() => loadDirectFile('amartin.glb')} className="text-[10px] font-bold border border-gray-700 hover:border-[#39ff14] rounded px-3 py-1.5 bg-gray-800 text-gray-300 hover:text-white transition-colors">
                                                             amartin.glb
@@ -4558,13 +4560,15 @@
           useEffect(() => {
               const autoLoadCloudCar = async () => {
                   try {
-                      let ghConfig = { owner: 'slotcarhome-star', repo: 'Circuitos3d', path: 'coches', branch: 'main' };
+                      let ghConfig = { owner: 'slotsoftware', repo: 'Telemetria', path: 'coches', branch: 'main' };
                       const saved = localStorage.getItem('slot_gh_config');
                       if (saved) {
                           const parsed = JSON.parse(saved);
                           if (parsed.owner && parsed.repo) {
                               ghConfig = parsed;
-                              if (ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d' && !ghConfig.path) {
+                              if (ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') {
+                                  ghConfig.owner = 'slotsoftware';
+                                  ghConfig.repo = 'Telemetria';
                                   ghConfig.path = 'coches';
                               }
                           }
@@ -4577,19 +4581,19 @@
                       
                       if (Array.isArray(data)) {
                           const glbFiles = data.filter(f => f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf'));
-                          const targetFile = glbFiles[4] || glbFiles[0]; 
+                          const targetFile = glbFiles[0]; 
                           
                           if (targetFile) {
                               let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
-                              if(ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') {
-                                   rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
+                              if(ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria') {
+                                   rawUrl = `https://slotsoftware.github.io/Telemetria/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
                               }
                               
                               setCustomCarAssets(prev => ({
                                   ...prev,
                                   1: { ...prev[1], glb: rawUrl, glbName: targetFile.name }
                               }));
-                              console.log("Auto-cargado coche desde la nube (Pos 5):", targetFile.name);
+                              console.log("Auto-cargado primer coche desde la nube:", targetFile.name);
                           }
                       }
                   } catch (e) {
