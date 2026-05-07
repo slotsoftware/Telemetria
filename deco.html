@@ -346,7 +346,7 @@
 
             const [ghConfig, setGhConfig] = useState(() => {
                 const saved = localStorage.getItem('slot_gh_config');
-                return saved ? JSON.parse(saved) : { owner: 'slotcarhome-star', repo: 'Circuitos3d', path: '', branch: 'main' };
+                return saved ? JSON.parse(saved) : { owner: 'slotsoftware', repo: 'Telemetria', path: '', branch: 'main' };
             });
             const [isEditingConfig, setIsEditingConfig] = useState(false);
             const [onlineFiles, setOnlineFiles] = useState([]);
@@ -440,7 +440,7 @@
 
             const updateScatterCount = (newCount) => { const count = Math.max(1, Math.min(60, parseInt(newCount))); setScatterCount(count); if (onTransform) onTransform(currentTargetId, { offset: [transform.x, transform.y, transform.z], rotation: [transform.rotX, transform.rotY, transform.rotZ], scale: transform.scale, yOffset: transform.y, scatterCount: count }); };
             const processLoadedModel = (model, fileName, url) => { setStatus(`${lang === 'en' ? "READY" : "LISTO"}: ${fileName.split('.')[0].toUpperCase()}`); if (url) { fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); }).then(blob => { const file = new File([blob], fileName, { type: 'model/gltf-binary' }); if (onLoad) onLoad(file, currentTargetId, loadingTypeRef.current); }).catch(err => { console.warn("Error descargando blob:", err); setStatus("ERROR BLOB"); }); } };
-            const loadFromGitHub = (fileData) => { setShowFileMenu(false); setStatus(`${lang === 'en' ? "DOWNLOADING" : "BAJANDO"}: ${fileData.name || fileData.file}...`); let activePath = ghConfig.path ? ghConfig.path : ''; if (loadingTypeRef.current === 'car') { activePath = activePath ? `${activePath}/coches` : 'coches'; } else if (loadingTypeRef.current === 'decor') { activePath = activePath ? `${activePath}/decora` : 'decora'; } const fileName = fileData.file || fileData.name; let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${activePath ? activePath + '/' : ''}${fileName}`; if(ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') { rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/${activePath ? activePath + '/' : ''}${fileName}`; } const loader = getSharedGLTFLoader() || new THREE.GLTFLoader(); loader.load( rawUrl, (gltf) => processLoadedModel(gltf.scene, fileData.name, rawUrl), (xhr) => setStatus(`${lang === 'en' ? "LOADING" : "CARGANDO"} ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`), (err) => { console.warn("Error GLTFLoader (Viewer):", err); setStatus("ERROR 404/RED"); } ); };
+            const loadFromGitHub = (fileData) => { setShowFileMenu(false); setStatus(`${lang === 'en' ? "DOWNLOADING" : "BAJANDO"}: ${fileData.name || fileData.file}...`); let activePath = ghConfig.path ? ghConfig.path : ''; if (loadingTypeRef.current === 'car') { activePath = activePath ? `${activePath}/coches` : 'coches'; } else if (loadingTypeRef.current === 'decor') { activePath = activePath ? `${activePath}/decora` : 'decora'; } const fileName = fileData.file || fileData.name; let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${activePath ? activePath + '/' : ''}${fileName}`; if(ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria') { rawUrl = `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/${activePath ? activePath + '/' : ''}${fileName}`; } const loader = getSharedGLTFLoader() || new THREE.GLTFLoader(); loader.load( rawUrl, (gltf) => processLoadedModel(gltf.scene, fileData.name, rawUrl), (xhr) => setStatus(`${lang === 'en' ? "LOADING" : "CARGANDO"} ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`), (err) => { console.warn("Error GLTFLoader (Viewer):", err); setStatus("ERROR 404/RED"); } ); };
             const loadDirectFile = (fileName) => { if(!fileName) return; const cleanName = fileName.trim(); loadFromGitHub({ name: cleanName }); };
             const handleFileChange = (e) => { const file = e.target.files[0]; if (!file) return; setStatus(lang === 'en' ? "PROCESSING..." : "PROCESANDO..."); if (onLoad) onLoad(file, currentTargetId, loadingTypeRef.current); e.target.value = ''; }; 
             const triggerFileSelect = () => { if (inputRef.current) inputRef.current.click(); }; 
@@ -1889,7 +1889,7 @@
                             };
 
                             fileList.forEach(fileName => {
-                                const url = `https://slotcarhome-star.github.io/Circuitos3d/decora/${fileName}`;
+                                const url = `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/decora/${fileName}`;
                                 loader.load(url, (gltf) => {
                                     const treeModel = gltf.scene;
                                     treeModel.position.set(0, 0, 0);
@@ -1939,7 +1939,7 @@
                             });
                         };
 
-                        fetch('https://api.github.com/repos/slotcarhome-star/Circuitos3d/contents/decora')
+                        fetch('https://api.github.com/repos/slotsoftware/Telemetria/contents/decora')
                             .then(res => res.ok ? res.json() : Promise.reject())
                             .then(data => {
                                 const glbFiles = data.filter(f => {
@@ -2685,13 +2685,13 @@
           useEffect(() => {
               if (circuitData && !autoLoadDone.current) {
                   autoLoadDone.current = true;
-                  const apiUrl = `https://api.github.com/repos/slotcarhome-star/Circuitos3d/contents/coches`;
+                  const apiUrl = `https://api.github.com/repos/slotsoftware/Telemetria/contents/coches`;
                   fetch(apiUrl)
                       .then(res => res.json())
                       .then(data => {
                           const glbFiles = data.filter(f => f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf'));
                           if (glbFiles.length > 0) {
-                              const rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/coches/${glbFiles[0].name}`;
+                              const rawUrl = `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/coches/${glbFiles[0].name}`;
                               fetch(rawUrl).then(r => r.blob()).then(blob => {
                                   const file = new File([blob], glbFiles[0].name, {type: 'model/gltf-binary'});
                                   setCustomCarAssets(prev => {
