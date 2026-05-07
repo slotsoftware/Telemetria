@@ -383,13 +383,16 @@
             if (saved) {
                 let parsed = JSON.parse(saved);
                 // Auto-migración al nuevo directorio si se usaba el anterior por defecto
-                if (parsed.owner === 'slotcarhome-star' && parsed.repo === 'Circuitos3d' && (parsed.path === '' || !parsed.path)) {
+                if ((parsed.owner === 'slotcarhome-star' || parsed.owner === 'slotsoftware') && 
+                    (parsed.repo === 'Circuitos3d' || parsed.repo === 'Telemetria')) {
+                    parsed.owner = 'slotsoftware';
+                    parsed.repo = 'Telemetria';
                     parsed.path = 'coches';
                     localStorage.setItem('slot_gh_config', JSON.stringify(parsed));
                 }
                 return parsed;
             }
-            return { owner: 'slotcarhome-star', repo: 'Circuitos3d', path: 'coches', branch: 'main' };
+            return { owner: 'slotsoftware', repo: 'Telemetria', path: 'coches', branch: 'main' };
         });
         const [isEditingConfig, setIsEditingConfig] = useState(false);
         const [onlineFiles, setOnlineFiles] = useState([]);
@@ -692,11 +695,6 @@
             setStatus(`DESCARGANDO: ${fileData.name}...`);
             
             let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${ghConfig.path ? ghConfig.path + '/' : ''}${fileData.name}`;
-            
-            // OPTIMIZACIÓN: Usar GitHub Pages si es el repo configurado (Más rápido y sin CORS)
-            if(ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d') {
-                 rawUrl = `https://slotcarhome-star.github.io/Circuitos3d/${ghConfig.path ? ghConfig.path + '/' : ''}${fileData.name}`;
-            }
 
             console.log("Intentando cargar:", rawUrl); // Debug para ver URL real
 
@@ -828,7 +826,7 @@
                                                 </div>
 
                                                 {/* ATAJOS RÁPIDOS SUGERIDOS */}
-                                                {ghConfig.owner === 'slotcarhome-star' && ghConfig.repo === 'Circuitos3d' && (
+                                                {ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria' && (
                                                     <div className="flex flex-wrap gap-1.5 justify-center mt-1">
                                                         <button onClick={() => loadDirectFile('amartin.glb')} className="text-[8px] font-bold border border-gray-700 hover:border-[#39ff14] rounded px-2 py-1 bg-gray-800 text-gray-300 hover:text-white transition-colors">
                                                             amartin.glb
@@ -5118,7 +5116,7 @@
                             };
 
                             fileList.forEach(fileName => {
-                                const url = `https://slotcarhome-star.github.io/Circuitos3d/decora/${fileName}`;
+                                const url = `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/decora/${fileName}`;
                                 
                                 loader.load(url, (gltf) => {
                                     const treeModel = gltf.scene;
@@ -5179,7 +5177,7 @@
                         };
 
                         // LEER TU DIRECTORIO EN TIEMPO REAL DESDE GITHUB
-                        fetch('https://api.github.com/repos/slotcarhome-star/Circuitos3d/contents/decora')
+                        fetch('https://api.github.com/repos/slotsoftware/Telemetria/contents/decora')
                             .then(res => {
                                 if (!res.ok) throw new Error("Rate limit o carpeta no encontrada");
                                 return res.json();
@@ -6658,11 +6656,14 @@
                   autoLoadDone.current = true;
                   
                   const savedConfig = localStorage.getItem('slot_gh_config');
-                  let config = { owner: 'slotcarhome-star', repo: 'Circuitos3d', path: 'coches', branch: 'main' };
+                  let config = { owner: 'slotsoftware', repo: 'Telemetria', path: 'coches', branch: 'main' };
                   if (savedConfig) {
                       try { 
                           const parsed = JSON.parse(savedConfig); 
-                          if (parsed.owner === 'slotcarhome-star' && parsed.repo === 'Circuitos3d' && (parsed.path === '' || !parsed.path)) {
+                          if ((parsed.owner === 'slotcarhome-star' || parsed.owner === 'slotsoftware') && 
+                              (parsed.repo === 'Circuitos3d' || parsed.repo === 'Telemetria')) {
+                              parsed.owner = 'slotsoftware';
+                              parsed.repo = 'Telemetria';
                               parsed.path = 'coches';
                           }
                           config = parsed;
@@ -6672,9 +6673,6 @@
                   const apiUrl = `https://api.github.com/repos/${config.owner}/${config.repo}/contents${config.path ? '/' + config.path : ''}`;
                   
                   const getRawUrl = (fileName) => {
-                      if(config.owner === 'slotcarhome-star' && config.repo === 'Circuitos3d') {
-                          return `https://slotcarhome-star.github.io/Circuitos3d/${config.path ? config.path + '/' : ''}${fileName}`;
-                      }
                       return `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${config.path ? config.path + '/' : ''}${fileName}`;
                   };
 
@@ -6764,7 +6762,7 @@
                       .catch(err => {
                           console.log("GitHub API failed for auto-load:", err);
                           // Fallback por límite de API de GitHub (60 peticiones/hora)
-                          if (config.owner === 'slotcarhome-star' && config.repo === 'Circuitos3d') {
+                          if (config.owner === 'slotsoftware' && config.repo === 'Telemetria') {
                               loadFromUrl(getRawUrl('amartin.glb'), 'amartin.glb', 1);
                               loadFromUrl(getRawUrl('seat_leon.glb'), 'seat_leon.glb', 2);
                               loadFromUrl(getRawUrl('seat_leon.glb'), 'seat_leon.glb', 3);
