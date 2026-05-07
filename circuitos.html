@@ -1019,7 +1019,7 @@
                   const fetchCloudFiles = async () => {
                       setIsLoadingCloud(true); setCloudError(null);
                       try {
-                          const response = await fetch('https://api.github.com/repos/slotcarhome-star/Circuitos3d/contents/circuitos2d');
+                          const response = await fetch('https://api.github.com/repos/slotsoftware/Telemetria/contents/circuitos2D');
                           if (!response.ok) throw new Error('Error al conectar con GitHub');
                           const data = await response.json();
                           const jsonFiles = data.filter(file => file.name.toLowerCase().endsWith('.json') && file.type === 'file');
@@ -1714,7 +1714,7 @@
                                   </>
                               ) : (
                                   <div className="flex-1 flex flex-col gap-2 overflow-hidden animate-in">
-                                      <div className="text-[10px] font-bold text-cyan-400 tracking-widest border-b border-cyan-500/20 pb-1 mb-1 flex justify-between"><span>{t.modal.repo}</span><span className="text-cyan-600">Circuitos3d/circuitos2d</span></div>
+                                      <div className="text-[10px] font-bold text-cyan-400 tracking-widest border-b border-cyan-500/20 pb-1 mb-1 flex justify-between"><span>{t.modal.repo}</span><span className="text-cyan-600">Telemetria/circuitos2D</span></div>
                                       <div className="flex-1 overflow-y-auto pr-1 space-y-2 hide-scrollbar">
                                           {isLoadingCloud && (<div className="flex flex-col items-center justify-center py-10 gap-2 opacity-50"><div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div><span className="text-[10px] text-cyan-300">{t.modal.connecting}</span></div>)}
                                           {cloudError && (<div className="text-[10px] text-red-400 text-center p-2 border border-red-500/20 rounded bg-red-900/10">{cloudError}</div>)}
