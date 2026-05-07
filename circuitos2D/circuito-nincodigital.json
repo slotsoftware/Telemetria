@@ -1,0 +1,391 @@
+{
+  "version": "1.0",
+  "date": "2026-02-14T15:48:17.249Z",
+  "brand": "NINCO",
+  "pieces": [
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "uid": 1768760195167
+    },
+    {
+      "id": "n_console",
+      "label": "Centralita",
+      "type": "straight",
+      "length": 20,
+      "subtype": "digital_console",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1768760208281
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760213237
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760213702
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760214036
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760214418
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760214974
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1768760222655
+    },
+    {
+      "id": "n_ch_r",
+      "label": "Cambio Der",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_right",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1768760242597
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760257289
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1768760265976
+    },
+    {
+      "id": "n_20",
+      "label": "Media 20cm",
+      "type": "straight",
+      "length": 20,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760296635
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1768760313349
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1768760314088
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1768760314658
+    },
+    {
+      "id": "n_20",
+      "label": "Media 20cm",
+      "type": "straight",
+      "length": 20,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760320072
+    },
+    {
+      "id": "n_pit_in",
+      "label": "Entrada Pit",
+      "type": "pit_entry",
+      "length": 40,
+      "cat": "Pit Lane",
+      "direction": "left",
+      "uid": 1768760326498
+    },
+    {
+      "id": "n_pit_fuel",
+      "label": "Zona Fuel",
+      "type": "straight",
+      "length": 40,
+      "subtype": "pit_parallel",
+      "cat": "Pit Lane",
+      "direction": "left",
+      "uid": 1768760328030
+    },
+    {
+      "id": "n_pit_out",
+      "label": "Salida Pit",
+      "type": "pit_exit",
+      "length": 40,
+      "cat": "Pit Lane",
+      "direction": "left",
+      "uid": 1768760329485
+    },
+    {
+      "id": "n_r2",
+      "label": "R2 (Std)",
+      "type": "curve",
+      "radius": 38,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760378468
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760387051
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760393303
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760393967
+    },
+    {
+      "id": "n_ch_l",
+      "label": "Cambio Izq",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_left",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1768760415579
+    },
+    {
+      "id": "n_x",
+      "label": "Cambio X",
+      "type": "straight",
+      "length": 40,
+      "subtype": "digital_x",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1768760427723
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760433214
+    },
+    {
+      "id": "n_10",
+      "label": "Cuarto 10cm",
+      "type": "straight",
+      "length": 10,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760466648
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1768760470330
+    },
+    {
+      "id": "n_cross",
+      "label": "Cruce 40cm",
+      "type": "straight",
+      "length": 40,
+      "subtype": "crossing",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760484033
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760487320
+    },
+    {
+      "id": "n_cross",
+      "label": "Cruce 40cm",
+      "type": "straight",
+      "length": 40,
+      "subtype": "crossing",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760498821
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760507645
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760509879
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760821661
+    },
+    {
+      "id": "n_10",
+      "label": "Cuarto 10cm",
+      "type": "straight",
+      "length": 10,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760859278
+    },
+    {
+      "id": "n_r2",
+      "label": "R2 (Std)",
+      "type": "curve",
+      "radius": 38,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768760868675
+    },
+    {
+      "id": "n_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 20,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760878153
+    },
+    {
+      "id": "n_20",
+      "label": "Media 20cm",
+      "type": "straight",
+      "length": 20,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760883263
+    },
+    {
+      "id": "n_05",
+      "label": "Cierre 5cm",
+      "type": "straight",
+      "length": 5,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768760890416
+    }
+  ],
+  "circuitOrigin": {
+    "x": 0,
+    "y": 0
+  },
+  "boardPoints": [],
+  "boardClosed": false
+}

@@ -1,0 +1,215 @@
+{
+  "version": "1.0",
+  "date": "2026-01-20T21:13:22.888Z",
+  "brand": "SCX_ADVANCE",
+  "pieces": [
+    {
+      "id": "adv_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "length": 36,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943487924
+    },
+    {
+      "id": "adv_180",
+      "label": "Media 180",
+      "type": "straight",
+      "length": 18,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943491941
+    },
+    {
+      "id": "adv_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 18,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943494069
+    },
+    {
+      "id": "adv_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 18,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943494349
+    },
+    {
+      "id": "adv_connect",
+      "label": "Bluetooth",
+      "type": "straight",
+      "length": 36,
+      "subtype": "connection",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1768943505250
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943509200
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943509495
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943509800
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943510219
+    },
+    {
+      "id": "adv_180",
+      "label": "Media 180",
+      "type": "straight",
+      "length": 18,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943517013
+    },
+    {
+      "id": "adv_x",
+      "label": "Cambio Recta",
+      "type": "straight",
+      "length": 36,
+      "subtype": "digital_x",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1768943520902
+    },
+    {
+      "id": "adv_pit_in",
+      "label": "Entrada Pit",
+      "type": "pit_entry",
+      "length": 36,
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1768943526995
+    },
+    {
+      "id": "adv_pit_fuel",
+      "label": "Recta Fuel",
+      "type": "straight",
+      "length": 36,
+      "subtype": "pit_parallel",
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1768943527776
+    },
+    {
+      "id": "adv_pit_out",
+      "label": "Salida Pit",
+      "type": "pit_exit",
+      "length": 36,
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1768943529926
+    },
+    {
+      "id": "adv_180",
+      "label": "Media 180",
+      "type": "straight",
+      "length": 18,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943535616
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943538834
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943539054
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943539309
+    },
+    {
+      "id": "adv_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943539577
+    },
+    {
+      "id": "adv_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "length": 36,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943541987
+    },
+    {
+      "id": "adv_180",
+      "label": "Media 180",
+      "type": "straight",
+      "length": 18,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943543425
+    }
+  ],
+  "circuitOrigin": {
+    "x": 0,
+    "y": 0
+  },
+  "boardPoints": [],
+  "boardClosed": false
+}

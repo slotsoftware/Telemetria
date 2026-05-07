@@ -1,0 +1,20 @@
+{
+  "motorRPM": 20000,
+  "motorTorque": 260,
+  "motorName": "SC-11",
+  "tireGrip": 5,
+  "tireName": "ZERO",
+  "gearTeeth": 27,
+  "pinionTeeth": 12,
+  "gearRatio": 2.25,
+  "weight": 90,
+  "weights": {
+    "body": 50.5,
+    "chassis": 16.2,
+    "trans": 12.8,
+    "wheels": 8.4,
+    "cockpit": 2.1
+  },
+  "name": "PILOTO 1",
+  "color": "#ef4444"
+}

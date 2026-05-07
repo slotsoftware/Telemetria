@@ -1,0 +1,430 @@
+{
+  "version": "1.0",
+  "date": "2026-01-23T01:10:38.745Z",
+  "brand": "NINCO",
+  "pieces": [
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "uid": 1769130254226
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130301804
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130302057
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130302347
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130305136
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130305378
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130305600
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130305834
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130307652
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130307917
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130308142
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130308341
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130311759
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130331086
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130331362
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130332560
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130365078
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130365332
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130368184
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130374583
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130374833
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130375025
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130375277
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130376281
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130376490
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130376680
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130376893
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130377093
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130378085
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130378297
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130378476
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130378685
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130379627
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130379810
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130380012
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130380202
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130387586
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130388649
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "right",
+      "uid": 1769130388888
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130390449
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1769130391097
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1769130394895
+    }
+  ],
+  "circuitOrigin": {
+    "x": 0,
+    "y": 0
+  },
+  "boardPoints": [],
+  "boardClosed": false
+}

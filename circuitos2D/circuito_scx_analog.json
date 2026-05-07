@@ -1,0 +1,197 @@
+{
+  "version": "1.0",
+  "date": "2026-01-20T21:11:00.532Z",
+  "brand": "SCX_ANALOG",
+  "pieces": [
+    {
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "length": 36,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943380453
+    },
+    {
+      "id": "s_180",
+      "label": "Media 180",
+      "type": "straight",
+      "length": 18,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943383860
+    },
+    {
+      "id": "s_chicane_in",
+      "label": "Entrada Chicane",
+      "type": "straight",
+      "length": 36,
+      "subtype": "chicane_entry",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943385834
+    },
+    {
+      "id": "s_chicane_mid",
+      "label": "Recta Chicane",
+      "type": "straight",
+      "length": 36,
+      "subtype": "chicane_middle",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943388472
+    },
+    {
+      "id": "s_chicane_out",
+      "label": "Salida Chicane",
+      "type": "straight",
+      "length": 36,
+      "subtype": "chicane_exit",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943388986
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943397519
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943397752
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943398034
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943398325
+    },
+    {
+      "id": "s_cross",
+      "label": "Recta Cruce",
+      "type": "straight",
+      "length": 36,
+      "subtype": "crossing",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943403559
+    },
+    {
+      "id": "s_cross",
+      "label": "Recta Cruce",
+      "type": "straight",
+      "length": 36,
+      "subtype": "crossing",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943404020
+    },
+    {
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "length": 36,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943405456
+    },
+    {
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "length": 36,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943405915
+    },
+    {
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "length": 36,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943406526
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943411108
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943411327
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943411547
+    },
+    {
+      "id": "s_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 15,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1768943411839
+    },
+    {
+      "id": "s_180",
+      "label": "Media 180",
+      "type": "straight",
+      "length": 18,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1768943417228
+    }
+  ],
+  "circuitOrigin": {
+    "x": 0,
+    "y": 0
+  },
+  "boardPoints": [],
+  "boardClosed": false
+}

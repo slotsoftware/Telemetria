@@ -1,0 +1,540 @@
+{
+  "version": "1.0",
+  "date": "2026-03-11T21:58:50.274Z",
+  "brand": "SCX_ANALOG",
+  "pieces": [
+    {
+      "length": 36,
+      "elevation": 0,
+      "direction": "left",
+      "uid": 1773257507762.6084,
+      "label": "Recta 360",
+      "id": "s_360",
+      "type": "straight",
+      "cat": "Rectas"
+    },
+    {
+      "cat": "Rectas",
+      "type": "straight",
+      "id": "s_360",
+      "label": "Recta 360",
+      "direction": "left",
+      "uid": 1773257517424.9639,
+      "length": 36,
+      "elevation": 0
+    },
+    {
+      "cat": "Rectas",
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "direction": "left",
+      "uid": 1773257517804.8591,
+      "elevation": 0,
+      "length": 36
+    },
+    {
+      "cat": "Rectas",
+      "type": "straight",
+      "label": "Recta 360",
+      "id": "s_360",
+      "uid": 1773257518062.1775,
+      "direction": "left",
+      "elevation": 0,
+      "length": 36
+    },
+    {
+      "length": 36,
+      "elevation": 0,
+      "uid": 1773257518282.5393,
+      "direction": "left",
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "cat": "Rectas"
+    },
+    {
+      "type": "straight",
+      "id": "s_360",
+      "label": "Recta 360",
+      "cat": "Rectas",
+      "length": 36,
+      "elevation": 0,
+      "uid": 1773257518599.906,
+      "direction": "left"
+    },
+    {
+      "length": 36,
+      "elevation": 0,
+      "uid": 1773257518834.1846,
+      "direction": "left",
+      "type": "straight",
+      "id": "s_360",
+      "label": "Recta 360",
+      "cat": "Rectas"
+    },
+    {
+      "direction": "right",
+      "uid": 1773257524045.69,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "radius": 30.6,
+      "elevation": 0,
+      "cat": "Curvas",
+      "angle": 45,
+      "id": "s_r2",
+      "invert": false
+    },
+    {
+      "id": "s_r2",
+      "angle": 45,
+      "cat": "Curvas",
+      "elevation": 0,
+      "radius": 30.6,
+      "label": "R2 (Std)",
+      "type": "curve",
+      "uid": 1773257524615.8704,
+      "direction": "right"
+    },
+    {
+      "uid": 1773257531088.0732,
+      "direction": "left",
+      "length": 36,
+      "label": "Recta Cruce",
+      "subtype": "crossing",
+      "type": "straight",
+      "elevation": 0,
+      "cat": "Rectas",
+      "id": "s_cross"
+    },
+    {
+      "angle": 45,
+      "cat": "Curvas",
+      "id": "s_r2",
+      "radius": 30.6,
+      "elevation": 0,
+      "label": "R2 (Std)",
+      "type": "curve",
+      "uid": 1773257534392.2903,
+      "direction": "right"
+    },
+    {
+      "id": "s_r2",
+      "cat": "Curvas",
+      "angle": 45,
+      "elevation": 0,
+      "radius": 30.6,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "uid": 1773257534881.212,
+      "direction": "right"
+    },
+    {
+      "cat": "Rectas",
+      "label": "Recta 360",
+      "id": "s_360",
+      "type": "straight",
+      "uid": 1773257639677.0474,
+      "direction": "left",
+      "elevation": 0,
+      "length": 36
+    },
+    {
+      "uid": 1773257640952.2764,
+      "direction": "left",
+      "elevation": 0,
+      "length": 36,
+      "cat": "Rectas",
+      "type": "straight",
+      "label": "Recta 360",
+      "id": "s_360"
+    },
+    {
+      "uid": 1773257645753.1611,
+      "direction": "left",
+      "length": 36,
+      "elevation": 0,
+      "cat": "Rectas",
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight"
+    },
+    {
+      "cat": "Rectas",
+      "type": "straight",
+      "label": "Recta 360",
+      "id": "s_360",
+      "direction": "left",
+      "uid": 1773257656555.0117,
+      "length": 36,
+      "elevation": 0
+    },
+    {
+      "id": "s_chicane_in",
+      "cat": "Rectas",
+      "elevation": 0,
+      "type": "straight",
+      "subtype": "chicane_entry",
+      "label": "Entrada Chicane",
+      "length": 36,
+      "direction": "left",
+      "uid": 1773257661490.7612
+    },
+    {
+      "angle": 45,
+      "cat": "Curvas",
+      "id": "s_r2",
+      "radius": 30.6,
+      "elevation": 0,
+      "label": "R2 (Std)",
+      "type": "curve",
+      "uid": 1773257669096.9004,
+      "direction": "right"
+    },
+    {
+      "direction": "right",
+      "uid": 1773257669530.4895,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "radius": 30.6,
+      "elevation": 0,
+      "cat": "Curvas",
+      "angle": 45,
+      "id": "s_r2"
+    },
+    {
+      "radius": 30.6,
+      "elevation": 0,
+      "cat": "Curvas",
+      "angle": 45,
+      "id": "s_r2",
+      "uid": 1773257669768.7021,
+      "direction": "right",
+      "type": "curve",
+      "label": "R2 (Std)"
+    },
+    {
+      "id": "s_r2",
+      "cat": "Curvas",
+      "angle": 45,
+      "elevation": 0,
+      "radius": 30.6,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "direction": "right",
+      "uid": 1773257670268.1218
+    },
+    {
+      "length": 36,
+      "direction": "left",
+      "uid": 1773257674187.3489,
+      "subtype": "chicane_exit",
+      "type": "straight",
+      "label": "Salida Chicane",
+      "elevation": 0,
+      "id": "s_chicane_out",
+      "cat": "Rectas"
+    },
+    {
+      "label": "Media 180",
+      "id": "s_180",
+      "type": "straight",
+      "cat": "Rectas",
+      "length": 18,
+      "elevation": 0,
+      "uid": 1773257679146.5608,
+      "direction": "left"
+    },
+    {
+      "elevation": 0,
+      "length": 36,
+      "direction": "left",
+      "uid": 1773257680600.5745,
+      "type": "straight",
+      "id": "s_360",
+      "label": "Recta 360",
+      "cat": "Rectas"
+    },
+    {
+      "id": "s_r2",
+      "cat": "Curvas",
+      "angle": 45,
+      "elevation": 0,
+      "radius": 30.6,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "uid": 1773257683688.7278,
+      "direction": "right"
+    },
+    {
+      "label": "Cierre 90",
+      "id": "s_90",
+      "type": "straight",
+      "cat": "Rectas",
+      "length": 9,
+      "elevation": 0,
+      "direction": "left",
+      "uid": 1773257688046.1057
+    },
+    {
+      "id": "s_r2",
+      "angle": 45,
+      "cat": "Curvas",
+      "elevation": 0.25,
+      "radius": 30.6,
+      "label": "R2 (Std)",
+      "type": "curve",
+      "uid": 1773257699531.1775,
+      "direction": "left"
+    },
+    {
+      "label": "R2 (Std)",
+      "type": "curve",
+      "uid": 1773257699977.0796,
+      "direction": "left",
+      "id": "s_r2",
+      "angle": 45,
+      "cat": "Curvas",
+      "elevation": 0.5,
+      "radius": 30.6
+    },
+    {
+      "direction": "left",
+      "uid": 1773257700413.7805,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "radius": 30.6,
+      "elevation": 0.75,
+      "cat": "Curvas",
+      "angle": 45,
+      "id": "s_r2"
+    },
+    {
+      "radius": 30.6,
+      "elevation": 1,
+      "angle": 45,
+      "cat": "Curvas",
+      "id": "s_r2",
+      "direction": "left",
+      "uid": 1773257700785.2053,
+      "label": "R2 (Std)",
+      "type": "curve"
+    },
+    {
+      "direction": "left",
+      "uid": 1773257701211.8367,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "radius": 30.6,
+      "elevation": 1.25,
+      "cat": "Curvas",
+      "angle": 45,
+      "id": "s_r2"
+    },
+    {
+      "direction": "left",
+      "uid": 1773257709761.3442,
+      "elevation": 1.25,
+      "length": 36,
+      "cat": "Rectas",
+      "type": "straight",
+      "id": "s_360",
+      "label": "Recta 360"
+    },
+    {
+      "elevation": 1.25,
+      "length": 36,
+      "uid": 1773257710237.426,
+      "direction": "left",
+      "type": "straight",
+      "label": "Recta 360",
+      "id": "s_360",
+      "cat": "Rectas"
+    },
+    {
+      "cat": "Rectas",
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "direction": "left",
+      "uid": 1773257710697.9846,
+      "length": 36,
+      "elevation": 1.25
+    },
+    {
+      "cat": "Rectas",
+      "type": "straight",
+      "id": "s_360",
+      "label": "Recta 360",
+      "uid": 1773257711162.7373,
+      "direction": "left",
+      "elevation": 1.25,
+      "length": 36
+    },
+    {
+      "length": 18,
+      "elevation": 1.25,
+      "direction": "left",
+      "uid": 1773257727347.5735,
+      "label": "Media 180",
+      "id": "s_180",
+      "type": "straight",
+      "cat": "Rectas"
+    },
+    {
+      "type": "straight",
+      "id": "s_90",
+      "label": "Cierre 90",
+      "cat": "Rectas",
+      "elevation": 1.25,
+      "length": 9,
+      "uid": 1773257728721.6667,
+      "direction": "left"
+    },
+    {
+      "elevation": 1.25,
+      "radius": 30.6,
+      "id": "s_r2",
+      "angle": 45,
+      "cat": "Curvas",
+      "uid": 1773257736785.2783,
+      "direction": "left",
+      "label": "R2 (Std)",
+      "type": "curve"
+    },
+    {
+      "direction": "left",
+      "uid": 1773257737157.242,
+      "label": "R2 (Std)",
+      "type": "curve",
+      "radius": 30.6,
+      "elevation": 1,
+      "angle": 45,
+      "cat": "Curvas",
+      "id": "s_r2"
+    },
+    {
+      "elevation": 0.75,
+      "length": 36,
+      "uid": 1773257740297.9165,
+      "direction": "left",
+      "id": "s_360",
+      "label": "Recta 360",
+      "type": "straight",
+      "cat": "Rectas"
+    },
+    {
+      "uid": 1773257744875.7454,
+      "direction": "right",
+      "type": "curve",
+      "label": "R2 (Std)",
+      "elevation": 0.5,
+      "radius": 30.6,
+      "id": "s_r2",
+      "cat": "Curvas",
+      "angle": 45
+    },
+    {
+      "uid": 1773257745380.7634,
+      "direction": "right",
+      "type": "curve",
+      "label": "R2 (Std)",
+      "elevation": 0.25,
+      "radius": 30.6,
+      "id": "s_r2",
+      "cat": "Curvas",
+      "angle": 45
+    },
+    {
+      "radius": 30.6,
+      "elevation": 0,
+      "angle": 45,
+      "cat": "Curvas",
+      "id": "s_r2",
+      "uid": 1773257745920.8535,
+      "direction": "right",
+      "label": "R2 (Std)",
+      "type": "curve"
+    },
+    {
+      "uid": 1773257746359.8284,
+      "direction": "right",
+      "label": "R2 (Std)",
+      "type": "curve",
+      "elevation": 0.25,
+      "radius": 30.6,
+      "id": "s_r2",
+      "angle": 45,
+      "cat": "Curvas"
+    },
+    {
+      "type": "straight",
+      "subtype": "crossing",
+      "label": "Recta Cruce",
+      "length": 36,
+      "direction": "left",
+      "uid": 1773257756932.0056,
+      "id": "s_cross",
+      "cat": "Rectas",
+      "elevation": 0
+    },
+    {
+      "angle": 45,
+      "cat": "Curvas",
+      "id": "s_r2",
+      "radius": 30.6,
+      "elevation": 0,
+      "label": "R2 (Std)",
+      "type": "curve",
+      "uid": 1773257761993.7153,
+      "direction": "right"
+    },
+    {
+      "cat": "Curvas",
+      "angle": 45,
+      "id": "s_r2",
+      "radius": 30.6,
+      "elevation": 0,
+      "type": "curve",
+      "label": "R2 (Std)",
+      "uid": 1773257762676.0813,
+      "direction": "right"
+    },
+    {
+      "direction": "left",
+      "uid": 1773257766628.2432,
+      "elevation": 0,
+      "length": 18,
+      "cat": "Rectas",
+      "type": "straight",
+      "id": "s_180",
+      "label": "Media 180"
+    }
+  ],
+  "circuitOrigin": {
+    "y": -48.600000000000016,
+    "x": -115.79999999999997
+  },
+  "boardPoints": [
+    {
+      "y": -61,
+      "x": -180
+    },
+    {
+      "y": -61,
+      "x": 180
+    },
+    {
+      "y": 61,
+      "x": 180
+    },
+    {
+      "y": 61,
+      "x": -180
+    }
+  ],
+  "boardClosed": true,
+  "hasMultiLane": false,
+  "disableAutoBridges": false,
+  "tunnelStyle": "standard"
+}

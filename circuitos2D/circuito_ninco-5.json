@@ -1,0 +1,283 @@
+{
+  "version": "1.0",
+  "date": "2026-02-21T20:39:09.676Z",
+  "brand": "NINCO",
+  "pieces": [
+    {
+      "id": "n_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 20,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706275225
+    },
+    {
+      "id": "n_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 20,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706275946
+    },
+    {
+      "id": "n_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 20,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706276506
+    },
+    {
+      "id": "n_grid",
+      "label": "Media Parrilla",
+      "type": "straight",
+      "length": 20,
+      "subtype": "starting_grid",
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706278764
+    },
+    {
+      "id": "n_pit_in",
+      "label": "Entrada Pit",
+      "type": "pit_entry",
+      "length": 40,
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771706289425
+    },
+    {
+      "id": "n_pit_box_x",
+      "label": "Boxes + Cambio X",
+      "type": "straight",
+      "length": 40,
+      "subtype": "pit_parallel_double_x",
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771706292431
+    },
+    {
+      "id": "n_pit_straight",
+      "label": "Recta Pit",
+      "type": "straight",
+      "length": 40,
+      "subtype": "pit_parallel_black",
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771706297807
+    },
+    {
+      "id": "n_pit_out",
+      "label": "Salida Pit",
+      "type": "pit_exit",
+      "length": 40,
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771706299736
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706307205
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706308790
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706312540
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706313056
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706313494
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706313968
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706318202
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706318722
+    },
+    {
+      "id": "n_ch_l",
+      "label": "Cambio Izq",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_left",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771706322875
+    },
+    {
+      "id": "n_ch_r",
+      "label": "Cambio Der",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_right",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771706323657
+    },
+    {
+      "id": "n_ch_l",
+      "label": "Cambio Izq",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_left",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771706325922
+    },
+    {
+      "id": "n_ch_r",
+      "label": "Cambio Der",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_right",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771706326578
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706332662
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706333675
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706336109
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706341947
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706342259
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706342527
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771706342779
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771706345711
+    }
+  ],
+  "circuitOrigin": {
+    "x": 0,
+    "y": 0
+  },
+  "boardPoints": [],
+  "boardClosed": false
+}

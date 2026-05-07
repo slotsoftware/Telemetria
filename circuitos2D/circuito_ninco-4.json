@@ -1,0 +1,205 @@
+{
+  "version": "1.0",
+  "date": "2026-02-19T18:41:04.892Z",
+  "brand": "NINCO",
+  "pieces": [
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771526409435
+    },
+    {
+      "id": "n_ch_r",
+      "label": "Cambio Der",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_right",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771526413282
+    },
+    {
+      "id": "n_ch_l",
+      "label": "Cambio Izq",
+      "type": "straight",
+      "length": 40,
+      "subtype": "change_left",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771526413839
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771526422096
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526426257
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526426848
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526427134
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526427367
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771526430636
+    },
+    {
+      "id": "n_pit_in",
+      "label": "Entrada Pit",
+      "type": "pit_entry",
+      "length": 40,
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771526433948
+    },
+    {
+      "id": "n_pit_box_x",
+      "label": "Boxes + Cambio X",
+      "type": "straight",
+      "length": 40,
+      "subtype": "pit_parallel_double_x",
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771526434935
+    },
+    {
+      "id": "n_pit_out",
+      "label": "Salida Pit",
+      "type": "pit_exit",
+      "length": 40,
+      "cat": "Boxes",
+      "direction": "left",
+      "uid": 1771526437600
+    },
+    {
+      "id": "n_console",
+      "label": "Centralita",
+      "type": "straight",
+      "length": 20,
+      "subtype": "digital_console",
+      "cat": "Digital",
+      "direction": "left",
+      "uid": 1771526445771
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771526448561
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526454196
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526454383
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526455176
+    },
+    {
+      "id": "n_r1",
+      "label": "R1 (Int)",
+      "type": "curve",
+      "radius": 20,
+      "angle": 45,
+      "cat": "Curvas",
+      "direction": "left",
+      "uid": 1771526455768
+    },
+    {
+      "id": "n_40",
+      "label": "Recta 40cm",
+      "type": "straight",
+      "length": 40,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771526458568
+    },
+    {
+      "id": "n_20",
+      "label": "Media 20cm",
+      "type": "straight",
+      "length": 20,
+      "cat": "Rectas",
+      "direction": "left",
+      "uid": 1771526460438
+    }
+  ],
+  "circuitOrigin": {
+    "x": 0,
+    "y": 0
+  },
+  "boardPoints": [],
+  "boardClosed": false
+}
