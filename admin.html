@@ -127,7 +127,7 @@
             <h3 class="text-xs font-bold text-emerald-300 uppercase mb-4">Licencias Generadas</h3>
             <div class="overflow-x-auto">
                 <table class="history-table">
-                    <thead><tr><th>EMAIL</th><th>CÓDIGO</th><th>ESTADO</th></tr></thead>
+                    <thead><tr><th>EMAIL</th><th>CÓDIGO</th><th>ESTADO</th><th></th></tr></thead>
                     <tbody id="history-body"></tbody>
                 </table>
             </div>
@@ -135,6 +135,18 @@
         
         <div class="text-center pt-4 pb-6">
              <button onclick="logout()" class="text-emerald-500 hover:text-white text-xs transition"><i class="fas fa-power-off mr-1"></i> Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE BORRADO -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-green-950/90 z-[100] flex flex-col items-center justify-center p-4">
+        <div class="glass p-6 rounded-xl border border-red-500/50 w-full max-w-sm text-center shadow-2xl">
+            <i class="fas fa-trash-alt text-4xl text-red-400 mb-4"></i>
+            <p class="text-white text-sm mb-6">¿Estás seguro de que deseas eliminar permanentemente esta licencia?</p>
+            <div class="flex gap-2">
+                <button onclick="closeConfirmModal()" class="w-1/2 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-lg transition">CANCELAR</button>
+                <button onclick="executeDelete()" class="w-1/2 bg-red-700 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition border border-red-500 shadow-lg shadow-red-900/50">ELIMINAR</button>
+            </div>
         </div>
     </div>
 
@@ -163,7 +175,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // Función personalizada para alertas
@@ -177,7 +189,7 @@
         const APP_ID = "app_tracks";
         
         // URL PARA EL CORREO
-        const CLIENT_URL = "https://slotcarhome-star.github.io/Circuitos3d/index.html"; 
+        const CLIENT_URL = "https://slotsoftware.github.io/Telemetria/index.html"; 
 
         const firebaseConfig = {
           apiKey: "AIzaSyDW-2Yc4kvZJYbNOVeesPZWdRThYe0noUI",
@@ -214,7 +226,7 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('main-panel').classList.remove('hidden');
                 
-                // Cargar ambas cosas al entrar (Igual que en KronoDual)
+                // Cargar ambas cosas al entrar
                 initStats();
                 loadHistory();
             } else {
@@ -223,6 +235,30 @@
         }
         window.logout = function() { location.reload(); }
         window.closePreview = function() { document.getElementById('preview-modal').classList.add('hidden'); }
+
+        // --- SISTEMA DE BORRADO ---
+        let docToDelete = null;
+        window.promptDelete = function(id) {
+            docToDelete = id;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+        
+        window.closeConfirmModal = function() {
+            docToDelete = null;
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+        
+        window.executeDelete = async function() {
+            if(!docToDelete) return;
+            try {
+                const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes', docToDelete);
+                await deleteDoc(docRef);
+                closeConfirmModal();
+            } catch (error) {
+                console.error("Error borrando:", error);
+                showAlert("No se pudo eliminar la licencia: " + error.message);
+            }
+        }
 
         // --- VISTA PREVIA CORREOS ---
         window.previewPaymentEmail = function() {
@@ -248,7 +284,7 @@
 
         // --- BASE DE DATOS ---
         
-        // 1. Contador de interesados corregido (Añadido 'general')
+        // 1. Contador de interesados corregido
         function initStats() {
             try {
                 onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'stats', 'general'), (docSnap) => {
@@ -266,7 +302,7 @@
             }
         }
 
-        // 2. Historial de licencias añadido (Igual que en KronoDual)
+        // 2. Historial de licencias añadido
         function loadHistory() {
             try {
                 onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes'), (snap) => {
@@ -278,6 +314,11 @@
                             <td>${data.email}</td>
                             <td class="font-mono text-emerald-400 font-bold">${data.code}</td>
                             <td>${data.current_session ? 'Activo' : '-'}</td>
+                            <td class="text-right">
+                                <button onclick="promptDelete('${d.id}')" class="text-red-400 hover:text-red-300 transition" title="Borrar licencia">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
                         </tr>`;
                     });
                 });
