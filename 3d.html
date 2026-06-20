@@ -130,6 +130,13 @@
             if(ls && ed) { ls.style.zIndex="10000"; ls.style.display="flex"; ls.style.opacity="1"; ed.style.display="block"; ed.innerHTML=`<strong>Error Detectado:</strong><br>${msg}<br><small>Línea: ${line}</small>`; }
             return false;
         };
+
+        // Suppress Babel 500KB deoptimization warning
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            if (typeof args[0] === 'string' && args[0].includes('deoptimised the styling of')) return;
+            originalConsoleError.apply(console, args);
+        };
     </script>
 
     <script type="text/babel" data-presets="react,env">
@@ -141,7 +148,8 @@
           SCX_ANALOG: { name: 'SCALEXTRIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#050505', railColor: '#d0d0d0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
           SCX_ADVANCE: { name: 'SCX ADVANCE', themeColor: 'blue', neonColor: '#3b82f6', uiClass: 'border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:bg-blue-950/30', activeClass: 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] border-blue-400 font-bold', trackColor: '#666666', railColor: '#d0d0d0', slotColor: '#1a1a1a', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
           POLICAR: { name: 'POLICAR', themeColor: 'orange', neonColor: '#f97316', uiClass: 'border-orange-500/50 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:bg-orange-950/30', activeClass: 'bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] border-orange-500 font-bold', trackColor: '#050505', railColor: '#dcdcdc', slotColor: '#000000', width: 17.9, laneSpacing: 9.0, connectionBoxColor: '#333' },
-          SCALEAUTO: { name: 'SCALEAUTO', themeColor: 'lime', neonColor: '#84cc16', uiClass: 'border-lime-500/50 text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.3)] hover:bg-lime-950/30', activeClass: 'bg-lime-500 text-black shadow-[0_0_20px_rgba(132,204,22,0.6)] border-lime-400 font-bold', trackColor: '#6b6b6b', railColor: '#e0e0e0', slotColor: '#111111', width: 20.0, laneSpacing: 10.0, connectionBoxColor: '#9ca3af' }
+          SCALEAUTO: { name: 'SCALEAUTO', themeColor: 'lime', neonColor: '#84cc16', uiClass: 'border-lime-500/50 text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.3)] hover:bg-lime-950/30', activeClass: 'bg-lime-500 text-black shadow-[0_0_20px_rgba(132,204,22,0.6)] border-lime-400 font-bold', trackColor: '#6b6b6b', railColor: '#e0e0e0', slotColor: '#111111', width: 20.0, laneSpacing: 10.0, connectionBoxColor: '#9ca3af' },
+          ADAPTER: { trackColor: '#2a2a2a' }
         };
 
         const IconWrapper = ({ name, size = 24, className, ...props }) => {
@@ -3578,6 +3586,8 @@
                 let spherical = new THREE.Spherical(250, Math.PI/3, Math.PI/4);
                 let carMeshes = []; pieceMapRef.current = []; let cameraTarget = new THREE.Vector3(0, 0, 0);
                 const brandData = TRACK_DEFINITIONS[circuitData.brand] || TRACK_DEFINITIONS.NINCO, laneSpacing = brandData.laneSpacing || 9.0, trackWidth = brandData.width || 18.0;
+                let currentLaneSpacing = laneSpacing;
+                let currentTrackWidth = trackWidth;
                 
                 const onResize = () => { if (camera && renderer) { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); } };
                 
@@ -3865,34 +3875,82 @@
                     scene.add(dl);
                     
                     // Cálculo de Ancho de Asfalto y Offsets Dinámicos
+                    const globalBrandData = TRACK_DEFINITIONS[circuitData.brand] || TRACK_DEFINITIONS.NINCO;
+                    let currentLaneSpacing = globalBrandData.laneSpacing || 9.0;
+                    let currentTrackWidth = globalBrandData.width || 18.0;
+                    let currentBrandKey = circuitData.brand || 'NINCO';
+
                     let currentOffsets = [];
                     let stdHalfL, stdHalfR;
 
                     if (hasGroups) {
-                        // El master spine asume ser el bucle interior, expandimos el resto geométricamente a su lado
                         for (let i = 0; i < numLanes; i++) {
                             const pairIndex = Math.floor(i / 2);
                             const isRightLane = i % 2 === 1;
-                            const localOffset = isRightLane ? (laneSpacing / 2) : (-laneSpacing / 2);
-                            // Desplazamos las parejas de carriles hacia el exterior un ancho de pista entero
-                            currentOffsets.push(localOffset + (pairIndex * trackWidth));
+                            const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
+                            currentOffsets.push(localOffset + (pairIndex * currentTrackWidth));
                         }
-                        stdHalfL = trackWidth / 2;
-                        stdHalfR = ((numLanes / 2) - 1) * trackWidth + (trackWidth / 2);
+                        stdHalfL = currentTrackWidth / 2;
+                        stdHalfR = ((numLanes / 2) - 1) * currentTrackWidth + (currentTrackWidth / 2);
                     } else {
-                        // Centrado normal para pistas creadas nativamente con n-carriles
                         for(let i=0; i<numLanes; i++) {
-                            currentOffsets.push((i - (numLanes - 1) / 2) * laneSpacing);
+                            currentOffsets.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
                         }
-                        const borderWidth = (trackWidth - laneSpacing) / 2;
-                        const halfAsphalt = ((numLanes - 1) * laneSpacing) / 2 + Math.max(4.5, borderWidth);
+                        const borderWidth = (currentTrackWidth - currentLaneSpacing) / 2;
+                        const halfAsphalt = ((numLanes - 1) * currentLaneSpacing) / 2 + Math.max(4.5, borderWidth);
                         stdHalfL = halfAsphalt;
                         stdHalfR = halfAsphalt;
                     }
                     
-                    const asphaltTexture = createAsphaltTexture(renderer, brandData.trackColor), trackGroup = new THREE.Group(), pitCenterDist = (laneSpacing / 2) + laneSpacing, pitOuterEdge = pitCenterDist + (trackWidth / 2 + 1) / 2; 
-                    const asphaltVerts = [], asphaltIndices = [], asphaltUVs = [], asphaltDists = [], asphaltAngles = []; let aspVertCount = 0; 
-                    const addAsphaltSlice = (cx, cz, ang, lW, rW, dist) => { const px = Math.cos(ang + Math.PI/2), pz = Math.sin(ang + Math.PI/2); asphaltVerts.push(cx - px * lW, 0, cz - pz * lW, cx + px * rW, 0, cz + pz * rW); const v = dist * 0.2; asphaltUVs.push(0, v, 1, v); if (aspVertCount > 0) { const b = (aspVertCount-1)*2; asphaltIndices.push(b, b+2, b+1, b+1, b+2, b+3); } asphaltDists.push(dist); asphaltAngles.push(ang); aspVertCount++; };
+                    const trackGroup = new THREE.Group(); 
+                    
+                    // GESTIÓN MULTI-TEXTURAS PARA ADAPTADORES DE MARCA
+                    const asphaltGeometries = [];
+                    let currentGeoData = null;
+                    const brandTextures = {};
+
+                    const startNewAsphaltSegment = (brand) => {
+                        if (!brandTextures[brand]) {
+                            brandTextures[brand] = createAsphaltTexture(renderer, (TRACK_DEFINITIONS[brand] || TRACK_DEFINITIONS.NINCO).trackColor);
+                        }
+                        currentGeoData = {
+                            brand: brand,
+                            verts: [], indices: [], uvs: [],
+                            count: 0,
+                            texture: brandTextures[brand]
+                        };
+                        asphaltGeometries.push(currentGeoData);
+                    };
+
+                    const asphaltVerts = [], asphaltDists = [], asphaltVertRefs = []; let aspVertCount = 0; 
+                    
+                    const addAsphaltSlice = (cx, cz, ang, lW, rW, dist, brand) => { 
+                        if (!currentGeoData || currentGeoData.brand !== brand) {
+                            startNewAsphaltSegment(brand);
+                        }
+                        const geoData = currentGeoData;
+                        const px = Math.cos(ang + Math.PI/2), pz = Math.sin(ang + Math.PI/2); 
+                        const vxL = cx - px * lW, vzL = cz - pz * lW;
+                        const vxR = cx + px * rW, vzR = cz + pz * rW;
+                        
+                        // Guardar la referencia al array fragmentado para sincronizar los puentes
+                        asphaltVertRefs.push({ geoData: geoData, index: geoData.count * 6 });
+                        
+                        geoData.verts.push(vxL, 0, vzL, vxR, 0, vzR); 
+                        
+                        // Array global para cálculo matricial (Laplacian smoothing, túneles, etc)
+                        asphaltVerts.push(vxL, 0, vzL, vxR, 0, vzR);
+                        asphaltDists.push(dist);
+
+                        const v = dist * 0.2; 
+                        geoData.uvs.push(0, v, 1, v); 
+                        if (geoData.count > 0) { 
+                            const b = (geoData.count-1)*2; 
+                            geoData.indices.push(b, b+2, b+1, b+1, b+2, b+3); 
+                        } 
+                        geoData.count++; 
+                        aspVertCount++; 
+                    };
                     
                     let curX = 0, curZ = 0, curAngle = 0;
 
@@ -3905,7 +3963,8 @@
                         if (po !== null) rails.pit.push(new THREE.Vector3(x + px * po, 0.2, z + pz * po)); else rails.pit.push(null); 
                         if (di > 0) { accumulatedDist += di; vertexDistances.push(accumulatedDist); } 
                     };
-                    addRailPoint(0,0,0, currentOffsets, null, 0); addAsphaltSlice(0,0,0, stdHalfL, stdHalfR, 0); 
+                    addRailPoint(0,0,0, currentOffsets, null, 0); 
+                    addAsphaltSlice(0,0,0, stdHalfL, stdHalfR, 0, currentBrandKey); 
                     
                     const easeSine = (t) => (1 - Math.cos(t * Math.PI)) / 2;
                     const cubicBezier = (p0, p1, p2, p3, t) => { const u = 1 - t; return (u*u*u * p0) + (3*u*u*t * p1) + (3*u*t*t * p2) + (t*t*t * p3); };
@@ -3937,7 +3996,7 @@
                             const entryRailX = startX + Math.cos(startAngle + Math.PI/2) * -laneOffVal;
                             const entryRailZ = startZ + Math.sin(startAngle + Math.PI/2) * -laneOffVal;
                             loopRailPoints.push(new THREE.Vector3(entryRailX, 0.2, entryRailZ));
-                            addAsphaltSlice(entryRailX, entryRailZ, startAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + 0.01);
+                            addAsphaltSlice(entryRailX, entryRailZ, startAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + 0.01, currentBrandKey);
 
                             // 1. TRAMO RECTO DE IDA (Solo carril derecho)
                             for (let i = 1; i <= straightSteps; i++) {
@@ -3945,7 +4004,7 @@
                                 const railX = startX + Math.cos(startAngle) * dist + Math.cos(startAngle + Math.PI/2) * -laneOffVal;
                                 const railZ = startZ + Math.sin(startAngle) * dist + Math.sin(startAngle + Math.PI/2) * -laneOffVal;
                                 loopRailPoints.push(new THREE.Vector3(railX, 0.2, railZ));
-                                addAsphaltSlice(railX, railZ, startAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + dist);
+                                addAsphaltSlice(railX, railZ, startAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + dist, currentBrandKey);
                             }
                             
                             const straightEndX = startX + straightLen * Math.cos(startAngle); 
@@ -3982,7 +4041,7 @@
                                 const worldAngle = startAngle + localAngle;
                                 
                                 loopRailPoints.push(new THREE.Vector3(worldX, 0.2, worldZ)); 
-                                addAsphaltSlice(worldX, worldZ, worldAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + straightLen + (i * loopStepDist));
+                                addAsphaltSlice(worldX, worldZ, worldAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + straightLen + (i * loopStepDist), currentBrandKey);
                             }
                             
                             // 3. TRAMO RECTO DE VUELTA (Retrocediendo por el carril izquierdo)
@@ -3992,7 +4051,7 @@
                                 const railX = startX + Math.cos(startAngle) * travel + Math.cos(startAngle + Math.PI/2) * laneOffVal;
                                 const railZ = startZ + Math.sin(startAngle) * travel + Math.sin(startAngle + Math.PI/2) * laneOffVal;
                                 loopRailPoints.push(new THREE.Vector3(railX, 0.2, railZ));
-                                addAsphaltSlice(railX, railZ, startAngle + Math.PI, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + straightLen + teardropLen + dist);
+                                addAsphaltSlice(railX, railZ, startAngle + Math.PI, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + straightLen + teardropLen + dist, currentBrandKey);
                             }
                             
                             rails.changes.push({ points: loopRailPoints, refIdx: rotVertexIndex, count: loopRailPoints.length, isRotonda: true });
@@ -4002,7 +4061,7 @@
                             vertexDistances.push(accumulatedDist); 
                             
                             // TRANSICIÓN DE SALIDA: Cierre de asfalto ancho completo para empalmar limpio con la siguiente pista
-                            addAsphaltSlice(curX, curZ, curAngle, stdHalfL, stdHalfR, accumulatedDist + 0.01);
+                            addAsphaltSlice(curX, curZ, curAngle, stdHalfL, stdHalfR, accumulatedDist + 0.01, currentBrandKey);
 
                             pieceMapRef.current.push({ index: index, distStart: accumulatedDist - totalPieceLen, distEnd: accumulatedDist, type: p.type, subtype: p.subtype, invert: p.invert, elevation: p.elevation || 0 });
                             return; 
@@ -4017,6 +4076,18 @@
                         const stepAngle = totalSweep / steps;
                         let stepPhysDist = stepLen; if (p.type === 'curve') stepPhysDist = (2 * Math.PI * p.radius) * (Math.abs(p.angle) / 360) / steps;
                         
+                        let brandChanged = false;
+                        if (p.brandKey && p.brandKey !== currentBrandKey) {
+                            currentBrandKey = p.brandKey;
+                            brandChanged = true;
+                        }
+                        
+                        let pieceBrand = (p.subtype && p.subtype.includes('adapter')) ? 'ADAPTER' : currentBrandKey;
+                        let brandChangedLocal = false;
+                        if (currentGeoData && currentGeoData.brand !== pieceBrand) {
+                            brandChangedLocal = true;
+                        }
+
                         const isCrossing = p.subtype === 'crossing';
                         const isPitEntry = p.type === 'pit_entry' || p.subtype === 'pit_entry';
                         const isPitExit = p.type === 'pit_exit' || p.subtype === 'pit_exit';
@@ -4027,8 +4098,62 @@
                         
                         let sL = [...currentOffsets];
                         let tL = [...currentOffsets];
+                        let startHalfL = stdHalfL, startHalfR = stdHalfR;
+                        let endHalfL = stdHalfL, endHalfR = stdHalfR;
 
-                        if (isCrossing) { tL.reverse(); currentOffsets = [...tL]; } 
+                        if (p.subtype && p.subtype.includes('adapter')) {
+                            let wIn = p.widthIn || currentTrackWidth;
+                            let wOut = p.widthOut || currentTrackWidth;
+                            let lsIn = p.laneSpacingIn || currentLaneSpacing;
+                            let lsOut = p.laneSpacingOut || currentLaneSpacing;
+                            if (p.invert) {
+                                let tw = wIn; wIn = wOut; wOut = tw;
+                                let tl = lsIn; lsIn = lsOut; lsOut = tl;
+                            }
+                            
+                            const calcHalfWidth = (trackW, laneS) => {
+                                if (hasGroups) {
+                                    return { l: trackW / 2, r: ((numLanes / 2) - 1) * trackW + (trackW / 2) };
+                                } else {
+                                    const bWidth = (trackW - laneS) / 2;
+                                    const hAsphalt = ((numLanes - 1) * laneS) / 2 + Math.max(4.5, bWidth);
+                                    return { l: hAsphalt, r: hAsphalt };
+                                }
+                            };
+
+                            const wInHalf = calcHalfWidth(wIn, lsIn);
+                            const wOutHalf = calcHalfWidth(wOut, lsOut);
+
+                            startHalfL = wInHalf.l; startHalfR = wInHalf.r;
+                            endHalfL = wOutHalf.l; endHalfR = wOutHalf.r;
+                            
+                            currentLaneSpacing = lsOut;
+                            currentTrackWidth = wOut;
+
+                            tL = [];
+                            if (hasGroups) {
+                                for (let i = 0; i < numLanes; i++) {
+                                    const pairIndex = Math.floor(i / 2);
+                                    const isRightLane = i % 2 === 1;
+                                    const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
+                                    tL.push(localOffset + (pairIndex * currentTrackWidth));
+                                }
+                                endHalfL = currentTrackWidth / 2;
+                                endHalfR = ((numLanes / 2) - 1) * currentTrackWidth + (currentTrackWidth / 2);
+                            } else {
+                                for(let i=0; i<numLanes; i++) {
+                                    tL.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
+                                }
+                                const borderWidth = (currentTrackWidth - currentLaneSpacing) / 2;
+                                const halfAsphalt = ((numLanes - 1) * currentLaneSpacing) / 2 + Math.max(4.5, borderWidth);
+                                endHalfL = halfAsphalt;
+                                endHalfR = halfAsphalt;
+                            }
+                            stdHalfL = endHalfL;
+                            stdHalfR = endHalfR;
+                            currentOffsets = [...tL];
+                        }
+                        else if (isCrossing) { tL.reverse(); currentOffsets = [...tL]; } 
                         else if (isChicaneEntry) { tL = sL.map(off => off * 0.2); currentOffsets = [...tL]; } 
                         else if (isChicaneExit) { 
                             let standardOffsets = [];
@@ -4036,12 +4161,12 @@
                                 for (let i = 0; i < numLanes; i++) {
                                     const pairIndex = Math.floor(i / 2);
                                     const isRightLane = i % 2 === 1;
-                                    const localOffset = isRightLane ? (laneSpacing / 2) : (-laneSpacing / 2);
-                                    standardOffsets.push(localOffset + (pairIndex * trackWidth));
+                                    const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
+                                    standardOffsets.push(localOffset + (pairIndex * currentTrackWidth));
                                 }
                             } else {
                                 for(let i=0; i<numLanes; i++) {
-                                    standardOffsets.push((i - (numLanes - 1) / 2) * laneSpacing);
+                                    standardOffsets.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
                                 }
                             }
                             
@@ -4064,26 +4189,34 @@
                             if (p.subtype !== 'change_right') d21.push(new THREE.Vector3(dStartX + perpX * sL[1], 0.2, dStartZ + perpZ * sL[1]));
                         }
 
+                        // Cerrar hueco visual al cambiar de marca o adaptador
+                        if (brandChangedLocal) {
+                            addAsphaltSlice(curX, curZ, curAngle, startHalfL, startHalfR, accumulatedDist, pieceBrand);
+                        }
+
                         for (let i = 1; i <= steps; i++) {
                             const t = i / steps; if (p.type === 'curve') { const r = p.radius, chordLen = 2 * r * Math.sin(Math.abs(stepAngle)/2), chordDir = curAngle + stepAngle/2; curX += chordLen * Math.cos(chordDir); curZ += chordLen * Math.sin(chordDir); curAngle += stepAngle; } else { curX += stepLen * Math.cos(curAngle); curZ += stepLen * Math.sin(curAngle); }
-                            let mixT = (isCrossing || isChicaneEntry || isChicaneExit) ? easeSine(t) : t; 
+                            let mixT = (isCrossing || isChicaneEntry || isChicaneExit || (p.subtype && p.subtype.includes('adapter'))) ? easeSine(t) : t; 
                             
                             let cL = [];
                             for(let j=0; j<numLanes; j++) {
                                 cL.push(sL[j] + (tL[j] - sL[j]) * mixT);
                             }
 
-                            let cPit = null, cTWL = stdHalfL, cTWR = stdHalfR;
-                            if (isPitEntry) { const sp = pitDir * (laneSpacing/2), ep = pitDir * pitCenterDist, e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = stdHalfR + (pitOuterEdge-stdHalfR)*e; else cTWL = stdHalfL + (pitOuterEdge-stdHalfL)*e; }
-                            else if (isPitExit) { const sp = pitDir * pitCenterDist, ep = pitDir * (laneSpacing/2), e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = pitOuterEdge - (pitOuterEdge-stdHalfR)*e; else cTWL = pitOuterEdge - (pitOuterEdge-stdHalfL)*e; }
-                            else if (p.subtype && p.subtype.includes('pit_parallel')) { cPit = pitDir * pitCenterDist; if(pitSide==='right') cTWR = pitOuterEdge; else cTWL = pitOuterEdge; }
+                            const pcd = (currentLaneSpacing / 2) + currentLaneSpacing;
+                            const poe = pcd + (currentTrackWidth / 2 + 1) / 2;
+                            let cPit = null, cTWL = startHalfL + (endHalfL - startHalfL)*mixT, cTWR = startHalfR + (endHalfR - startHalfR)*mixT;
+                            
+                            if (isPitEntry) { const sp = pitDir * (currentLaneSpacing/2), ep = pitDir * pcd, e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = endHalfR + (poe-endHalfR)*e; else cTWL = endHalfL + (poe-endHalfL)*e; }
+                            else if (isPitExit) { const sp = pitDir * pcd, ep = pitDir * (currentLaneSpacing/2), e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = poe - (poe-endHalfR)*e; else cTWL = poe - (poe-endHalfL)*e; }
+                            else if (p.subtype && p.subtype.includes('pit_parallel')) { cPit = pitDir * pcd; if(pitSide==='right') cTWR = poe; else cTWL = poe; }
                             
                             let curL_Vis = [...cL];
                             if (p.subtype === 'single_lane_1') { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); cTWR = 0; }
                             if (p.subtype === 'single_lane_2') { curL_Vis = curL_Vis.map((v, idx) => idx === 1 ? v : null); cTWL = 0; }
 
                             addRailPoint(curX, curZ, curAngle, curL_Vis, cPit, stepPhysDist); 
-                            addAsphaltSlice(curX, curZ, curAngle, cTWL, cTWR, accumulatedDist);
+                            addAsphaltSlice(curX, curZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
                             
                             if (['digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype) && numLanes >= 2) { 
                                 const ct = easeSine(t), o12 = sL[0] + (sL[1]-sL[0])*ct, o21 = sL[1] + (sL[0]-sL[1])*ct, px = Math.cos(curAngle+Math.PI/2), pz = Math.sin(curAngle+Math.PI/2); 
@@ -4520,6 +4653,13 @@
                         }
                     }
 
+                    // SINCRONIZAR LAS ALTURAS SUAVIZADAS A LAS GEOMETRÍAS FRAGMENTADAS POR MARCA
+                    for (let s = 0; s < aspVertCount; s++) {
+                        const ref = asphaltVertRefs[s];
+                        ref.geoData.verts[ref.index + 1] = asphaltVerts[s * 6 + 1];
+                        ref.geoData.verts[ref.index + 4] = asphaltVerts[s * 6 + 4];
+                    }
+
                     // --- AUTO-GENERACIÓN DE MUROS REALISTAS Y TÚNELES (SUSTITUYE A LOS PILARES) ---
                     const wallVerts = []; const wallIndices = []; const wallUVs = [];
                     const bottomVerts = []; const bottomIndices = []; const bottomUVs = [];
@@ -4826,15 +4966,26 @@
                     };
                     const createMultiSegmentRailMesh = (points, color, width=0.6) => { let currentSegment = []; for (let p of points) { if (p === null) { if (currentSegment.length > 1) createRailMesh(currentSegment, color, width); currentSegment = []; } else { currentSegment.push(p); } } if (currentSegment.length > 1) createRailMesh(currentSegment, color, width); };
 
-                    const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(asphaltVerts, 3)); ag.setAttribute('uv', new THREE.Float32BufferAttribute(asphaltUVs, 2)); ag.setIndex(asphaltIndices); ag.computeVertexNormals(); 
-                    
-                    // OPTIMIZACIÓN MATERIALES: Lambert es extremadamente rápido para calcular luz comparado con Standard
-                    const am = new THREE.Mesh(ag, new THREE.MeshLambertMaterial({ 
-                        map: asphaltTexture, 
-                        side: THREE.DoubleSide,
-                        color: 0xcccccc 
-                    })); 
-                    am.receiveShadow = true; am.castShadow = true; trackGroup.add(am);
+                    // CONSTRUIMOS Y AÑADIMOS UNA MALLA POR CADA SEGMENTO CREADO
+                    asphaltGeometries.forEach(geoData => {
+                        if (geoData.verts.length === 0) return;
+
+                        const geo = new THREE.BufferGeometry();
+                        geo.setAttribute('position', new THREE.Float32BufferAttribute(geoData.verts, 3));
+                        geo.setAttribute('uv', new THREE.Float32BufferAttribute(geoData.uvs, 2));
+                        geo.setIndex(geoData.indices);
+                        geo.computeVertexNormals();
+
+                        const mat = new THREE.MeshLambertMaterial({ 
+                            map: geoData.texture, 
+                            color: 0xcccccc,
+                            side: THREE.DoubleSide
+                        });
+                        const mesh = new THREE.Mesh(geo, mat);
+                        mesh.receiveShadow = true;
+                        mesh.castShadow = true;
+                        trackGroup.add(mesh);
+                    });
                     
                     for(let j=0; j<numLanes; j++) {
                         createMultiSegmentRailMesh(rails.lanes[j], null, 0.7); 
