@@ -520,14 +520,6 @@
                                 else if (nextPiece.subtype === 'chicane_exit') nextPiece.subtype = 'chicane_entry';
                                 if (nextPiece.type === 'pit_entry') nextPiece.type = 'pit_exit';
                                 else if (nextPiece.type === 'pit_exit') nextPiece.type = 'pit_entry';
-                                
-                                // Invertir también la lógica de los adaptadores
-                                if (nextPiece.subtype === 'adapter_ninco_scx') nextPiece.subtype = 'adapter_scx_ninco';
-                                else if (nextPiece.subtype === 'adapter_scx_ninco') nextPiece.subtype = 'adapter_ninco_scx';
-                                else if (nextPiece.subtype === 'adapter_scx_adv') nextPiece.subtype = 'adapter_adv_scx';
-                                else if (nextPiece.subtype === 'adapter_adv_scx') nextPiece.subtype = 'adapter_scx_adv';
-                                else if (nextPiece.subtype === 'adapter_ninco_suk') nextPiece.subtype = 'adapter_suk_ninco';
-                                else if (nextPiece.subtype === 'adapter_suk_ninco') nextPiece.subtype = 'adapter_ninco_suk';
                             }
 
                             nextPiece.invert = false;
@@ -572,53 +564,15 @@
                 finalCompiled.push(...bestChainForLane);
             });
 
-            // 3. EXPANSIÓN DE ADAPTADORES E INYECCIÓN DE COLORES
-            // Dividimos los adaptadores por la mitad y forzamos los colores de cada marca
-            // para que el motor 3D lo dibuje a la perfección sin requerir cambios en él.
-            const adapterBrands = {
-                'adapter_ninco_scx': ['NINCO', 'SCX_ANALOG'],
-                'adapter_scx_ninco': ['SCX_ANALOG', 'NINCO'],
-                'adapter_scx_adv': ['SCX_ANALOG', 'SCX_ADVANCE'],
-                'adapter_adv_scx': ['SCX_ADVANCE', 'SCX_ANALOG'],
-                'adapter_ninco_suk': ['NINCO', 'SCALEXTRIC_UK'],
-                'adapter_suk_ninco': ['SCALEXTRIC_UK', 'NINCO']
-            };
-            
-            let expandedCompiled = [];
-            finalCompiled.forEach(p => {
-                if (p.subtype && adapterBrands[p.subtype]) {
-                    const brands = adapterBrands[p.subtype];
-                    const halfLength = p.length / 2;
-                    
-                    const p1 = { ...p, subtype: undefined, type: 'straight', length: halfLength, brandKey: brands[0] };
-                    const p2 = { ...p, subtype: undefined, type: 'straight', length: halfLength, brandKey: brands[1] };
-                    
-                    p2.x = p1.x + halfLength * Math.cos(p1.rot || 0);
-                    p2.y = p1.y + halfLength * Math.sin(p1.rot || 0);
-                    
-                    const b1 = TRACK_DEFINITIONS[brands[0]];
-                    p1.trackColor = b1.trackColor; p1.railColor = b1.railColor; p1.slotColor = b1.slotColor; p1.width = b1.width; p1.laneSpacing = b1.laneSpacing;
-                    
-                    const b2 = TRACK_DEFINITIONS[brands[1]];
-                    p2.trackColor = b2.trackColor; p2.railColor = b2.railColor; p2.slotColor = b2.slotColor; p2.width = b2.width; p2.laneSpacing = b2.laneSpacing;
-
-                    expandedCompiled.push(p1, p2);
-                } else {
-                    const b = TRACK_DEFINITIONS[p.brandKey] || TRACK_DEFINITIONS['NINCO'];
-                    p.trackColor = b.trackColor; p.railColor = b.railColor; p.slotColor = b.slotColor; p.width = b.width; p.laneSpacing = b.laneSpacing;
-                    expandedCompiled.push(p);
-                }
-            });
-
-            // 4. MAGIA FINAL PARA EL MOTOR 3D:
+            // 3. MAGIA FINAL PARA EL MOTOR 3D:
             // Engañamos al motor 3D reescribiendo los "uid" (DNI de la pista) en estricto orden secuencial.
             // Así el motor cree que se ha construido seguido (como en tu archivo 222.json)
             let fakeTimestamp = Date.now() - 1000000;
-            expandedCompiled.forEach((p, idx) => {
+            finalCompiled.forEach((p, idx) => {
                 p.uid = fakeTimestamp + (idx * 1000) + 0.1234; 
             });
 
-            return expandedCompiled;
+            return finalCompiled;
         };
 
         const DrawEngine2D = {
