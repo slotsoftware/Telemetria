@@ -411,6 +411,14 @@
                     p.id = 'car_r1_60';
                 }
 
+                // SOLUCIÓN CHAPUZA 3D: Fallback para cambios simples de Carrera
+                // El simulador 3D no tiene los modelos de car_ch_l y car_ch_r, dejando huecos de 69cm. 
+                // Forzamos que dibuje la malla del cruce doble (car_x) para parchear el hueco visual,
+                // pero mantenemos el 'subtype' original para que el coche respete el cambio único.
+                if (p.id === 'car_ch_l' || p.id === 'car_ch_r') {
+                    p.id = 'car_x';
+                }
+
                 const laneId = p.lane || 0;
                 if (!lanes[laneId]) lanes[laneId] = [];
                 lanes[laneId].push(p);
