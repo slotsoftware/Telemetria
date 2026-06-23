@@ -233,6 +233,8 @@
                 camRace: "CARRERA",
                 camChase: "PERSECUCIÓN",
                 camPilot: "PILOTO",
+                camHood: "CAPÓ",
+                camFront: "FRONTAL",
                 customParts: "PIEZAS CUSTOM:",
                 backup: "BACKUP",
                 restore: "RESTAURAR",
@@ -310,6 +312,8 @@
                 camRace: "RACE",
                 camChase: "CHASE",
                 camPilot: "PILOT",
+                camHood: "HOOD",
+                camFront: "FRONT",
                 customParts: "CUSTOM PARTS:",
                 backup: "BACKUP",
                 restore: "RESTORE",
@@ -501,7 +505,7 @@
             modelRef.current = modelGroup;
 
             const camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 1000); 
-            camera.position.set(0, 2, 4); 
+            camera.position.set(0, 1.5, 3.5); 
             cameraRef.current = camera; 
             
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }); 
@@ -510,7 +514,7 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0)); 
             renderer.outputEncoding = THREE.sRGBEncoding; 
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.8;
+            renderer.toneMappingExposure = 1.2;
             renderer.shadowMap.enabled = true;
             // OPTIMIZACIÓN: Sombras estándar (Mucho más rápidas que las Soft)
             renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -518,11 +522,11 @@
             rendererRef.current = renderer; 
             
             // ELEMENTOS ESTÁTICOS (Nunca se eliminan)
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6); 
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0); 
             hemiLight.userData = { keep: true };
             scene.add(hemiLight); 
             
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2); 
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.0); 
             dirLight.position.set(5, 5, 5); 
             dirLight.castShadow = true; 
             dirLight.shadow.mapSize.width = 1024;
@@ -667,7 +671,7 @@
 
             // 3. Aplicar escala
             const maxDim = Math.max(sizeOriginal.x, sizeOriginal.y, sizeOriginal.z);
-            const scale = maxDim > 0 ? 2.5 / maxDim : 1;
+            const scale = maxDim > 0 ? 3.5 / maxDim : 1;
             model.scale.setScalar(scale);
             model.updateMatrixWorld(true);
 
@@ -742,7 +746,7 @@
         const triggerFileSelect = () => { if (inputRef.current) inputRef.current.click(); }; 
         
         return ( 
-            <div className="w-[300px] h-[320px] bg-[#0f172a] border-2 border-[#39ff14] rounded-xl shadow-[0_0_40px_rgba(57,255,20,0.2)] flex flex-col overflow-hidden animate-in z-50 pointer-events-auto relative">
+            <div className="w-[380px] h-[400px] bg-[#0f172a] border-2 border-[#39ff14] rounded-xl shadow-[0_0_40px_rgba(57,255,20,0.2)] flex flex-col overflow-hidden animate-in z-50 pointer-events-auto relative">
                 <div className="bg-[#39ff14]/10 p-2 flex flex-col border-b border-[#39ff14]/30 gap-1.5 shrink-0">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-1.5 shrink-0"><span className="w-2 h-2 bg-[#39ff14] rounded-full animate-pulse"></span><h3 className="text-[10px] font-black text-white tracking-[0.1em]">{t('garage3d')}</h3></div> 
@@ -858,7 +862,7 @@
                         )}
                     </div>
                 </div> 
-                <div className="flex-1 relative bg-black/50 overflow-hidden" ref={mountRef}> 
+                <div className="flex-1 relative bg-gradient-to-b from-blue-400 to-blue-900 overflow-hidden" ref={mountRef}> 
                     {showCarMenu && <div className="absolute inset-0 z-50 bg-black/20" onClick={() => setShowCarMenu(false)}></div>} 
                     {showFileMenu && <div className="absolute inset-0 z-50 bg-black/20" onClick={() => setShowFileMenu(false)}></div>} 
                     <div className="absolute top-2 left-2 right-2 text-[8px] font-bold font-mono text-[#39ff14] bg-black/80 px-2 py-1 rounded pointer-events-none select-none border border-[#39ff14]/20 text-center z-10 backdrop-blur-sm"> {status} </div>
@@ -1023,7 +1027,7 @@
             return (
                 <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm pointer-events-auto">
                     <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('camera')}</span>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap justify-center gap-1">
                         <button onClick={(e) => { e.stopPropagation(); setMode('race'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'race' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
                             {t('camRace')}
                         </button>
@@ -1032,6 +1036,12 @@
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setMode('pilot'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'pilot' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
                             {t('camPilot')}
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setMode('hood'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'hood' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                            {t('camHood')}
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setMode('front'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'front' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                            {t('camFront')}
                         </button>
                     </div>
                 </div>
@@ -3839,7 +3849,7 @@
                     // --- GENERACIÓN DINÁMICA DE CARRILES (SOPORTA 2, 4, 6, 8... CARRILES) ---
                     const rails = { lanes: Array.from({length: numLanes}, () => []), pit: [], changes: [] }, vertexDistances = [0]; let accumulatedDist = 0;
                     
-                    scene = new THREE.Scene(); scene.background = new THREE.Color(0x3b5f7d); scene.fog = new THREE.Fog(0x3b5f7d, 500, 3000); 
+                    scene = new THREE.Scene(); scene.background = new THREE.Color(0x60a5fa); scene.fog = new THREE.Fog(0x60a5fa, 500, 3000); 
                     
                     const gridHelper = new THREE.GridHelper(10000, 200, 0x39ff14, 0x39ff14);
                     gridHelper.position.y = -0.5; 
@@ -6096,6 +6106,18 @@
                                         const lookTarget = targetPos.clone().add(forward.clone().multiplyScalar(50));
                                         camera.position.lerp(targetPos, 1 - Math.exp(-15 * dt)); 
                                         camera.lookAt(lookTarget);
+                                    } else if (cameraModeRef.current === 'hood') {
+                                        // Cámara en el techo apuntando un poco hacia abajo para ver bien el capó del coche
+                                        const targetPos = worldP1.clone().sub(forward.clone().multiplyScalar(2.0)).add(new THREE.Vector3(0, 5.0, 0));   
+                                        const lookTarget = targetPos.clone().add(forward.clone().multiplyScalar(50)).sub(new THREE.Vector3(0, 2.0, 0));
+                                        camera.position.lerp(targetPos, 1 - Math.exp(-20 * dt)); 
+                                        camera.lookAt(lookTarget);
+                                    } else if (cameraModeRef.current === 'front') {
+                                        // Cámara por delante del coche (Leader cam), mirando hacia atrás para ver el morro
+                                        const targetPos = worldP1.clone().add(forward.clone().multiplyScalar(35.0)).add(new THREE.Vector3(0, 8.0, 0));   
+                                        const lookTarget = worldP1.clone().add(new THREE.Vector3(0, 2.0, 0));
+                                        camera.position.lerp(targetPos, 1 - Math.exp(-15 * dt)); 
+                                        camera.lookAt(lookTarget);
                                     } else if (cameraModeRef.current === 'chase') {
                                         const targetPos = worldP1.clone().sub(forward.clone().multiplyScalar(50)).add(new THREE.Vector3(0, 30, 0));     
                                         camera.position.lerp(targetPos, 1 - Math.exp(-5 * dt)); 
@@ -6307,7 +6329,7 @@
             }, [customCarAssets, sceneReady]); 
 
             return ( 
-                <div className="absolute inset-0 z-50 bg-[#3b5f7d] text-white font-sans overflow-hidden animate-in"> 
+                <div className="absolute inset-0 z-50 bg-[#60a5fa] text-white font-sans overflow-hidden animate-in"> 
                     {/* Contenedor 3D */}
                     <div ref={containerRef} className="absolute inset-0 w-full h-full" /> 
                     
