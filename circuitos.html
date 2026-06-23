@@ -404,9 +404,11 @@
                 } else if (p.subtype === 'digital_arc_curve_in') {
                     // La curva ejecuta dinámicamente el cambio hacia el INTERIOR mientras gira
                     p.subtype = p.direction === 'left' ? 'change_left' : 'change_right';
+                    p.id = 'car_r1_60';
                 } else if (p.subtype === 'digital_arc_curve_out') {
                     // La curva ejecuta dinámicamente el cambio hacia el EXTERIOR mientras gira
                     p.subtype = p.direction === 'left' ? 'change_right' : 'change_left';
+                    p.id = 'car_r1_60';
                 }
 
                 const laneId = p.lane || 0;
@@ -467,7 +469,7 @@
                     let currentChain = [];
 
                     let startIdx = pool.findIndex(p => p.type === 'rotonda' || p.subtype === 'rotonda' || p.subtype === 'rotonda_connect');
-                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid');
+                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid' || p.subtype === 'digital_console');
                     
                     if (startIdx === -1) {
                         startIdx = pool.findIndex(p => {
