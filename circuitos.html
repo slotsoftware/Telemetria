@@ -393,33 +393,20 @@
                 }
 
                 // SANITIZACIÓN PARA 3D: Cambios en Curva de Carrera.
-                // El simulador 3D NO soporta físicas de cambio de carril en tramos curvos.
-                // Al asignarle 'change_left' a una curva, el motor 3D intenta leer su 'length' (como si fuera recta) 
-                // y produce un error matemático (NaN) que colapsa la renderización de TODO el circuito.
-                // Solución: Transformamos la macro completa en una recta y curva normales para el 3D.
+                // A petición del piloto, queremos que el cambio de carril ocurra EN LA CURVA.
+                // Para que el motor 3D no se vuelva loco con el "compound spline" original, 
+                // transformamos la recta de entrada en una recta normal, y le asignamos 
+                // la orden matemática de "cambio de carril" directamente al arco de la curva.
                 if (p.subtype === 'digital_str_curve_in' || p.subtype === 'digital_str_curve_out') {
+                    // La recta previa actúa solo de aproximación (recta estándar 34.5cm)
                     delete p.subtype;
                     p.id = 'car_345'; 
-                    p.cat = 'Rectas';
-                    p.label = 'Recta Std 34.5cm';
-                } else if (p.subtype === 'digital_arc_curve_in' || p.subtype === 'digital_arc_curve_out') {
-                    delete p.subtype; // Eliminamos la orden digital para evitar el crash en el motor 3D
-                    p.id = 'car_r1_60';
-                    p.cat = 'Curvas';
-                    p.label = 'R1 (60°)';
-                }
-
-                // SOLUCIÓN DEFINITIVA PARA CAMBIOS SIMPLES 3D
-                // Comprobado: El simulador 3D actual colapsa con 'change_left' o 'change_right' porque carece de los modelos 3D individuales.
-                // Para que no se rompa ni haga "chapuzas", los transformamos en un Cruce Doble (X) perfecto 
-                // tanto en malla visual como en físicas internas antes de enviarlo al 3D.
-                if (p.type === 'straight' && (p.subtype === 'change_left' || p.subtype === 'change_right')) {
-                    if (p.brandKey === 'CARRERA' || (p.id && p.id.startsWith('car_'))) {
-                        p.id = 'car_x';
-                    } else if (p.brandKey === 'NINCO' || (p.id && p.id.startsWith('n_'))) {
-                        p.id = 'n_x';
-                    }
-                    p.subtype = 'digital_x';
+                } else if (p.subtype === 'digital_arc_curve_in') {
+                    // La curva ejecuta dinámicamente el cambio hacia el INTERIOR mientras gira
+                    p.subtype = p.direction === 'left' ? 'change_left' : 'change_right';
+                } else if (p.subtype === 'digital_arc_curve_out') {
+                    // La curva ejecuta dinámicamente el cambio hacia el EXTERIOR mientras gira
+                    p.subtype = p.direction === 'left' ? 'change_right' : 'change_left';
                 }
 
                 const laneId = p.lane || 0;
@@ -480,7 +467,7 @@
                     let currentChain = [];
 
                     let startIdx = pool.findIndex(p => p.type === 'rotonda' || p.subtype === 'rotonda' || p.subtype === 'rotonda_connect');
-                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid' || p.subtype === 'digital_console');
+                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid');
                     
                     if (startIdx === -1) {
                         startIdx = pool.findIndex(p => {
