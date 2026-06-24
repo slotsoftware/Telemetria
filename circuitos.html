@@ -386,10 +386,6 @@
             rawPieces.forEach(rawP => {
                 const p = JSON.parse(JSON.stringify(rawP));
                 
-                // SANITIZACIÓN: Eliminar propiedades de grupo que confunden al parser del motor 3D
-                delete p.groupId;
-                delete p.isMacro;
-
                 // Mantenemos los subtypes originales para que el motor 3D dibuje las curvas 
                 // digitales exactamente igual que en 2D, sin alterar su comportamiento.
                 if (p.subtype === 'crossing_curve') {
