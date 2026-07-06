@@ -392,23 +392,6 @@
                     p.subtype = 'crossing'; // Adaptamos para que el motor 3D la dibuje sin dejar un hueco y cruce los carriles
                 }
 
-                // SANITIZACIÓN PARA 3D: Cambios en Curva de Carrera.
-                // A petición del piloto, queremos que el cambio de carril ocurra EN LA CURVA.
-                // Para que el motor 3D no se vuelva loco con el "compound spline" original, 
-                // transformamos la recta de entrada en una recta normal, y le asignamos 
-                // la orden matemática de "cambio de carril" directamente al arco de la curva.
-                if (p.subtype === 'digital_str_curve_in' || p.subtype === 'digital_str_curve_out') {
-                    // La recta previa actúa solo de aproximación (recta estándar 34.5cm)
-                    delete p.subtype;
-                    p.id = 'car_345'; 
-                } else if (p.subtype === 'digital_arc_curve_in') {
-                    // La curva ejecuta dinámicamente el cambio hacia el INTERIOR mientras gira
-                    p.subtype = p.direction === 'left' ? 'change_left' : 'change_right';
-                } else if (p.subtype === 'digital_arc_curve_out') {
-                    // La curva ejecuta dinámicamente el cambio hacia el EXTERIOR mientras gira
-                    p.subtype = p.direction === 'left' ? 'change_right' : 'change_left';
-                }
-
                 const laneId = p.lane || 0;
                 if (!lanes[laneId]) lanes[laneId] = [];
                 lanes[laneId].push(p);
@@ -423,7 +406,7 @@
                     origGeos.set(p.uid, getPieceGeometry(p));
                 });
 
-                const findNextPiece = (searchPoint, availablePool) => {
+                const findNextPiece = (searchPoint, availablePool, currentPiece) => {
                     let bestIdx = -1;
                     let bestDist = Infinity;
                     let connectedToIn = true;
@@ -440,18 +423,26 @@
 
                         const isCandRotonda = cand.type === 'rotonda' || cand.subtype === 'rotonda' || cand.subtype === 'rotonda_connect';
 
+                        // Prioridad extrema para piezas del mismo Macro (evita que se separen en cruces de circuitos grandes)
+                        let groupBonus = 0;
+                        if (currentPiece && currentPiece.groupId && cand.groupId === currentPiece.groupId) {
+                            groupBonus = 1000;
+                        }
+
                         // Relajamos distancia de búsqueda (15px), la reconstrucción matemática lo enderezará perfecto
                         if (distIn < 15.0 && angleInDiff < 0.5) {
-                            if (distIn < bestDist) {
-                                bestDist = distIn;
+                            const score = distIn - groupBonus;
+                            if (score < bestDist) {
+                                bestDist = score;
                                 bestIdx = i;
                                 connectedToIn = true;
                             }
                         }
                         
                         if (!isCandRotonda && distOut < 15.0 && angleOutDiff < 0.5) {
-                            if (distOut < bestDist) {
-                                bestDist = distOut;
+                            const score = distOut - groupBonus;
+                            if (score < bestDist) {
+                                bestDist = score;
                                 bestIdx = i;
                                 connectedToIn = false;
                             }
@@ -500,7 +491,7 @@
 
                     let chainContinues = true;
                     while (chainContinues && pool.length > 0) {
-                        const { bestIdx, connectedToIn } = findNextPiece(currentSearchExit, pool);
+                        const { bestIdx, connectedToIn } = findNextPiece(currentSearchExit, pool, currentChain[currentChain.length - 1]);
 
                         if (bestIdx !== -1) {
                             let nextPiece = pool.splice(bestIdx, 1)[0];
@@ -520,7 +511,7 @@
                                 else if (nextPiece.subtype === 'chicane_exit') nextPiece.subtype = 'chicane_entry';
                                 if (nextPiece.type === 'pit_entry') nextPiece.type = 'pit_exit';
                                 else if (nextPiece.type === 'pit_exit') nextPiece.type = 'pit_entry';
-                                
+
                                 // Invertir propiedades de pistas de adaptación para que el motor 3D entienda el cambio de ancho
                                 if (nextPiece.subtype === 'adapter_ninco_scx') nextPiece.subtype = 'adapter_scx_ninco';
                                 else if (nextPiece.subtype === 'adapter_scx_ninco') nextPiece.subtype = 'adapter_ninco_scx';
@@ -585,6 +576,19 @@
             let fakeTimestamp = Date.now() - 1000000;
             finalCompiled.forEach((p, idx) => {
                 p.uid = fakeTimestamp + (idx * 1000) + 0.1234; 
+
+                // SANITIZACIÓN PARA 3D: Cambios en Curva de Carrera.
+                // El motor 3D actual explota (efecto abanico negro) si recibe 'digital_arc_curve_in' 
+                // porque no tiene una malla 3D nativa para curvas con cambio.
+                // La solución más limpia es que el exportador convierta la macro en pistas estándar (recta + curva).
+                // Así el circuito se dibuja perfecto, la geometría no se rompe y los coches pueden correr.
+                if (p.subtype === 'digital_str_curve_in' || p.subtype === 'digital_str_curve_out') {
+                    delete p.subtype;
+                    p.id = 'car_345'; 
+                } else if (p.subtype === 'digital_arc_curve_in' || p.subtype === 'digital_arc_curve_out') {
+                    delete p.subtype;
+                    p.id = 'car_r1_60'; // Se dibuja y comporta como una curva normal perfecta en 3D
+                }
             });
 
             return finalCompiled;
