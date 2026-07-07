@@ -260,6 +260,10 @@
         <i class="fas fa-power-off"></i>
     </button>
 
+    <button onclick="toggleFullScreen()" id="fullscreen-btn" class="hidden fixed bottom-8 left-8 btn-neon w-14 h-14 rounded-2xl shadow-2xl z-[100] flex items-center justify-center text-xl border-2 border-[#39ff14] bg-black">
+        <i id="fullscreen-icon" class="fas fa-expand"></i>
+    </button>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -395,6 +399,7 @@
             document.getElementById('app-frame').src = APP_FILENAME;
             document.getElementById('app-frame').style.display = 'block';
             document.getElementById('logout-btn').classList.remove('hidden');
+            document.getElementById('fullscreen-btn').classList.remove('hidden');
         }
 
         function forceLogout() {
@@ -403,6 +408,7 @@
             localStorage.removeItem('session_' + APP_ID);
             localStorage.removeItem('doc_id_' + APP_ID);
             document.getElementById('app-frame').src = 'about:blank';
+            document.getElementById('fullscreen-btn').classList.add('hidden');
         }
 
         window.logout = function() { 
@@ -420,6 +426,42 @@
             showApp();
             monitorSession(savedDocId);
         } else if (savedUser) window.logout(); 
+
+        window.toggleFullScreen = function() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+
+            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+            if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                if(requestFullScreen) {
+                    requestFullScreen.call(docEl);
+                }
+            }
+            else {
+                if(cancelFullScreen) {
+                    cancelFullScreen.call(doc);
+                }
+            }
+        };
+
+        // Escuchar los cambios de pantalla para actualizar el icono
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+        document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
+        document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
+
+        function updateFullscreenIcon() {
+            const icon = document.getElementById('fullscreen-icon');
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                icon.classList.remove('fa-expand');
+                icon.classList.add('fa-compress');
+            } else {
+                icon.classList.remove('fa-compress');
+                icon.classList.add('fa-expand');
+            }
+        }
     </script>
 </body>
 </html>
