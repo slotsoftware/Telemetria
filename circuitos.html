@@ -382,9 +382,19 @@
             const finalCompiled = [];
             const lanes = {};
             
-            // 1. Clonamos profundamente las piezas para no corromper la memoria de React
+            // 0. ANTI-FANTASMAS: Eliminamos piezas superpuestas en las mismas coordenadas exactas
+            const uniquePiecesMap = new Map();
             rawPieces.forEach(rawP => {
+                if (!rawP) return;
                 const p = JSON.parse(JSON.stringify(rawP));
+                // Clave basada en posición con precisión de 1mm
+                const key = `${Math.round(p.x * 10) / 10}_${Math.round(p.y * 10) / 10}_${Math.round((p.rot || 0) * 10) / 10}_${p.lane || 0}`;
+                // Guardamos la pieza. Si hay un fantasma superpuesto, se sobreescribe, dejando solo 1 pieza real en ese espacio.
+                uniquePiecesMap.set(key, p);
+            });
+            
+            // 1. Clonamos profundamente las piezas para no corromper la memoria de React
+            Array.from(uniquePiecesMap.values()).forEach(p => {
                 
                 // Mantenemos los subtypes originales para que el motor 3D dibuje las curvas 
                 // digitales exactamente igual que en 2D, sin alterar su comportamiento.
@@ -401,6 +411,7 @@
                     // La recta previa actúa solo de aproximación (recta estándar 34.5cm)
                     delete p.subtype;
                     p.id = 'car_345'; 
+                    p.direction = 'left'; // Normalizamos rectas para el 3D
                 } else if (p.subtype === 'digital_arc_curve_in') {
                     // La curva ejecuta dinámicamente el cambio hacia el INTERIOR mientras gira
                     p.subtype = p.direction === 'left' ? 'change_left' : 'change_right';
@@ -408,6 +419,16 @@
                     // La curva ejecuta dinámicamente el cambio hacia el EXTERIOR mientras gira
                     p.subtype = p.direction === 'left' ? 'change_right' : 'change_left';
                 }
+
+                // Limpieza de seguridad: las rectas no giran, forzamos left para evitar cuelgues
+                if (p.type === 'straight' || (p.type && p.type.includes('pit'))) {
+                    p.direction = 'left'; 
+                }
+
+                // SANITIZAR PROPIEDADES EXTRAS (Elimina variables de control 2D que pueden crashear el parser JSON estricto del motor 3D)
+                delete p.groupId;
+                delete p.cat;
+                delete p.brandKey;
 
                 const laneId = p.lane || 0;
                 if (!lanes[laneId]) lanes[laneId] = [];
@@ -467,7 +488,7 @@
                     let currentChain = [];
 
                     let startIdx = pool.findIndex(p => p.type === 'rotonda' || p.subtype === 'rotonda' || p.subtype === 'rotonda_connect');
-                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid');
+                    if (startIdx === -1) startIdx = pool.findIndex(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'starting_grid' || p.subtype === 'digital_console');
                     
                     if (startIdx === -1) {
                         startIdx = pool.findIndex(p => {
