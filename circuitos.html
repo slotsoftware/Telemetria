@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -1707,7 +1707,7 @@
               if (activePointers.current.size === 1) { 
                   lastPointerPos.current = coords; 
                   setIsDragging(true);
-                  if (isCircuitMoveMode) { dragMode.current = 'view'; return; } 
+                  if (isCircuitMoveMode) { dragMode.current = 'moveBoard'; return; } 
 
                   const rawMouse = getRawMouse(coords);
                   
@@ -1850,7 +1850,13 @@
               } 
               
               if (activePointers.current.size === 1) { 
-                  if (dragMode.current === 'view' && e.buttons === 1) { 
+                  if (dragMode.current === 'moveBoard' && e.buttons === 1) {
+                      const dx = (coords.x - lastPointerPos.current.x) / view.scale;
+                      const dy = (coords.y - lastPointerPos.current.y) / view.scale;
+                      if (boardPoints.length > 0) {
+                          setBoardPoints(prev => prev.map(p => ({ x: p.x + dx, y: p.y + dy })));
+                      }
+                  } else if (dragMode.current === 'view' && e.buttons === 1) { 
                       const dx = coords.x - lastPointerPos.current.x; const dy = coords.y - lastPointerPos.current.y;
                       setView(v => ({ ...v, x: v.x + dx, y: v.y + dy })); 
                   } else if (dragGroup) {
