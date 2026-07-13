@@ -840,7 +840,7 @@
                 ctx.setLineDash([]);
             },
             renderTrack: (ctx, pieces, view, activeBrand, selectedPieceIds, dragGroup, imageCache, boardPoints, boardClosed, options = {}) => {
-                const outerBrand = TRACK_DEFINITIONS[activeBrand];
+                const outerBrand = TRACK_DEFINITIONS[activeBrand] || TRACK_DEFINITIONS['NINCO'];
                 const pieceExtents = []; 
 
                 if (boardPoints && boardPoints.length > 0) {
@@ -1412,7 +1412,7 @@
             useEffect(() => {
                 if (!canvasRef.current || !circuit || !circuit.pieces) return;
                 const ctx = canvasRef.current.getContext('2d'); const width = canvasRef.current.width; const height = canvasRef.current.height;
-                ctx.clearRect(0, 0, width, height); const tempView = { x: 0, y: 0, scale: 1.0 }; const brandName = circuit.brand || 'NINCO';
+                ctx.clearRect(0, 0, width, height); const tempView = { x: 0, y: 0, scale: 1.0 }; const brandName = TRACK_DEFINITIONS[circuit.brand] ? circuit.brand : 'NINCO';
                 ctx.save(); ctx.globalAlpha = 0; 
                 const absPieces = migrateToAbsolute(circuit.pieces);
                 const positions = DrawEngine2D.renderTrack(ctx, absPieces, tempView, brandName, [], null, {current: new Map()}, circuit.boardPoints, circuit.boardClosed); ctx.restore();
@@ -1733,7 +1733,7 @@
               ctx.stroke();
 
               const tempView = { x: 0, y: 0, scale: 1.0 }; ctx.save(); ctx.globalAlpha = 0; 
-              const brandName = previewData.brand || 'NINCO';
+              const brandName = TRACK_DEFINITIONS[previewData.brand] ? previewData.brand : 'NINCO';
               const absPieces = migrateToAbsolute(previewData.pieces || []);
               
               const positions = DrawEngine2D.renderTrack(ctx, absPieces, tempView, brandName, [], null, {current: new Map()}, previewData.boardPoints, previewData.boardClosed);
