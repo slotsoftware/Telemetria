@@ -150,8 +150,8 @@
             const [tag, attrs, children = []] = iconData;
             return <svg {...attrs} width={size} height={size} className={className} {...props}>{Array.isArray(children) && children.map(([childTag, childAttrs], index) => React.createElement(childTag, { ...childAttrs, key: index }))}</svg>;
         };
-        const icons = ['Trash2','Image','Fuel','Move','Zap','Bluetooth','RotateCw','RotateCcw','X','Repeat','PenTool','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Square','FolderOpen','Save','FileText','Activity','Play','Pause','Flag','GitCommit','ZoomIn','ZoomOut','Crosshair','Undo2','Redo2','Layers','Clock','Hash','Plus','Minus','AlertTriangle', 'Cloud', 'CloudUpload', 'CloudDownload', 'Settings', 'Battery', 'Scale', 'Trophy', 'Timer', 'Gauge', 'Maximize', 'Minimize', 'User', 'Users', 'ChevronDown', 'Mic', 'MicOff', 'Volume2', 'VolumeX', 'Move3d', 'Video', 'Eye'].reduce((acc, name) => { acc[name] = (p) => <IconWrapper name={name} {...p} />; return acc; }, {});
-        const { Trash2, Image: ImageIcon, Fuel, Move, Zap, Bluetooth, RotateCw, RotateCcw, X, Repeat, PenTool, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Square, FolderOpen, Save, FileText, Activity, Play, Pause, Flag, GitCommit, ZoomIn, ZoomOut, Crosshair, Undo2, Redo2, Layers, Clock, Hash, Plus, Minus, AlertTriangle, Cloud, CloudUpload, CloudDownload, Settings, Battery, Scale, Trophy, Timer, Gauge, Maximize, Minimize, User, Users, ChevronDown, Mic, MicOff, Volume2, VolumeX, Move3d, Video, Eye } = icons;
+        const icons = ['Trash2','Image','Fuel','Move','Zap','Bluetooth','RotateCw','RotateCcw','X','Repeat','PenTool','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Square','FolderOpen','Save','FileText','Activity','Play','Pause','Flag','GitCommit','ZoomIn','ZoomOut','Crosshair','Undo2','Redo2','Layers','Clock','Hash','Plus','Minus','AlertTriangle', 'Cloud', 'CloudUpload', 'CloudDownload', 'Settings', 'Battery', 'Scale', 'Trophy', 'Timer', 'Gauge', 'Maximize', 'Minimize', 'User', 'Users', 'ChevronDown', 'Mic', 'MicOff', 'Volume2', 'VolumeX', 'Move3d', 'Video', 'Eye', 'Tv', 'TreePine'].reduce((acc, name) => { acc[name] = (p) => <IconWrapper name={name} {...p} />; return acc; }, {});
+        const { Trash2, Image: ImageIcon, Fuel, Move, Zap, Bluetooth, RotateCw, RotateCcw, X, Repeat, PenTool, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Square, FolderOpen, Save, FileText, Activity, Play, Pause, Flag, GitCommit, ZoomIn, ZoomOut, Crosshair, Undo2, Redo2, Layers, Clock, Hash, Plus, Minus, AlertTriangle, Cloud, CloudUpload, CloudDownload, Settings, Battery, Scale, Trophy, Timer, Gauge, Maximize, Minimize, User, Users, ChevronDown, Mic, MicOff, Volume2, VolumeX, Move3d, Video, Eye, Tv, TreePine } = icons;
 
         /* --- SISTEMA DE IDIOMAS (NUEVO) --- */
         const TRANSLATIONS = {
@@ -244,7 +244,11 @@
                 save: "GUARDAR",
                 open: "ABRIR",
                 pilotView: "VISTA PILOTO",
-                birdView: "VISTA PÁJARO"
+                birdView: "VISTA PÁJARO",
+                camOrbit: "CÁM. LIBRE",
+                camChase: "CÁM. SEGUIR",
+                camPilot: "CÁM. PILOTO",
+                camTV: "CÁM. TV"
             },
             en: {
                 lobbyTitle: "SELECT SOURCE",
@@ -335,7 +339,11 @@
                 save: "SAVE",
                 open: "OPEN",
                 pilotView: "PILOT VIEW",
-                birdView: "BIRD VIEW"
+                birdView: "BIRD VIEW",
+                camOrbit: "FREE CAM",
+                camChase: "CHASE CAM",
+                camPilot: "PILOT CAM",
+                camTV: "TV CAM"
             }
         };
 
@@ -1531,10 +1539,26 @@
             const [manualThrottle, setManualThrottle] = useState(0);
             const [sceneReady, setSceneReady] = useState(false);
             
+            // --- NUEVO: ESTADO DE BOSQUE ---
+            const [showVegetation, setShowVegetation] = useState(true);
+            const showVegetationRef = useRef(showVegetation);
+            const forestGroupRef = useRef(null);
+
+            useEffect(() => {
+                showVegetationRef.current = showVegetation;
+                if (forestGroupRef.current) {
+                    forestGroupRef.current.visible = showVegetation;
+                }
+            }, [showVegetation]);
+
             // --- NUEVO: ESTADO DE NIVEL IA ---
             const [aiLevel, setAiLevel] = useState(3);
             const aiLevelRef = useRef(aiLevel);
             useEffect(() => { aiLevelRef.current = aiLevel; }, [aiLevel]);
+            
+            const trackSizeRef = useRef(new THREE.Vector3(100, 20, 100));
+            const tvCameraPosRef = useRef(new THREE.Vector3(0, 50, 50));
+            const nextTvSwitchTimeRef = useRef(0);
             
             // --- NUEVAS REF PARA LOCUTORA AVANZADA ---
             const globalBestLapRef = useRef(Infinity);
@@ -2240,6 +2264,7 @@
 
                 const createCar = (id, color) => { const pg = new THREE.Group(), vg = new THREE.Group(); pg.add(vg); const bm = new THREE.MeshLambertMaterial({ color }), bg = new THREE.BoxGeometry(4.5, 1.2, 9), b = new THREE.Mesh(bg, bm); b.position.y = 0.8; b.castShadow = true; vg.add(b); const cg = new THREE.BoxGeometry(3.5, 0.8, 4), cm = new THREE.MeshLambertMaterial({ color: 0x111111 }), c = new THREE.Mesh(cg, cm); c.position.y = 1.8; vg.add(c); const wg = new THREE.CylinderGeometry(1.2, 1.2, 0.8, 16); wg.rotateZ(Math.PI/2); const wm = new THREE.MeshLambertMaterial({ color: 0x222222 }); [[-2.5, 3], [2.5, 3], [-2.5, -3], [2.5, -3]].forEach(p => { const w = new THREE.Mesh(wg, wm); w.position.set(p[0], 1.2, p[1]); vg.add(w); }); return pg; };
                 const createAsphaltTexture = (r, bc) => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const cx = cv.getContext('2d'); cx.fillStyle = bc || '#080808'; cx.fillRect(0, 0, 512, 512); for (let i = 0; i < 30000; i++) { const v = 15 + Math.floor(Math.random() * 30); cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.2)`; cx.fillRect(Math.random() * 512, Math.random() * 512, 1.5, 1.5); } const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; return t; };
+                const createStoneTexture = () => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const cx = cv.getContext('2d'); cx.fillStyle = '#333333'; cx.fillRect(0, 0, 512, 512); const rows = 12; const cols = 6; const bh = 512 / rows; const bw = 512 / cols; for (let r = 0; r < rows; r++) { const offset = (r % 2 === 0) ? 0 : bw / 2; for (let c = -1; c < cols + 1; c++) { const x = c * bw + offset; const y = r * bh; const shade = 70 + Math.random() * 40; cx.fillStyle = `rgb(${shade}, ${shade-5}, ${shade-10})`; cx.fillRect(x + 2, y + 2, bw - 4, bh - 4); for(let i=0; i<40; i++){ cx.fillStyle = 'rgba(0,0,0,0.15)'; cx.fillRect(x + Math.random()*bw, y + Math.random()*bh, 2, 2); } } } const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; return t; };
 
                 const init3D = () => {
                     // --- POOL DE MEMORIA (GC OPTIMIZATION) ---
@@ -2365,16 +2390,32 @@
                     renderer.setPixelRatio(1.0); // OPTIMIZACIÓN EXTREMA: Forzar a 1 para evitar asfixiar gráficas móviles o Retina
                     renderer.shadowMap.enabled = true;
                     renderer.shadowMap.type = THREE.BasicShadowMap; // Sombras básicas sin difuminado suave (libera muchísimo cálculo)
+                    
+                    // MEJORA DE COLOR Y CONTRASTE PARA MODELOS 3D
+                    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    renderer.toneMappingExposure = 1.1;
+                    renderer.outputEncoding = THREE.sRGBEncoding;
+
                     while(containerRef.current.firstChild) containerRef.current.removeChild(containerRef.current.firstChild); containerRef.current.appendChild(renderer.domElement);
-                    scene.add(new THREE.AmbientLight(0xffffff, 0.8)); 
-                    const dl = new THREE.DirectionalLight(0xffffff, 1.2); 
-                    dl.position.set(100, 300, 50); 
+                    
+                    // LUZ HEMISFÉRICA: Da volumen (cielo claro, suelo oscuro) en vez de luz ambiental plana
+                    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+                    scene.add(hemiLight);
+                    
+                    // LUZ PRINCIPAL (SOL)
+                    const dl = new THREE.DirectionalLight(0xffffff, 1.8); 
+                    dl.position.set(150, 300, 100); 
                     dl.castShadow = true; 
-                    dl.shadow.mapSize.width = 512; // Menos resolución de sombra, más FPS
-                    dl.shadow.mapSize.height = 512;
+                    dl.shadow.mapSize.width = 1024; // Sombra más definida
+                    dl.shadow.mapSize.height = 1024;
                     dl.shadow.camera.left = -300; dl.shadow.camera.right = 300; dl.shadow.camera.top = 300; dl.shadow.camera.bottom = -300; dl.shadow.camera.far = 1500;
-                    dl.shadow.bias = -0.0005; // Eliminar artifacts sin cargar CPU
+                    dl.shadow.bias = -0.0005; // Eliminar artifacts
                     scene.add(dl);
+                    
+                    // LUZ DE RELLENO: Ilumina los laterales oscuros
+                    const fillLight = new THREE.DirectionalLight(0x90b0d0, 0.5); 
+                    fillLight.position.set(-150, 100, -100); 
+                    scene.add(fillLight);
                     
                     // Cálculo de Ancho de Asfalto y Offsets Dinámicos
                     let currentOffsets = [];
@@ -2967,7 +3008,9 @@
                     bottomGeom.setIndex(bottomIndices);
                     bottomGeom.computeVertexNormals();
                     
-                    const structMat = new THREE.MeshLambertMaterial({ color: 0x474747, side: THREE.DoubleSide });
+                    const stoneTexture = createStoneTexture();
+                    stoneTexture.repeat.set(0.5, 0.5);
+                    const structMat = new THREE.MeshLambertMaterial({ map: stoneTexture, side: THREE.DoubleSide });
                     const wallMesh = new THREE.Mesh(wallGeom, structMat);
                     wallMesh.receiveShadow = false; wallMesh.castShadow = false; // PREVENCIÓN LAG: Desactivar sombras de muros estáticos
                     trackGroup.add(wallMesh);
@@ -3114,6 +3157,7 @@
                     if (!b.isEmpty()) { 
                         const center = b.getCenter(new THREE.Vector3()); 
                         const size = b.getSize(new THREE.Vector3());
+                        trackSizeRef.current.copy(size);
                         trackGroup.position.sub(center); 
                         trackGroup.position.y = 0; 
                         
@@ -3124,7 +3168,7 @@
                         const boardH = 2.0;
 
                         // Textura asfalto verde (Material granular exacto de Ninco aplicado al tablero)
-                        const greenAsphaltTex = createAsphaltTexture(renderer, '#073b14'); // Verde tapete MUY oscuro
+                        const greenAsphaltTex = createAsphaltTexture(renderer, '#021a08'); // Verde tapete AÚN MÁS oscuro
                         greenAsphaltTex.repeat.set(boardW / 10, boardD / 10); // Misma escala de grano que la pista original
 
                         // Materiales para cada cara del cubo (Multi-material)
@@ -3143,6 +3187,115 @@
                         scene.add(boardMesh);
                     } 
                     scene.add(trackGroup);
+
+                    // --- IA: GENERACIÓN AUTOMÁTICA DE BOSQUES / DECORACIÓN ---
+                    const generateForest = async () => {
+                        try {
+                            const res = await fetch('https://api.github.com/repos/slotsoftware/Telemetria/contents/decora');
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            if (!Array.isArray(data)) return;
+
+                            // Excluir cualquier archivo que contenga "dunlop" o "arbusto"
+                            const glbFiles = data.filter(f => 
+                                (f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')) &&
+                                !f.name.toLowerCase().includes('dunlop') &&
+                                !f.name.toLowerCase().includes('arbusto')
+                            );
+
+                            if (glbFiles.length === 0) return;
+
+                            const loader = getSharedGLTFLoader();
+                            const models = [];
+                            
+                            // Cargar modelos de decoración
+                            for (const file of glbFiles) {
+                                const url = `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/decora/${encodeURIComponent(file.name)}`;
+                                try {
+                                    const gltf = await new Promise((resolve, reject) => {
+                                        loader.load(url, resolve, undefined, reject);
+                                    });
+                                    const model = gltf.scene;
+                                    
+                                    model.traverse(child => {
+                                        if (child.isMesh) {
+                                            child.castShadow = true;
+                                            child.receiveShadow = true;
+                                        }
+                                    });
+
+                                    const box = new THREE.Box3().setFromObject(model);
+                                    const center = box.getCenter(new THREE.Vector3());
+                                    model.position.set(-center.x, -box.min.y, -center.z);
+                                    
+                                    const wrapper = new THREE.Group();
+                                    wrapper.add(model);
+                                    
+                                    // Normalizar tamaño de los árboles/decoración
+                                    const maxDim = Math.max(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
+                                    if (maxDim > 50) wrapper.scale.setScalar(50 / maxDim);
+                                    else if (maxDim < 5) wrapper.scale.setScalar(15 / maxDim);
+                                    
+                                    models.push(wrapper);
+                                } catch (err) {
+                                    console.warn('Error cargando decoración:', file.name);
+                                }
+                            }
+
+                            if (models.length === 0) return;
+
+                            const numTrees = 100; // Densidad del bosque
+                            const validPositions = [];
+                            
+                            // Recopilar TODOS los puntos de TODOS los carriles para una colisión perfecta
+                            const allTrackPts = [];
+                            for(let j=0; j<numLanes; j++) {
+                                if(rails.lanes[j]) allTrackPts.push(...rails.lanes[j].filter(p => p !== null));
+                            }
+
+                            // Buscar posiciones aleatorias en el tapete verde, lejos del asfalto
+                            for (let i = 0; i < numTrees * 20; i++) { // Aumentados los intentos masivamente
+                                if (validPositions.length >= numTrees) break;
+                                
+                                const x = b.min.x - 20 + Math.random() * (b.max.x - b.min.x + 40);
+                                const z = b.min.z - 20 + Math.random() * (b.max.z - b.min.z + 40);
+
+                                let minDistSq = Infinity;
+                                // Revisar TODOS los puntos de la pista exhaustivamente (sin saltos) para máxima precisión
+                                for (let j = 0; j < allTrackPts.length; j++) {
+                                    const p = allTrackPts[j];
+                                    const distSq = (p.x - x)**2 + (p.z - z)**2;
+                                    if (distSq < minDistSq) minDistSq = distSq;
+                                }
+
+                                // Distancia ultra-segura (45 unidades) para evitar colisiones
+                                // Garantiza que ni una hoja asome a la pista
+                                if (minDistSq > 45 * 45) {
+                                    validPositions.push({ x, z });
+                                }
+                            }
+
+                            const forestGroup = new THREE.Group();
+                            forestGroup.name = "FOREST";
+                            validPositions.forEach(pos => {
+                                const randomModel = models[Math.floor(Math.random() * models.length)].clone();
+                                randomModel.position.set(pos.x, -0.2, pos.z); // -0.2 es el nivel superior del tapete
+                                randomModel.rotation.y = Math.random() * Math.PI * 2;
+                                const s = 0.6 + Math.random() * 0.8; // Variación de escala entre 0.6 y 1.4
+                                randomModel.scale.multiplyScalar(s);
+                                forestGroup.add(randomModel);
+                            });
+                            
+                            forestGroupRef.current = forestGroup;
+                            forestGroup.visible = showVegetationRef.current; // Sincroniza con el estado UI
+                            trackGroup.add(forestGroup);
+
+                        } catch (err) {
+                            console.error("Error al generar el bosque:", err);
+                        }
+                    };
+
+                    generateForest();
 
                     carMeshesRef.current = [];
                     if (rails.lanes[0].length > 2) { 
@@ -3651,6 +3804,42 @@
                                 camera.position.lerp(_targetPos, 1 - Math.exp(-5 * dt)); 
                                 cameraTarget.lerp(_worldP1, 1 - Math.exp(-10 * dt)); 
                                 camera.lookAt(cameraTarget); 
+                            } else if (cameraModeRef.current === 'TV') {
+                                if (nowTime > nextTvSwitchTimeRef.current) {
+                                    const sideDir = new THREE.Vector3(-_trackedDir.z, 0, _trackedDir.x).normalize();
+                                    const viewType = Math.floor(Math.random() * 4);
+                                    const offset = new THREE.Vector3();
+                                    
+                                    if (viewType === 0) {
+                                        // Toma frontal baja (el coche viene hacia la cámara)
+                                        offset.addScaledVector(_trackedDir, 40);
+                                        offset.addScaledVector(sideDir, (Math.random() > 0.5 ? 15 : -15));
+                                        offset.y = 2 + Math.random() * 4;
+                                    } else if (viewType === 1) {
+                                        // Toma lateral (panning)
+                                        offset.addScaledVector(_trackedDir, 10);
+                                        offset.addScaledVector(sideDir, (Math.random() > 0.5 ? 35 : -35));
+                                        offset.y = 8 + Math.random() * 10;
+                                    } else if (viewType === 2) {
+                                        // Toma trasera alta (helicóptero corto)
+                                        offset.addScaledVector(_trackedDir, -25);
+                                        offset.addScaledVector(sideDir, (Math.random() > 0.5 ? 10 : -10));
+                                        offset.y = 15 + Math.random() * 5;
+                                    } else {
+                                        // Toma a ras de suelo lateral
+                                        offset.addScaledVector(_trackedDir, 20);
+                                        offset.addScaledVector(sideDir, (Math.random() > 0.5 ? 8 : -8));
+                                        offset.y = 1.5;
+                                    }
+                                    
+                                    tvCameraPosRef.current.copy(_worldP1).add(offset);
+                                    if (tvCameraPosRef.current.y < 1.5) tvCameraPosRef.current.y = 1.5;
+                                    
+                                    nextTvSwitchTimeRef.current = nowTime + 2500 + Math.random() * 3500; 
+                                    camera.position.copy(tvCameraPosRef.current);
+                                }
+                                cameraTarget.lerp(_worldP1, 1 - Math.exp(-15 * dt)); 
+                                camera.lookAt(cameraTarget);
                             } else {
                                 cameraTarget.lerp(_origin, 1 - Math.exp(-10 * dt)); 
                                 _camPos.setFromSpherical(spherical);
@@ -3875,8 +4064,8 @@
                             <button onClick={() => setLang('en')} className={`w-8 h-8 flex items-center justify-center rounded-lg text-lg transition-all ${lang === 'en' ? 'bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-110' : 'opacity-40 hover:opacity-100 hover:bg-white/10'}`} title="English">🇬🇧</button>
                         </div>
 
-                        <button onClick={toggleFullscreen} className="w-14 h-14 flex items-center justify-center rounded-lg bg-black/60 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black transition-all duration-300 backdrop-blur-md shadow-[0_0_15px_rgba(249,115,22,0.5)] group animate-pulse hover:animate-none">
-                            {isFullscreen ? <Minimize size={24}/> : <Maximize size={24}/>}
+                        <button onClick={toggleFullscreen} className="w-10 h-10 flex items-center justify-center rounded-xl bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300 backdrop-blur-md" title="Pantalla Completa">
+                            {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
                         </button>
                     </div>
 
@@ -3929,20 +4118,38 @@
                                 
                                 {/* Botones Garaje y Cámaras */}
                                 <div className="flex gap-2 items-center">
-                                    <button onClick={() => setShowHomoViewer(!showHomoViewer)} className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-xl border transition-all group ${showHomoViewer ? 'bg-cyan-900/50 border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-gray-900/80 border-gray-700 text-gray-400 hover:text-cyan-400 hover:border-cyan-500 hover:bg-cyan-950/30'}`}>
-                                        <User size={16} className="mb-1 group-hover:scale-110 transition-transform"/>
-                                        <span className="text-[7px] font-black tracking-widest uppercase">{t('garage')}</span>
-                                    </button>
+                                    <div className="flex flex-col gap-1 items-center justify-center">
+                                        <span className="text-[6px] font-bold text-gray-400 uppercase tracking-widest leading-none">ENTORNO</span>
+                                        <div className="flex gap-1.5">
+                                            <button onClick={() => setShowHomoViewer(!showHomoViewer)} className={`px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg border transition-all ${showHomoViewer ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`} title={t('garage')}>
+                                                <User size={12}/>
+                                                <span className="text-[8px] font-black tracking-wider whitespace-nowrap">{t('garage')}</span>
+                                            </button>
+                                            <button onClick={() => setShowVegetation(!showVegetation)} className={`px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg border transition-all ${showVegetation ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`} title="Ocultar/Mostrar Bosque">
+                                                <TreePine size={12}/>
+                                                <span className="text-[8px] font-black tracking-wider whitespace-nowrap">BOSQUE</span>
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                    <button onClick={() => setCameraMode('PILOT')} className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-xl border transition-all group ${cameraMode === 'PILOT' ? 'bg-[#39ff14]/20 border-[#39ff14] text-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.4)]' : 'bg-gray-900/80 border-gray-700 text-gray-400 hover:text-[#39ff14] hover:border-[#39ff14] hover:bg-[#39ff14]/10'}`}>
-                                        <Eye size={16} className="mb-1 group-hover:scale-110 transition-transform"/>
-                                        <span className="text-[7px] font-black tracking-widest uppercase text-center leading-tight px-0.5">{t('pilotView')}</span>
-                                    </button>
-                                    
-                                    <button onClick={() => setCameraMode(prev => prev === 'ORBIT' ? 'CHASE' : 'ORBIT')} className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-xl border transition-all group ${cameraMode !== 'PILOT' ? 'bg-indigo-900/50 border-indigo-500 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'bg-gray-900/80 border-gray-700 text-gray-400 hover:text-indigo-400 hover:border-indigo-500 hover:bg-indigo-950/30'}`}>
-                                        {cameraMode === 'ORBIT' ? <Move3d size={16} className="mb-1 group-hover:scale-110 transition-transform"/> : <Video size={16} className="mb-1 group-hover:scale-110 transition-transform animate-pulse"/>}
-                                        <span className="text-[7px] font-black tracking-widest uppercase text-center leading-tight px-0.5">{t('birdView')}</span>
-                                    </button>
+                                    {/* Selector de Cámaras Expandido */}
+                                    <div className="flex flex-col gap-1 items-center justify-center border-l border-gray-700 pl-3 ml-1">
+                                        <span className="text-[6px] font-bold text-gray-400 uppercase tracking-widest leading-none">CÁMARA</span>
+                                        <div className="flex gap-1.5">
+                                            <button onClick={() => setCameraMode('ORBIT')} className={`px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg border transition-all ${cameraMode === 'ORBIT' ? 'bg-[#39ff14]/20 border-[#39ff14] text-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.3)]' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`} title={t('camOrbit')}>
+                                                <Move3d size={12}/><span className="text-[8px] font-black tracking-wider whitespace-nowrap">{t('camOrbit')}</span>
+                                            </button>
+                                            <button onClick={() => setCameraMode('CHASE')} className={`px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg border transition-all ${cameraMode === 'CHASE' ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`} title={t('camChase')}>
+                                                <Video size={12}/><span className="text-[8px] font-black tracking-wider whitespace-nowrap">{t('camChase')}</span>
+                                            </button>
+                                            <button onClick={() => setCameraMode('PILOT')} className={`px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg border transition-all ${cameraMode === 'PILOT' ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`} title={t('camPilot')}>
+                                                <Eye size={12}/><span className="text-[8px] font-black tracking-wider whitespace-nowrap">{t('camPilot')}</span>
+                                            </button>
+                                            <button onClick={() => setCameraMode('TV')} className={`px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg border transition-all ${cameraMode === 'TV' ? 'bg-red-500/20 border-red-500 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`} title={t('camTV')}>
+                                                <Tv size={12}/><span className="text-[8px] font-black tracking-wider whitespace-nowrap">{t('camTV')}</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -4639,19 +4846,25 @@
                       
                       if (Array.isArray(data)) {
                           const glbFiles = data.filter(f => f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf'));
-                          const targetFile = glbFiles[7] || glbFiles[0]; // Intenta cargar el 8º archivo, si no, carga el 1º
                           
-                          if (targetFile) {
-                              let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
-                              if(ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria') {
-                                   rawUrl = `https://slotsoftware.github.io/Telemetria/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
-                              }
-                              
-                              setCustomCarAssets(prev => ({
-                                  ...prev,
-                                  1: { ...prev[1], glb: rawUrl, glbName: targetFile.name }
-                              }));
-                              console.log("Auto-cargado primer coche desde la nube:", targetFile.name);
+                          if (glbFiles.length > 0) {
+                              setCustomCarAssets(prev => {
+                                  const next = { ...prev };
+                                  for (let i = 1; i <= 8; i++) {
+                                      // Asigna los archivos secuencialmente (repite si hay menos de 8)
+                                      const fileIndex = (i - 1) % glbFiles.length;
+                                      const targetFile = glbFiles[fileIndex];
+                                      
+                                      let rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
+                                      if(ghConfig.owner === 'slotsoftware' && ghConfig.repo === 'Telemetria') {
+                                           rawUrl = `https://slotsoftware.github.io/Telemetria/${ghConfig.path ? ghConfig.path + '/' : ''}${targetFile.name}`;
+                                      }
+                                      
+                                      next[i] = { ...next[i], glb: rawUrl, glbName: targetFile.name };
+                                  }
+                                  return next;
+                              });
+                              console.log("Auto-cargados coches de la nube para las posiciones 1 a 8.");
                           }
                       }
                   } catch (e) {

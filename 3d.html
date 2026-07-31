@@ -144,11 +144,13 @@
 
         /* --- 1. DATOS ESTÁTICOS (TRACK DEFINITIONS) --- */
         const TRACK_DEFINITIONS = {
-          NINCO: { name: 'NINCO', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#050505', railColor: '#dcdcdc', slotColor: '#000000', width: 18.0, laneSpacing: 9.0, connectionBoxColor: '#ef4444' },
-          SCX_ANALOG: { name: 'SCALEXTRIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#050505', railColor: '#d0d0d0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
-          SCX_ADVANCE: { name: 'SCX ADVANCE', themeColor: 'blue', neonColor: '#3b82f6', uiClass: 'border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:bg-blue-950/30', activeClass: 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] border-blue-400 font-bold', trackColor: '#666666', railColor: '#d0d0d0', slotColor: '#1a1a1a', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
-          POLICAR: { name: 'POLICAR', themeColor: 'orange', neonColor: '#f97316', uiClass: 'border-orange-500/50 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:bg-orange-950/30', activeClass: 'bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] border-orange-500 font-bold', trackColor: '#050505', railColor: '#dcdcdc', slotColor: '#000000', width: 17.9, laneSpacing: 9.0, connectionBoxColor: '#333' },
-          SCALEAUTO: { name: 'SCALEAUTO', themeColor: 'lime', neonColor: '#84cc16', uiClass: 'border-lime-500/50 text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.3)] hover:bg-lime-950/30', activeClass: 'bg-lime-500 text-black shadow-[0_0_20px_rgba(132,204,22,0.6)] border-lime-400 font-bold', trackColor: '#6b6b6b', railColor: '#e0e0e0', slotColor: '#111111', width: 20.0, laneSpacing: 10.0, connectionBoxColor: '#9ca3af' },
+          NINCO: { name: 'NINCO', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#000000', railColor: '#dcdcdc', slotColor: '#000000', width: 18.0, laneSpacing: 9.0, connectionBoxColor: '#ef4444' },
+          SCX_ANALOG: { name: 'SCALEXTRIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#333333', railColor: '#d0d0d0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
+          SCX_CLASSIC: { name: 'SCX CLASSIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#000000', railColor: '#d0d0d0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
+          SCX_ADVANCE: { name: 'SCX ADVANCE', themeColor: 'blue', neonColor: '#3b82f6', uiClass: 'border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:bg-blue-950/30', activeClass: 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] border-blue-400 font-bold', trackColor: '#333333', railColor: '#d0d0d0', slotColor: '#1a1a1a', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
+          CARRERA: { name: 'CARRERA', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#000000', railColor: '#e0e0e0', slotColor: '#000000', width: 19.8, laneSpacing: 9.9, connectionBoxColor: '#ef4444' },
+          POLICAR: { name: 'POLICAR', themeColor: 'orange', neonColor: '#f97316', uiClass: 'border-orange-500/50 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:bg-orange-950/30', activeClass: 'bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] border-orange-500 font-bold', trackColor: '#000000', railColor: '#dcdcdc', slotColor: '#000000', width: 17.9, laneSpacing: 9.0, connectionBoxColor: '#333' },
+          SCALEAUTO: { name: 'SCALEAUTO', themeColor: 'lime', neonColor: '#84cc16', uiClass: 'border-lime-500/50 text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.3)] hover:bg-lime-950/30', activeClass: 'bg-lime-500 text-black shadow-[0_0_20px_rgba(132,204,22,0.6)] border-lime-400 font-bold', trackColor: '#333333', railColor: '#e0e0e0', slotColor: '#111111', width: 20.0, laneSpacing: 10.0, connectionBoxColor: '#9ca3af' },
           ADAPTER: { trackColor: '#2a2a2a' }
         };
 
@@ -242,92 +244,13 @@
                 importRestore: "Importar piezas (Restaurar)",
                 restoreSuccess: "✅ Piezas personalizadas restauradas correctamente.",
                 restoreError: "❌ Error al restaurar el archivo de piezas."
-            },
-            en: {
-                lobbyTitle: "SELECT SOURCE",
-                lobbySub: "Load a track file or return to the designer",
-                btnLoad: "LOAD JSON (.JSON)",
-                btn2D: "GO TO 2D DESIGNER",
-                clearCache: "Clear browser cache",
-                prep: "PREPARATION",
-                practice: "PRACTICE",
-                rally: "RALLY TIMER",
-                analog: "ANALOG",
-                digital: "DIGITAL",
-                back: "BACK",
-                start: "START",
-                pause: "PAUSE",
-                resume: "RESUME",
-                menu: "MENU",
-                laps: "LAPS",
-                total: "TOTAL",
-                pilots: "DRIVERS",
-                pilot: "DRIVER",
-                speed: "SPEED",
-                lastLap: "LAST LAP",
-                bestLap: "BEST LAP",
-                telemetry: "TELEMETRY",
-                winner: "WINNER!",
-                continue: "CONTINUE",
-                freePractice: "FREE PRACTICE",
-                powertrain: "POWERTRAIN",
-                tireManagement: "TIRE MANAGEMENT",
-                workshopSettings: "WORKSHOP SETTINGS",
-                motorPower: "MOTOR & POWER",
-                compounds: "COMPOUNDS",
-                gears: "CROWN GEARS",
-                pinions: "PINIONS",
-                digitalScale: "DIGITAL SCALE",
-                powerSupply: "POWER SUPPLY",
-                save: "SAVE",
-                open: "OPEN",
-                car: "CAR",
-                motor: "MOTOR",
-                tires: "TIRES",
-                gearRatio: "GEAR RATIO",
-                testingMonitor: "TESTING MONITOR",
-                lap: "LAP",
-                last: "LAST",
-                sector: "SECTOR",
-                activeConfig: "ACTIVE CONFIG",
-                controller: "CONTROL",
-                manualControl: "Manual Control",
-                slide: "SLIDE",
-                slideTitle: "Slide up to accelerate your car",
-                laneChange1: "LANE",
-                laneChange2: "CHANGE",
-                pitEntry1: "PIT",
-                pitEntry2: "ENTRY",
-                voice: "VOICE",
-                polarity: "POLARITY",
-                voiceOn: "Enable Announcer",
-                voiceOff: "Mute Announcer",
-                polarityChange: "Change Polarity",
-                alertPolarity: "You can only change direction before starting the race or in free practice.",
-                manualDrivingTypes: "MANUAL DRIVING TYPES",
-                garage: "GARAGE",
-                garage3d: "3D GARAGE",
-                forest: "FOREST",
-                camera: "CAMERA",
-                camRace: "RACE",
-                camChase: "CHASE",
-                camPilot: "PILOT",
-                camHood: "HOOD",
-                camFront: "FRONT",
-                customParts: "CUSTOM PARTS:",
-                backup: "BACKUP",
-                restore: "RESTORE",
-                exportBackup: "Export all parts (Backup)",
-                importRestore: "Import parts (Restore)",
-                restoreSuccess: "✅ Custom parts restored successfully.",
-                restoreError: "❌ Error restoring parts file."
-            }
-        };
+        }
+    };
 
-        const LanguageContext = React.createContext({ lang: 'es', t: (key) => key });
-        const useTranslation = () => React.useContext(LanguageContext);
+    const LanguageContext = React.createContext({ lang: 'es', t: (key) => key, handleLangChange: () => {} });
+    const useTranslation = () => React.useContext(LanguageContext);
 
-        /* --- OPTIMIZACIÓN DRACO LOADER (SINGLETON) --- */
+    /* --- OPTIMIZACIÓN DRACO LOADER (SINGLETON) --- */
         // Creamos una única instancia global para evitar saturar el procesador con Web Workers
         let sharedGLTFLoader = null;
         const getSharedGLTFLoader = () => {
@@ -940,7 +863,7 @@
             );
         });
 
-        const DrivingStyleSelector = memo(({ profile, setProfile }) => {
+        const DrivingStyleSelector = memo(({ profile, setProfile, showDunlop, setShowDunlop }) => {
             const { t } = useTranslation();
             const styles = [
                 { id: 1, label: 'ECO', color: 'bg-blue-400', shadow: 'shadow-[0_0_10px_rgba(96,165,250,0.4)]' },
@@ -949,22 +872,29 @@
                 { id: 4, label: 'ULTRA', color: 'bg-fuchsia-500', shadow: 'shadow-[0_0_20px_rgba(217,70,239,0.8)]' }
             ];
             return (
-                <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm pointer-events-auto">
-                    <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('manualDrivingTypes')}</span>
-                    <div className="flex gap-1">
-                        {styles.map(s => {
-                            const isActive = profile === s.id;
-                            return (
-                                <button 
-                                    key={s.id} 
-                                    onClick={(e) => { e.stopPropagation(); setProfile(s.id); }}
-                                    className={`px-1.5 h-4 rounded flex items-center justify-center text-[8px] font-black border transition-all duration-300 hover:scale-110 active:scale-95 ${isActive ? `${s.color} border-transparent text-black ${s.shadow}` : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}
-                                >
-                                    {s.label}
-                                </button>
-                            )
-                        })}
+                <div className="flex flex-col gap-1 items-center pointer-events-auto">
+                    <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm">
+                        <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('manualDrivingTypes')}</span>
+                        <div className="flex gap-1">
+                            {styles.map(s => {
+                                const isActive = profile === s.id;
+                                return (
+                                    <button 
+                                        key={s.id} 
+                                        onClick={(e) => { e.stopPropagation(); setProfile(s.id); }}
+                                        className={`px-1.5 h-4 rounded flex items-center justify-center text-[8px] font-black border transition-all duration-300 hover:scale-110 active:scale-95 ${isActive ? `${s.color} border-transparent text-black ${s.shadow}` : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}
+                                    >
+                                        {s.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
                     </div>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setShowDunlop(!showDunlop); }}
+                        className={`px-3 py-1 rounded text-[7px] font-black tracking-widest uppercase shadow-[0_0_10px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all border ${showDunlop ? 'bg-[#39ff14] text-black border-[#39ff14]' : 'bg-black/80 text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-white hover:border-[#39ff14]'}`}>
+                        PUENTE DUNLOP {showDunlop ? 'ON' : 'OFF'}
+                    </button>
                 </div>
             );
         });
@@ -1048,7 +978,7 @@
             );
         });
 
-        const AnalogDashboard = memo(({ telemetry, carSetups, raceState, activeLights, elapsedTime, targetLaps, aiLevel, setAiLevel, throttleProfile, setThrottleProfile, showTrees, setShowTrees, showGarage, setShowGarage, cameraMode, setCameraMode, isRally }) => {
+        const AnalogDashboard = memo(({ telemetry, carSetups, raceState, activeLights, elapsedTime, targetLaps, aiLevel, setAiLevel, throttleProfile, setThrottleProfile, showTrees, setShowTrees, showGarage, setShowGarage, cameraMode, setCameraMode, isRally, showDunlop, setShowDunlop }) => {
             const { t } = useTranslation();
             const isPractice = raceState === 'idle';
             const formatTime = (ms) => { if (!ms || ms === Infinity) return "00:00.000"; const m = Math.floor(ms / 60000); const s = Math.floor((ms % 60000) / 1000); const sms = Math.floor(ms % 1000); return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}.${sms.toString().padStart(3,'0')}`; };
@@ -1183,7 +1113,7 @@
                     
                     <div className="flex-1 flex flex-col items-center mx-2 -mt-4 pointer-events-auto">
                         <div className="flex gap-4 items-end mb-1">
-                            <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} />
+                            <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} showDunlop={showDunlop} setShowDunlop={setShowDunlop} />
                             <AiLevelSelector aiLevel={aiLevel} setAiLevel={setAiLevel} />
                             <TreeToggle showTrees={showTrees} setShowTrees={setShowTrees} />
                             <GarageToggle showGarage={showGarage} setShowGarage={setShowGarage} />
@@ -1224,7 +1154,7 @@
             );
         });
 
-        const DigitalDashboard = memo(({ telemetry, carSetups, raceState, activeLights, elapsedTime, targetLaps, aiLevel, setAiLevel, throttleProfile, setThrottleProfile, showTrees, setShowTrees, numCars, showGarage, setShowGarage, cameraMode, setCameraMode }) => {
+        const DigitalDashboard = memo(({ telemetry, carSetups, raceState, activeLights, elapsedTime, targetLaps, aiLevel, setAiLevel, throttleProfile, setThrottleProfile, showTrees, setShowTrees, numCars, showGarage, setShowGarage, cameraMode, setCameraMode, showDunlop, setShowDunlop }) => {
             const { t } = useTranslation();
             const isPractice = raceState === 'idle';
             const formatTime = (ms) => { if (!ms || ms === Infinity) return "00:00.000"; const m = Math.floor(ms / 60000); const s = Math.floor((ms % 60000) / 1000); const sms = Math.floor(ms % 1000); return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}.${sms.toString().padStart(3,'0')}`; };
@@ -1323,7 +1253,7 @@
                     {/* CENTRO: SEMÁFORO Y CONTROLES */}
                     <div className="flex-1 flex flex-col items-center mx-2 -mt-4 pointer-events-auto">
                         <div className="flex gap-4 items-end mb-1">
-                            <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} />
+                            <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} showDunlop={showDunlop} setShowDunlop={setShowDunlop} />
                             <AiLevelSelector aiLevel={aiLevel} setAiLevel={setAiLevel} />
                             <TreeToggle showTrees={showTrees} setShowTrees={setShowTrees} />
                             <GarageToggle showGarage={showGarage} setShowGarage={setShowGarage} />
@@ -2585,7 +2515,7 @@
 
         /* --- 3. VISOR 3D (CORE LOGIC) --- */
         const Telemetry3DViewer = ({ circuitData, carSettings, customCarAssets, onCarAssetUpdate, onClose }) => {
-            const { t, lang } = useTranslation();
+            const { t, lang, handleLangChange } = useTranslation();
             const containerRef = useRef(null);
             const [paused, setPaused] = useState(false); 
             const [selectedCarId, setSelectedCarId] = useState(1);
@@ -2723,6 +2653,18 @@
             const [sceneReady, setSceneReady] = useState(false);
             const [showTrees, setShowTrees] = useState(false);
             const forestGroupRef = useRef(null);
+            
+            // --- NUEVO: ESTADO PUENTE DUNLOP ---
+            const [showDunlop, setShowDunlop] = useState(false);
+            const showDunlopRef = useRef(showDunlop);
+            useEffect(() => { showDunlopRef.current = showDunlop; }, [showDunlop]);
+            const dunlopGroupRef = useRef(null);
+
+            useEffect(() => {
+                if (dunlopGroupRef.current) {
+                    dunlopGroupRef.current.visible = showDunlop;
+                }
+            }, [showDunlop]);
 
             // NUEVO: ESTADO Y FUNCIONES PARA BACKUP/RESTORE DE COMPONENTES
             const [refreshPartsKey, setRefreshPartsKey] = useState(0);
@@ -3636,8 +3578,8 @@
                     cx.fillStyle = bc || '#080808'; 
                     cx.fillRect(0, 0, 256, 256); 
                     for (let i = 0; i < 8000; i++) { // Reducido de 15.000 a 8.000 para cargar más rápido
-                        const v = Math.floor(Math.random() * 25); 
-                        cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.2)`; 
+                        const v = Math.random() > 0.5 ? 255 : 0; 
+                        cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.04)`; 
                         cx.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5); 
                     } 
                     const t = new THREE.CanvasTexture(cv); 
@@ -3964,16 +3906,23 @@
                     
                     let curX = 0, curZ = 0, curAngle = 0;
 
-                    const addRailPoint = (x, z, ang, lOffs, po, di) => { 
+                    const addRailPoint = (x, z, ang, lOffs, po, di, brand) => { 
                         const px = Math.cos(ang + Math.PI/2), pz = Math.sin(ang + Math.PI/2); 
                         for(let i=0; i<numLanes; i++) {
-                            if (lOffs && lOffs[i] !== null && lOffs[i] !== undefined) rails.lanes[i].push(new THREE.Vector3(x + px * lOffs[i], 0.2, z + pz * lOffs[i])); 
-                            else rails.lanes[i].push(null);
+                            if (lOffs && lOffs[i] !== null && lOffs[i] !== undefined) {
+                                const pt = new THREE.Vector3(x + px * lOffs[i], 0.2, z + pz * lOffs[i]);
+                                pt.brand = brand;
+                                rails.lanes[i].push(pt); 
+                            } else rails.lanes[i].push(null);
                         }
-                        if (po !== null) rails.pit.push(new THREE.Vector3(x + px * po, 0.2, z + pz * po)); else rails.pit.push(null); 
+                        if (po !== null) {
+                            const pt = new THREE.Vector3(x + px * po, 0.2, z + pz * po);
+                            pt.brand = brand;
+                            rails.pit.push(pt);
+                        } else rails.pit.push(null); 
                         if (di > 0) { accumulatedDist += di; vertexDistances.push(accumulatedDist); } 
                     };
-                    addRailPoint(0,0,0, currentOffsets, null, 0); 
+                    addRailPoint(0,0,0, currentOffsets, null, 0, currentBrandKey); 
                     addAsphaltSlice(0,0,0, stdHalfL, stdHalfR, 0, currentBrandKey); 
                     
                     const easeSine = (t) => (1 - Math.cos(t * Math.PI)) / 2;
@@ -4005,7 +3954,9 @@
                             // TRANSICIÓN DE ENTRADA: Cierra el carril izquierdo plano verticalmente sin estirar texturas
                             const entryRailX = startX + Math.cos(startAngle + Math.PI/2) * -laneOffVal;
                             const entryRailZ = startZ + Math.sin(startAngle + Math.PI/2) * -laneOffVal;
-                            loopRailPoints.push(new THREE.Vector3(entryRailX, 0.2, entryRailZ));
+                            const entryPt = new THREE.Vector3(entryRailX, 0.2, entryRailZ);
+                            entryPt.brand = currentBrandKey;
+                            loopRailPoints.push(entryPt);
                             addAsphaltSlice(entryRailX, entryRailZ, startAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + 0.01, currentBrandKey);
 
                             // 1. TRAMO RECTO DE IDA (Solo carril derecho)
@@ -4013,7 +3964,9 @@
                                 const dist = i * (straightLen / straightSteps);
                                 const railX = startX + Math.cos(startAngle) * dist + Math.cos(startAngle + Math.PI/2) * -laneOffVal;
                                 const railZ = startZ + Math.sin(startAngle) * dist + Math.sin(startAngle + Math.PI/2) * -laneOffVal;
-                                loopRailPoints.push(new THREE.Vector3(railX, 0.2, railZ));
+                                const pt1 = new THREE.Vector3(railX, 0.2, railZ);
+                                pt1.brand = currentBrandKey;
+                                loopRailPoints.push(pt1);
                                 addAsphaltSlice(railX, railZ, startAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + dist, currentBrandKey);
                             }
                             
@@ -4050,7 +4003,9 @@
                                 const worldZ = straightEndZ + (localX * sinA + localZ * cosA); 
                                 const worldAngle = startAngle + localAngle;
                                 
-                                loopRailPoints.push(new THREE.Vector3(worldX, 0.2, worldZ)); 
+                                const ptLoop = new THREE.Vector3(worldX, 0.2, worldZ);
+                                ptLoop.brand = currentBrandKey;
+                                loopRailPoints.push(ptLoop); 
                                 addAsphaltSlice(worldX, worldZ, worldAngle, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + straightLen + (i * loopStepDist), currentBrandKey);
                             }
                             
@@ -4060,14 +4015,16 @@
                                 const travel = straightLen - dist; // Volvemos hacia atrás
                                 const railX = startX + Math.cos(startAngle) * travel + Math.cos(startAngle + Math.PI/2) * laneOffVal;
                                 const railZ = startZ + Math.sin(startAngle) * travel + Math.sin(startAngle + Math.PI/2) * laneOffVal;
-                                loopRailPoints.push(new THREE.Vector3(railX, 0.2, railZ));
+                                const pt2 = new THREE.Vector3(railX, 0.2, railZ);
+                                pt2.brand = currentBrandKey;
+                                loopRailPoints.push(pt2);
                                 addAsphaltSlice(railX, railZ, startAngle + Math.PI, laneAsphaltHalfWidth, laneAsphaltHalfWidth, accumulatedDist + straightLen + teardropLen + dist, currentBrandKey);
                             }
                             
                             rails.changes.push({ points: loopRailPoints, refIdx: rotVertexIndex, count: loopRailPoints.length, isRotonda: true });
                             curX = startX; curZ = startZ; curAngle = startAngle + Math.PI; accumulatedDist += totalPieceLen;
                             
-                            addRailPoint(curX, curZ, curAngle, currentOffsets, null, 0); 
+                            addRailPoint(curX, curZ, curAngle, currentOffsets, null, 0, currentBrandKey); 
                             vertexDistances.push(accumulatedDist); 
                             
                             // TRANSICIÓN DE SALIDA: Cierre de asfalto ancho completo para empalmar limpio con la siguiente pista
@@ -4086,13 +4043,44 @@
                         const stepAngle = totalSweep / steps;
                         let stepPhysDist = stepLen; if (p.type === 'curve') stepPhysDist = (2 * Math.PI * p.radius) * (Math.abs(p.angle) / 360) / steps;
                         
+                        let pb = p.brand || p.brandKey;
                         let brandChanged = false;
-                        if (p.brandKey && p.brandKey !== currentBrandKey) {
-                            currentBrandKey = p.brandKey;
+                        if (pb && pb !== currentBrandKey) {
+                            currentBrandKey = pb;
                             brandChanged = true;
+                            
+                            // Si no es un adaptador, actualizamos abruptamente anchos para pistas regulares mezcladas
+                            if (!p.subtype || !p.subtype.includes('adapter')) {
+                                const newDef = TRACK_DEFINITIONS[pb];
+                                if (newDef) {
+                                    currentTrackWidth = newDef.width || currentTrackWidth;
+                                    currentLaneSpacing = newDef.laneSpacing || currentLaneSpacing;
+                                    
+                                    let tL = [];
+                                    if (hasGroups) {
+                                        for (let i = 0; i < numLanes; i++) {
+                                            const pairIndex = Math.floor(i / 2);
+                                            const isRightLane = i % 2 === 1;
+                                            const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
+                                            tL.push(localOffset + (pairIndex * currentTrackWidth));
+                                        }
+                                        stdHalfL = currentTrackWidth / 2;
+                                        stdHalfR = ((numLanes / 2) - 1) * currentTrackWidth + (currentTrackWidth / 2);
+                                    } else {
+                                        for(let i=0; i<numLanes; i++) {
+                                            tL.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
+                                        }
+                                        const borderWidth = (currentTrackWidth - currentLaneSpacing) / 2;
+                                        const halfAsphalt = ((numLanes - 1) * currentLaneSpacing) / 2 + Math.max(4.5, borderWidth);
+                                        stdHalfL = halfAsphalt;
+                                        stdHalfR = halfAsphalt;
+                                    }
+                                    currentOffsets = [...tL];
+                                }
+                            }
                         }
                         
-                        let pieceBrand = (p.subtype && p.subtype.includes('adapter')) ? 'ADAPTER' : currentBrandKey;
+                        let pieceBrand = currentBrandKey;
                         let brandChangedLocal = false;
                         if (currentGeoData && currentGeoData.brand !== pieceBrand) {
                             brandChangedLocal = true;
@@ -4101,8 +4089,8 @@
                         const isCrossing = p.subtype === 'crossing';
                         const isPitEntry = p.type === 'pit_entry' || p.subtype === 'pit_entry';
                         const isPitExit = p.type === 'pit_exit' || p.subtype === 'pit_exit';
-                        const isChicaneEntry = p.subtype === 'chicane_entry';
-                        const isChicaneExit = p.subtype === 'chicane_exit';
+                        const isChicaneEntry = p.subtype === 'chicane_entry' || p.subtype === 'chicane3_entry';
+                        const isChicaneExit = p.subtype === 'chicane_exit' || p.subtype === 'chicane3_exit';
                         const pitSide = p.invert ? 'left' : 'right';
                         const pitDir = pitSide === 'right' ? 1 : -1;
                         
@@ -4195,8 +4183,16 @@
                         if (['digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype) && numLanes >= 2) {
                             const perpX = Math.cos(dStartAngle + Math.PI/2);
                             const perpZ = Math.sin(dStartAngle + Math.PI/2);
-                            if (p.subtype !== 'change_left') d12.push(new THREE.Vector3(dStartX + perpX * sL[0], 0.2, dStartZ + perpZ * sL[0]));
-                            if (p.subtype !== 'change_right') d21.push(new THREE.Vector3(dStartX + perpX * sL[1], 0.2, dStartZ + perpZ * sL[1]));
+                            if (p.subtype !== 'change_left') {
+                                const pt12 = new THREE.Vector3(dStartX + perpX * sL[0], 0.2, dStartZ + perpZ * sL[0]);
+                                pt12.brand = pieceBrand;
+                                d12.push(pt12);
+                            }
+                            if (p.subtype !== 'change_right') {
+                                const pt21 = new THREE.Vector3(dStartX + perpX * sL[1], 0.2, dStartZ + perpZ * sL[1]);
+                                pt21.brand = pieceBrand;
+                                d21.push(pt21);
+                            }
                         }
 
                         // Cerrar hueco visual al cambiar de marca o adaptador
@@ -4225,13 +4221,43 @@
                             if (p.subtype === 'single_lane_1') { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); cTWR = 0; }
                             if (p.subtype === 'single_lane_2') { curL_Vis = curL_Vis.map((v, idx) => idx === 1 ? v : null); cTWL = 0; }
 
-                            addRailPoint(curX, curZ, curAngle, curL_Vis, cPit, stepPhysDist); 
+                            let railX = curX;
+                            let railZ = curZ;
+                            let sShapeOffset = 0;
+
+                            if (p.subtype === 'chicane3_entry') {
+                                // Fase 1: Suavemente hacia un lado. Inicia paralelo al asfalto (0) y termina paralelo en el borde
+                                sShapeOffset = easeSine(t) * (currentLaneSpacing * 0.5);
+                            } else if (p.subtype === 'chicane3_middle') {
+                                // Fase 2: Cruza de un borde al otro. Inicia paralelo y termina paralelo en el otro extremo
+                                sShapeOffset = (currentLaneSpacing * 0.5) - (easeSine(t) * currentLaneSpacing);
+                            } else if (p.subtype === 'chicane3_exit') {
+                                // Fase 3: Retorna al centro. Inicia paralelo en el borde y termina paralelo en el centro (0)
+                                sShapeOffset = -(currentLaneSpacing * 0.5) + (easeSine(t) * (currentLaneSpacing * 0.5));
+                            }
+
+                            if (sShapeOffset !== 0) {
+                                const px = Math.cos(curAngle + Math.PI/2);
+                                const pz = Math.sin(curAngle + Math.PI/2);
+                                railX += px * sShapeOffset;
+                                railZ += pz * sShapeOffset;
+                            }
+
+                            addRailPoint(railX, railZ, curAngle, curL_Vis, cPit, stepPhysDist, pieceBrand); 
                             addAsphaltSlice(curX, curZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
                             
                             if (['digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype) && numLanes >= 2) { 
                                 const ct = easeSine(t), o12 = sL[0] + (sL[1]-sL[0])*ct, o21 = sL[1] + (sL[0]-sL[1])*ct, px = Math.cos(curAngle+Math.PI/2), pz = Math.sin(curAngle+Math.PI/2); 
-                                if (p.subtype !== 'change_left') d12.push(new THREE.Vector3(curX+px*o12, 0.2, curZ+pz*o12)); 
-                                if (p.subtype !== 'change_right') d21.push(new THREE.Vector3(curX+px*o21, 0.2, curZ+pz*o21)); 
+                                if (p.subtype !== 'change_left') {
+                                    const pt12_t = new THREE.Vector3(curX+px*o12, 0.2, curZ+pz*o12);
+                                    pt12_t.brand = pieceBrand;
+                                    d12.push(pt12_t); 
+                                }
+                                if (p.subtype !== 'change_right') {
+                                    const pt21_t = new THREE.Vector3(curX+px*o21, 0.2, curZ+pz*o21);
+                                    pt21_t.brand = pieceBrand;
+                                    d21.push(pt21_t); 
+                                }
                             }
                         }
                         if (d12.length > 0) rails.changes.push({ points: d12, refIdx: startVertexIdx, count: steps });
@@ -4378,7 +4404,7 @@
 
                             const flatZones = [];
                             pieceMapRef.current.forEach(p => {
-                                const isSpecial = [ 'crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'digital_console', 'connection', 'analog_connect', 'starting_grid', 'chicane_entry', 'chicane_exit', 'rotonda' ].includes(p.subtype) || ['pit_entry', 'pit_exit'].includes(p.type);
+                                const isSpecial = [ 'crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'digital_console', 'connection', 'analog_connect', 'starting_grid', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'rotonda' ].includes(p.subtype) || ['pit_entry', 'pit_exit'].includes(p.type);
                                 if (isSpecial) {
                                     // Ampliamos el "escudo" de protección +15cm antes y después de la pieza especial
                                     flatZones.push({ start: p.distStart - 15.0, end: p.distEnd + 15.0 });
@@ -4440,11 +4466,11 @@
 
                             for(let i=0; i<testPoints.length; i++) {
                                 const tp1 = testPoints[i];
-                                const isSpecial1 = tp1.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp1.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp1.piece.type));
+                                const isSpecial1 = tp1.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp1.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp1.piece.type));
                                 
                                 for(let j=i+1; j<testPoints.length; j++) {
                                     const tp2 = testPoints[j];
-                                    const isSpecial2 = tp2.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp2.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp2.piece.type));
+                                    const isSpecial2 = tp2.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp2.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp2.piece.type));
                                     
                                     if (tp1.piece && tp2.piece) {
                                         const idxDiff = Math.abs(tp1.piece.index - tp2.piece.index);
@@ -4930,7 +4956,7 @@
                     rallyPathRef.current = finalRallyPath; rallyDistancesRef.current = rallyDists;
 
                     const totalDist = accumulatedDist; physicsState.current.forEach(car => { if (totalDist > 0) { while (car.distance < 0) car.distance += totalDist; car.distance = car.distance % totalDist; } });
-                    const createRailMesh = (pts, c, w=0.6) => { 
+                    const createRailMesh = (pts, brand, w=0.6) => { 
                         const cp = pts.filter(p => p !== null); 
                         if(cp.length < 2) return; 
                         
@@ -4966,15 +4992,39 @@
                         const gR = new THREE.TubeGeometry(pathR, segments, w/3.5, 3, false);
                         const gS = new THREE.TubeGeometry(pathS, segments, w/2.2, 3, false);
 
-                        // OPTIMIZACIÓN MATERIALES: Usar Phong/Lambert evita que la GPU calcule metalness/roughness por pixel
-                        const mMetal = new THREE.MeshPhongMaterial({ color: 0xd0d0d0, shininess: 50 });
-                        const mSlot = new THREE.MeshLambertMaterial({ color: 0x020202 });
+                        // OPTIMIZACIÓN MATERIALES COLORIDOS POR MARCA
+                        const bDef = TRACK_DEFINITIONS[brand] || TRACK_DEFINITIONS.NINCO;
+                        const rCol = parseInt((bDef.railColor || '#dcdcdc').replace('#', '0x'));
+                        const sCol = parseInt((bDef.slotColor || '#000000').replace('#', '0x'));
+
+                        const mMetal = new THREE.MeshPhongMaterial({ color: rCol, shininess: 50 });
+                        const mSlot = new THREE.MeshLambertMaterial({ color: sCol });
 
                         const meshL = new THREE.Mesh(gL, mMetal); meshL.castShadow = true; meshL.receiveShadow = true; trackGroup.add(meshL);
                         const meshR = new THREE.Mesh(gR, mMetal); meshR.castShadow = true; meshR.receiveShadow = true; trackGroup.add(meshR);
                         const meshS = new THREE.Mesh(gS, mSlot); meshS.receiveShadow = true; trackGroup.add(meshS);
                     };
-                    const createMultiSegmentRailMesh = (points, color, width=0.6) => { let currentSegment = []; for (let p of points) { if (p === null) { if (currentSegment.length > 1) createRailMesh(currentSegment, color, width); currentSegment = []; } else { currentSegment.push(p); } } if (currentSegment.length > 1) createRailMesh(currentSegment, color, width); };
+                    const createMultiSegmentRailMesh = (points, w=0.6) => { 
+                        let currentSegment = []; 
+                        let currentBrand = null;
+                        for (let p of points) { 
+                            if (p === null) { 
+                                if (currentSegment.length > 1) createRailMesh(currentSegment, currentBrand, w); 
+                                currentSegment = []; 
+                            } else { 
+                                if (currentBrand && p.brand !== currentBrand && currentSegment.length > 0) {
+                                    currentSegment.push(p);
+                                    createRailMesh(currentSegment, currentBrand, w);
+                                    currentSegment = [p];
+                                    currentBrand = p.brand;
+                                } else {
+                                    if (!currentBrand) currentBrand = p.brand;
+                                    currentSegment.push(p); 
+                                }
+                            } 
+                        } 
+                        if (currentSegment.length > 1) createRailMesh(currentSegment, currentBrand, w); 
+                    };
 
                     // CONSTRUIMOS Y AÑADIMOS UNA MALLA POR CADA SEGMENTO CREADO
                     asphaltGeometries.forEach(geoData => {
@@ -4988,7 +5038,7 @@
 
                         const mat = new THREE.MeshLambertMaterial({ 
                             map: geoData.texture, 
-                            color: 0xcccccc,
+                            color: 0xffffff,
                             side: THREE.DoubleSide
                         });
                         const mesh = new THREE.Mesh(geo, mat);
@@ -4998,11 +5048,11 @@
                     });
                     
                     for(let j=0; j<numLanes; j++) {
-                        createMultiSegmentRailMesh(rails.lanes[j], null, 0.7); 
+                        createMultiSegmentRailMesh(rails.lanes[j], 0.7); 
                     }
                     
-                    let curSeg = []; for (let p of rails.pit) { if (p === null) { if (curSeg.length > 1) createRailMesh(curSeg, null, 0.6); curSeg = []; } else { curSeg.push(p); } } if (curSeg.length > 1) createRailMesh(curSeg, null, 0.6); 
-                    rails.changes.forEach(obj => { if (obj.points) createRailMesh(obj.points, null, 0.5); else createRailMesh(obj, null, 0.5); });
+                    createMultiSegmentRailMesh(rails.pit, 0.6); 
+                    rails.changes.forEach(obj => { if (obj.points) createMultiSegmentRailMesh(obj.points, 0.5); else createMultiSegmentRailMesh(obj, 0.5); });
                     
                     const finishLinePiece = pieceMapRef.current.find(p => p.subtype === 'analog_connect' || p.subtype === 'connection' || p.subtype === 'digital_console') || pieceMapRef.current[0];
                     if (finishLinePiece) {
@@ -5043,6 +5093,104 @@
                             lineMesh.castShadow = true;
                             lineMesh.receiveShadow = true;
                             trackGroup.add(lineMesh);
+
+                            // --- PUENTE DUNLOP ---
+                            const dunlopGroup = new THREE.Group();
+                            dunlopGroup.visible = showDunlopRef.current;
+                            
+                            // El trackGroup está elevado +0.8 respecto a la escena base. El tapete verde (madera) está en +0.5.
+                            // Para que la base toque exactamente la madera, Y local = -0.3
+                            dunlopGroup.position.set(mid.x, -0.3, mid.z);
+                            const lookAtPosForBridge = mid.clone().add(tangent);
+                            lookAtPosForBridge.y = -0.3;
+                            
+                            dunlopGroup.lookAt(lookAtPosForBridge);
+                            trackGroup.add(dunlopGroup);
+                            dunlopGroupRef.current = dunlopGroup;
+
+                            const loader = getSharedGLTFLoader();
+                            loader.load('https://raw.githubusercontent.com/slotsoftware/Telemetria/main/decora/Dunlop%20Camara.glb', (gltf) => {
+                                const bridge = gltf.scene;
+                                
+                                // 1. Reset
+                                bridge.position.set(0, 0, 0);
+                                bridge.rotation.set(0, 0, 0);
+                                bridge.scale.setScalar(1);
+                                bridge.updateMatrixWorld(true);
+
+                                // 2. Determinar escala inicial
+                                const boxInit = new THREE.Box3().setFromObject(bridge);
+                                const sizeInit = boxInit.getSize(new THREE.Vector3());
+                                const modelWidth = Math.max(sizeInit.x, sizeInit.z);
+                                
+                                // Hacemos el puente suficientemente ancho para que las patas caigan en el tapete, no en la pista
+                                const targetWidth = currentTrackWidth + 20.0; 
+                                const scale = targetWidth / (modelWidth || 1);
+                                
+                                // 3. Aplicar Escala y Rotación DEFINITIVAS
+                                bridge.scale.setScalar(scale);
+                                
+                                // Giramos -90 grados en X para levantarlo
+                                bridge.rotation.x = -Math.PI / 2; 
+                                bridge.rotation.z = 0;
+                                
+                                // Rotamos en Y para que cruce la pista perpendicularmente
+                                if (sizeInit.z > sizeInit.x) {
+                                    bridge.rotation.y = Math.PI / 2;
+                                } else {
+                                    bridge.rotation.y = 0;
+                                }
+                                bridge.updateMatrixWorld(true);
+
+                                // 4. Centrar X/Z
+                                const boxFinal = new THREE.Box3().setFromObject(bridge);
+                                const centerFinal = boxFinal.getCenter(new THREE.Vector3());
+                                bridge.position.x -= centerFinal.x;
+                                bridge.position.z -= centerFinal.z;
+                                bridge.updateMatrixWorld(true);
+
+                                // 5. Escáner de Vértices: Buscar la base física real para clavarla en el tapete
+                                let minY = Infinity;
+                                bridge.traverse(child => {
+                                    if (child.isMesh) {
+                                        const geom = child.geometry;
+                                        if (geom.attributes.position) {
+                                            const posAttr = geom.attributes.position;
+                                            const v = new THREE.Vector3();
+                                            for(let i=0; i<posAttr.count; i++) {
+                                                v.fromBufferAttribute(posAttr, i);
+                                                v.applyMatrix4(child.matrixWorld);
+                                                if (v.y < minY) minY = v.y;
+                                            }
+                                        }
+                                    }
+                                });
+
+                                // Aplicar el ajuste de altura absoluto
+                                if (minY !== Infinity) {
+                                    bridge.position.y -= minY;
+                                } else {
+                                    bridge.position.y -= boxFinal.min.y;
+                                }
+
+                                bridge.traverse(child => {
+                                    if (child.isMesh) {
+                                        child.castShadow = true;
+                                        child.receiveShadow = true;
+                                        if (child.material) {
+                                            const fixMat = (m) => {
+                                                if (m.metalness !== undefined) m.metalness = Math.min(m.metalness, 0.3);
+                                                if (m.roughness !== undefined) m.roughness = Math.max(m.roughness, 0.6);
+                                                m.needsUpdate = true;
+                                            };
+                                            if (Array.isArray(child.material)) child.material.forEach(fixMat);
+                                            else fixMat(child.material);
+                                        }
+                                    }
+                                });
+
+                                dunlopGroup.add(bridge);
+                            }, undefined, (err) => console.warn('Error cargando Dunlop:', err));
                         }
                     }
 
@@ -6333,9 +6481,6 @@
                     {/* Contenedor 3D */}
                     <div ref={containerRef} className="absolute inset-0 w-full h-full" /> 
                     
-                    {/* Botón Fullscreen */}
-                    <button onClick={toggleFullscreen} className="absolute top-6 right-6 z-[80] w-12 h-12 flex items-center justify-center rounded-lg bg-black/60 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black transition-all duration-300 backdrop-blur-md shadow-[0_0_15px_rgba(249,115,22,0.5)] pointer-events-auto group animate-pulse hover:animate-none">{isFullscreen ? <Minimize size={24}/> : <Maximize size={24}/>}</button>
-                    
                     {/* MENSAJE DE ERROR FLOTANTE (NUEVO) */}
                     {validationError && (
                         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-red-600/95 text-white px-10 py-8 rounded-3xl border-4 border-red-400 shadow-[0_0_80px_rgba(220,38,38,1)] backdrop-blur-xl animate-in zoom-in duration-300 flex flex-col items-center gap-4 pointer-events-none text-center">
@@ -6346,23 +6491,33 @@
 
                     {/* DASHBOARD SUPERIOR */}
                     {(activeButton === 'ANALOG' || activeButton === 'PRACTICE') && (
-                        <AnalogDashboard telemetry={telemetry.slice(0, numCars)} carSetups={carSetups} raceState={raceState} activeLights={activeLights} elapsedTime={elapsedTime} targetLaps={targetLaps} aiLevel={aiLevel} setAiLevel={setAiLevel} throttleProfile={throttleProfile} setThrottleProfile={setThrottleProfile} showTrees={showTrees} setShowTrees={setShowTrees} showGarage={showHomoViewer} setShowGarage={setShowHomoViewer} cameraMode={cameraMode} setCameraMode={setCameraMode} isRally={hasRotonda} />
+                        <AnalogDashboard telemetry={telemetry.slice(0, numCars)} carSetups={carSetups} raceState={raceState} activeLights={activeLights} elapsedTime={elapsedTime} targetLaps={targetLaps} aiLevel={aiLevel} setAiLevel={setAiLevel} throttleProfile={throttleProfile} setThrottleProfile={setThrottleProfile} showTrees={showTrees} setShowTrees={setShowTrees} showGarage={showHomoViewer} setShowGarage={setShowHomoViewer} cameraMode={cameraMode} setCameraMode={setCameraMode} isRally={hasRotonda} showDunlop={showDunlop} setShowDunlop={setShowDunlop} />
                     )}
                     
                     {activeButton === 'DIGITAL' && (
-                        <DigitalDashboard telemetry={telemetry} carSetups={carSetups} raceState={raceState} activeLights={activeLights} elapsedTime={elapsedTime} targetLaps={targetLaps} aiLevel={aiLevel} setAiLevel={setAiLevel} throttleProfile={throttleProfile} setThrottleProfile={setThrottleProfile} showTrees={showTrees} setShowTrees={setShowTrees} numCars={numCars} showGarage={showHomoViewer} setShowGarage={setShowHomoViewer} cameraMode={cameraMode} setCameraMode={setCameraMode} />
+                        <DigitalDashboard telemetry={telemetry} carSetups={carSetups} raceState={raceState} activeLights={activeLights} elapsedTime={elapsedTime} targetLaps={targetLaps} aiLevel={aiLevel} setAiLevel={setAiLevel} throttleProfile={throttleProfile} setThrottleProfile={setThrottleProfile} showTrees={showTrees} setShowTrees={setShowTrees} numCars={numCars} showGarage={showHomoViewer} setShowGarage={setShowHomoViewer} cameraMode={cameraMode} setCameraMode={setCameraMode} showDunlop={showDunlop} setShowDunlop={setShowDunlop} />
                     )}
 
                     {activeButton !== 'ANALOG' && activeButton !== 'DIGITAL' && activeButton !== 'PRACTICE' && (
                         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[70] flex items-start gap-8 pointer-events-none w-full justify-center px-4">
-                            <div className="flex flex-col gap-2 mt-2 pointer-events-auto animate-in items-center transition-opacity duration-300">
-                                <button onClick={enterGridMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'GRID' ? 'bg-[#22d3ee] border-[#22d3ee] text-black shadow-[0_0_30px_rgba(34,211,238,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('prep')}</button>
-                                <button onClick={startPracticeMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'PRACTICE' ? 'bg-[#a3e635] border-[#a3e635] text-black shadow-[0_0_30px_rgba(163,230,53,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{hasRotonda ? t('rally') : t('practice')}</button>
+                            <div className="flex gap-4 items-center mt-2">
+                                <div className="flex flex-row items-center bg-black/80 border border-gray-600 rounded-xl p-1 pointer-events-auto shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm">
+                                    <button onClick={() => handleLangChange('es')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black transition-all ${lang === 'es' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
+                                        <span className="text-xs leading-none">🇪🇸</span> ES
+                                    </button>
+                                    <button onClick={() => handleLangChange('en')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black transition-all ${lang === 'en' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
+                                        <span className="text-xs leading-none">🇬🇧</span> EN
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-2 pointer-events-auto animate-in items-center transition-opacity duration-300">
+                                    <button onClick={enterGridMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'GRID' ? 'bg-[#22d3ee] border-[#22d3ee] text-black shadow-[0_0_30px_rgba(34,211,238,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('prep')}</button>
+                                    <button onClick={startPracticeMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'PRACTICE' ? 'bg-[#a3e635] border-[#a3e635] text-black shadow-[0_0_30px_rgba(163,230,53,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{hasRotonda ? t('rally') : t('practice')}</button>
+                                </div>
                             </div>
                             
                             <div className="flex flex-col items-center mt-2 shrink-0 pointer-events-auto">
                                 <div className="flex gap-4 items-end mb-1">
-                                        <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} />
+                                        <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} showDunlop={showDunlop} setShowDunlop={setShowDunlop} />
                                         <AiLevelSelector aiLevel={aiLevel} setAiLevel={setAiLevel} />
                                         <TreeToggle showTrees={showTrees} setShowTrees={setShowTrees} />
                                         <GarageToggle showGarage={showHomoViewer} setShowGarage={setShowHomoViewer} />
@@ -6398,13 +6553,23 @@
                             <div className="flex flex-col gap-2 mt-2 pointer-events-auto animate-in items-center transition-opacity duration-300">
                                 {!hasRotonda && (
                                     <>
-                                        <button onClick={handleAnalogMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'ANALOG' ? 'bg-[#fbbf24] border-[#fbbf24] text-black shadow-[0_0_30px_rgba(251,191,36,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('analog')}</button>
+                                        <div className="relative flex justify-center items-center w-full">
+                                            <button onClick={handleAnalogMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'ANALOG' ? 'bg-[#fbbf24] border-[#fbbf24] text-black shadow-[0_0_30px_rgba(251,191,36,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('analog')}</button>
+                                            <button onClick={toggleFullscreen} className="absolute -right-14 w-10 h-10 flex items-center justify-center rounded-lg bg-black/60 hover:bg-white text-gray-400 hover:text-black border border-white/20 hover:border-white transition-all duration-300 backdrop-blur-sm" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
+                                                {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
+                                            </button>
+                                        </div>
                                         <button onClick={handleDigitalMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'DIGITAL' ? 'bg-[#d946ef] border-[#d946ef] text-black shadow-[0_0_30px_rgba(217,70,239,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('digital')}</button>
                                     </>
                                 )}
                                 {hasRotonda && (
-                                    <div className="px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 border-[#facc15] bg-[#facc15]/10 text-[#facc15] shadow-[0_0_20px_rgba(250,204,21,0.3)] w-36 text-center animate-pulse">
-                                        MODO RALLY
+                                    <div className="relative flex justify-center items-center w-full">
+                                        <div className="px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 border-[#facc15] bg-[#facc15]/10 text-[#facc15] shadow-[0_0_20px_rgba(250,204,21,0.3)] w-36 text-center animate-pulse">
+                                            MODO RALLY
+                                        </div>
+                                        <button onClick={toggleFullscreen} className="absolute -right-14 w-10 h-10 flex items-center justify-center rounded-lg bg-black/60 hover:bg-white text-gray-400 hover:text-black border border-white/20 hover:border-white transition-all duration-300 backdrop-blur-sm" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
+                                            {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -6870,64 +7035,59 @@
                           if (Array.isArray(data)) {
                               const glbFiles = data.filter(f => f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf'));
                               
-                              if (glbFiles.length > 0) {
-                                  // Coche 1: 1er archivo
+                              if (glbFiles.length > 8) {
+                                  // Coche 1: 9no archivo (índice 8)
+                                  loadFromUrl(getRawUrl(glbFiles[8].name), glbFiles[8].name, 1);
+                              } else if (glbFiles.length > 0) {
                                   loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 1);
                               }
                               
-                              if (glbFiles.length > 1) {
-                                  // Coche 3: 2do archivo (posición 2 de la nube)
-                                  loadFromUrl(getRawUrl(glbFiles[1].name), glbFiles[1].name, 3);
-                              }
-                              
-                              if (glbFiles.length > 3) {
-                                  // Coche 2: 4to archivo
-                                  loadFromUrl(getRawUrl(glbFiles[3].name), glbFiles[3].name, 2);
-                              } else if (glbFiles.length > 2) {
-                                  // Si hay 3 archivos, asigna el 3ro al Coche 2
-                                  loadFromUrl(getRawUrl(glbFiles[2].name), glbFiles[2].name, 2);
+                              if (glbFiles.length > 9) {
+                                  // Coche 2: 10mo archivo (índice 9)
+                                  loadFromUrl(getRawUrl(glbFiles[9].name), glbFiles[9].name, 2);
                               } else if (glbFiles.length > 1) {
-                                  // Fallback: si solo hay 2, usa el 2do para el Coche 2 también
                                   loadFromUrl(getRawUrl(glbFiles[1].name), glbFiles[1].name, 2);
+                              } else if (glbFiles.length > 0) {
+                                  loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 2);
+                              }
+
+                              if (glbFiles.length > 1) {
+                                  // Coche 3: 2do archivo (índice 1)
+                                  loadFromUrl(getRawUrl(glbFiles[1].name), glbFiles[1].name, 3);
+                              } else if (glbFiles.length > 0) {
+                                  loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 3);
                               }
 
                               if (glbFiles.length > 12) {
-                                  // Coche 4: 13vo archivo (posición 13 de la nube, índice 12)
+                                  // Coche 4: 13vo archivo (índice 12)
                                   loadFromUrl(getRawUrl(glbFiles[12].name), glbFiles[12].name, 4);
                               } else if (glbFiles.length > 0) {
-                                  // Fallback: si no hay 13 archivos, repite el 1ero para el coche 4
                                   loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 4);
                               }
 
                               if (glbFiles.length > 11) {
-                                  // Coche 5: 12vo archivo (posición 12 de la nube, índice 11)
+                                  // Coche 5: 12vo archivo (índice 11)
                                   loadFromUrl(getRawUrl(glbFiles[11].name), glbFiles[11].name, 5);
                               } else if (glbFiles.length > 0) {
-                                  // Fallback: si no hay 12 archivos, repite el 1ero para el coche 5
                                   loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 5);
                               }
 
                               if (glbFiles.length > 10) {
-                                  // Coche 6: 11vo archivo (posición 11 de la nube, índice 10)
+                                  // Coche 6: 11vo archivo (índice 10)
                                   loadFromUrl(getRawUrl(glbFiles[10].name), glbFiles[10].name, 6);
                               } else if (glbFiles.length > 0) {
-                                  // Fallback: si no hay 11 archivos, repite el 1ero para el coche 6
                                   loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 6);
                               }
 
-                              if (glbFiles.length > 8) {
-                                  // Coche 7: 9no archivo (posición 9 de la nube, índice 8)
-                                  loadFromUrl(getRawUrl(glbFiles[8].name), glbFiles[8].name, 7);
-                              } else if (glbFiles.length > 0) {
-                                  // Fallback: si no hay 9 archivos, repite el 1ero para el coche 7
+                              if (glbFiles.length > 0) {
+                                  // Coche 7: 1er archivo (índice 0)
                                   loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 7);
                               }
 
-                              if (glbFiles.length > 9) {
-                                  // Coche 8: 10mo archivo (posición 10 de la nube, índice 9)
-                                  loadFromUrl(getRawUrl(glbFiles[9].name), glbFiles[9].name, 8);
+                              if (glbFiles.length > 2) {
+                                  // Coche 8: 3er archivo (índice 2)
+                                  loadFromUrl(getRawUrl(glbFiles[2].name), glbFiles[2].name, 8);
                               } else if (glbFiles.length > 0) {
-                                  // Fallback: si no hay 10 archivos, repite el 1ero para el coche 8
                                   loadFromUrl(getRawUrl(glbFiles[0].name), glbFiles[0].name, 8);
                               }
                           }
@@ -7014,13 +7174,8 @@
 
           if (circuitData) {
             return (
-                <LanguageContext.Provider value={{ lang, t }}>
+                <LanguageContext.Provider value={{ lang, t, handleLangChange }}>
                     <React.Fragment>
-                        {/* BANDERAS DE IDIOMA EN EL VISOR 3D */}
-                        <div className="absolute top-6 right-24 z-[90] flex gap-3 bg-black/50 p-2 rounded-full border border-white/10 backdrop-blur-md pointer-events-auto">
-                            <button onClick={() => handleLangChange('es')} className={`text-2xl transition-all ${lang === 'es' ? 'scale-125 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] grayscale-0' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`} title="Español">🇪🇸</button>
-                            <button onClick={() => handleLangChange('en')} className={`text-2xl transition-all ${lang === 'en' ? 'scale-125 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] grayscale-0' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`} title="English">🇬🇧</button>
-                        </div>
                         <Telemetry3DViewer 
                             circuitData={circuitData} 
                             carSettings={carSettings} 
@@ -7034,13 +7189,17 @@
           }
 
           return (
-            <LanguageContext.Provider value={{ lang, t }}>
+            <LanguageContext.Provider value={{ lang, t, handleLangChange }}>
                 <div className="flex flex-col h-[100dvh] w-full bg-[#0a0a0a] overflow-hidden font-sans select-none text-gray-200 justify-center items-center relative">
                     
                     {/* BANDERAS DE IDIOMA */}
-                    <div className="absolute top-6 right-6 z-50 flex gap-3 bg-black/50 p-2 rounded-full border border-white/10 backdrop-blur-md">
-                        <button onClick={() => handleLangChange('es')} className={`text-2xl transition-all ${lang === 'es' ? 'scale-125 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] grayscale-0' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`} title="Español">🇪🇸</button>
-                        <button onClick={() => handleLangChange('en')} className={`text-2xl transition-all ${lang === 'en' ? 'scale-125 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] grayscale-0' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-100'}`} title="English">🇬🇧</button>
+                    <div className="absolute top-6 right-6 z-50 flex flex-row items-center bg-black/60 border border-gray-600 rounded-2xl p-1 shadow-[0_0_20px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                        <button onClick={() => handleLangChange('es')} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${lang === 'es' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
+                            <span className="text-lg leading-none">🇪🇸</span> ES
+                        </button>
+                        <button onClick={() => handleLangChange('en')} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${lang === 'en' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
+                            <span className="text-lg leading-none">🇬🇧</span> EN
+                        </button>
                     </div>
 
                     {/* LOBBY SCREEN */}
