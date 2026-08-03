@@ -215,6 +215,7 @@
               { id: 's_r2_ice', label: 'R2 (Hielo)', type: 'curve', radius: 30.6, angle: 45, subtype: 'ice', cat: 'Curvas' }, 
               { id: 's_r3', label: 'R3 (Ext)', type: 'curve', radius: 46.2, angle: 22.5, cat: 'Curvas' }, 
               { id: 's_r4', label: 'R4 (Super)', type: 'curve', radius: 61.8, angle: 22.5, cat: 'Curvas' }, 
+              { id: 's_rotonda_ini', label: 'Rotonda Inicio', type: 'rotonda', radius: 15.0, angle: 180, subtype: 'rotonda_connect', cat: 'RALLY' }, 
               { id: 's_rotonda_fin', label: 'Rotonda Final', type: 'rotonda', radius: 15.0, angle: 180, subtype: 'rotonda', cat: 'RALLY' } 
             ] 
           },
@@ -297,8 +298,8 @@
               { id: 'car_x', label: 'Cambio X (69)', type: 'straight', length: 69.0, subtype: 'digital_x', cat: 'Digital' },
               { id: 'car_ch_l', label: 'Cambio Izq (69)', type: 'straight', length: 69.0, subtype: 'change_left', cat: 'Digital' },
               { id: 'car_ch_r', label: 'Cambio Der (69)', type: 'straight', length: 69.0, subtype: 'change_right', cat: 'Digital' },
-              { id: 'car_macro_ch_curve_in', label: 'Cambio Curva In', type: 'compound_curve_change', length: 34.5, radius: 30.0, angle: 60, subtype: 'in', cat: 'Digital' },
-              { id: 'car_macro_ch_curve_out', label: 'Cambio Curva Out', type: 'compound_curve_change', length: 34.5, radius: 30.0, angle: 60, subtype: 'out', cat: 'Digital' },
+              { id: 'car_macro_ch_curve_in', label: 'Cambio Curva In', type: 'curve', isMacro: true, cat: 'Digital', pieces: [ { id: 'car_ch_curve_str_in', label: 'Recta Cambio In', type: 'straight', length: 34.5, subtype: 'digital_str_curve_in', cat: 'Digital' }, { id: 'car_ch_curve_arc_in', label: 'Curva Cambio In', type: 'curve', radius: 30.0, angle: 60, subtype: 'digital_arc_curve_in', cat: 'Digital' } ] },
+              { id: 'car_macro_ch_curve_out', label: 'Cambio Curva Out', type: 'curve', isMacro: true, cat: 'Digital', pieces: [ { id: 'car_ch_curve_str_out', label: 'Recta Cambio Out', type: 'straight', length: 34.5, subtype: 'digital_str_curve_out', cat: 'Digital' }, { id: 'car_ch_curve_arc_out', label: 'Curva Cambio Out', type: 'curve', radius: 30.0, angle: 60, subtype: 'digital_arc_curve_out', cat: 'Digital' } ] },
               { id: 'car_pit_in', label: 'Entrada Pit Carrera', type: 'pit_entry', length: 34.5, cat: 'Boxes' },
               { id: 'car_pit_straight', label: 'Recta Pit 34.5', type: 'straight', length: 34.5, subtype: 'pit_parallel', cat: 'Boxes' },
               { id: 'car_pit_out', label: 'Salida Pit Carrera', type: 'pit_exit', length: 34.5, cat: 'Boxes' },
@@ -1105,7 +1106,7 @@
         };
 
         // Compilador 3D MEJORADO: ENCADENAMIENTO ESTRICTO Y CONTINUO
-        const compileCircuitFor3D = (rawPieces) => {
+        const compileCircuitFor3D = (rawPieces, expandMacros = false) => {
             if (!rawPieces || rawPieces.length === 0) return [];
             
             const finalCompiled = [];
@@ -1152,7 +1153,7 @@
                     return; 
                 }
 
-                if (p.subtype === 'full_chicane') {
+                if (p.subtype === 'full_chicane' && expandMacros) {
                     const partLength = p.length / 3;
                     
                     let prefix = 'n_';
@@ -1185,7 +1186,30 @@
                     return;
                 }
 
-                if (p.subtype === 'chicane_entry' || p.subtype === 'chicane3_entry' || p.subtype === 'chicane_middle' || p.subtype === 'chicane3_middle' || p.subtype === 'chicane_exit' || p.subtype === 'chicane3_exit' || p.subtype === 'crossing') {
+                if (p.type === 'compound_curve_change' && expandMacros) {
+                    const strLen = p.length;
+                    const r = Math.abs(p.radius);
+                    const a = p.angle;
+                    
+                    const p1 = { ...p, uid: p.uid + "_1", id: "car_345", type: 'straight', length: strLen, direction: 'left', brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_cr` };
+                    delete p1.subtype;
+
+                    let arcSubtype = p.direction === 'left' ? 'change_left' : 'change_right';
+                    if (p.subtype === 'out') {
+                        arcSubtype = p.direction === 'left' ? 'change_right' : 'change_left';
+                    }
+
+                    const p2 = { ...p, uid: p.uid + "_2", id: "car_r1_60", type: 'curve', radius: r, angle: a, direction: p.direction, subtype: arcSubtype, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_cr` };
+                    
+                    p2.x = p1.x + strLen * Math.cos(p.rot || 0);
+                    p2.y = p1.y + strLen * Math.sin(p.rot || 0);
+                    p2.rot = p.rot;
+                    
+                    expandedPieces.push(p1, p2);
+                    return;
+                }
+
+                if (p.subtype === 'chicane_entry' || p.subtype === 'chicane3_entry' || p.subtype === 'chicane_middle' || p.subtype === 'chicane3_middle' || p.subtype === 'chicane_exit' || p.subtype === 'chicane3_exit' || p.subtype === 'crossing' || (!expandMacros && p.subtype === 'full_chicane')) {
                     p.width = brandDef.width; 
                     p.laneSpacing = brandDef.laneSpacing;
                 }
@@ -1286,6 +1310,10 @@
                         if (!connectedToIn) {
                             if (nextPiece.type === 'curve' || nextPiece.subtype === 'chicane_curve' || nextPiece.type === 'rotonda' || nextPiece.subtype === 'rotonda' || nextPiece.subtype === 'rotonda_connect') {
                                 nextPiece.direction = nextPiece.direction === 'left' ? 'right' : 'left';
+                            }
+                            if (nextPiece.type === 'compound_curve_change') {
+                                nextPiece.direction = nextPiece.direction === 'left' ? 'right' : 'left';
+                                nextPiece.subtype = nextPiece.subtype === 'in' ? 'out' : 'in';
                             }
                             const tmpL = nextPiece.borderLeft; nextPiece.borderLeft = nextPiece.borderRight; nextPiece.borderRight = tmpL;
                             
@@ -2183,7 +2211,7 @@
                 chat: { title: 'CHAT DE PILOTOS', placeholder: 'Escribe un mensaje...', loginReq: 'Inicia sesión o verifica tu correo.', empty: 'No hay mensajes aún. ¡Sé el primero en saludar!' },
                 auth: { loginBtn: 'INICIAR SESIÓN', logoutBtn: 'CERRAR SESIÓN', titleLogin: 'ACCESO PILOTOS', titleReg: 'NUEVA LICENCIA', email: 'Correo Electrónico', pass: 'Contraseña', name: 'Alias de Piloto', submitLogin: 'ENTRAR A BOXES', submitReg: 'OBTENER LICENCIA', switchReg: '¿No tienes cuenta? Regístrate', switchLogin: '¿Ya tienes cuenta? Entra aquí', reqLogin: 'Debes iniciar sesión para publicar en la comunidad.', forgotPass: '¿Olvidaste tu contraseña?', resetMsg: 'Te hemos enviado un enlace para recuperar tu contraseña.', verifyMsg: '¡Bienvenido a Track Telemetry! Te hemos enviado un enlace. REVISA TU CARPETA DE SPAM O CORREO NO DESEADO para verificar tu cuenta.', enterEmail: 'Introduce tu correo arriba para recuperar la contraseña.', reqVerify: '⛔ ACCESO DENEGADO\n\nPara mantener una comunidad sana y libre de bots, debes verificar tu correo electrónico.\n\nPor favor, REVISA TU BANDEJA DE ENTRADA O LA CARPETA DE SPAM para activar tu cuenta antes de acceder.', verifyCheck: 'ACTUALIZAR ESTADO' },
                 alerts: { confirmNew: '¿Estás seguro de que quieres crear un circuito nuevo? Se borrará el diseño actual.', valid: 'El archivo seleccionado no es un circuito válido.', github: 'Error al descargar el circuito desde GitHub.', json: 'El archivo no parece ser un circuito válido.', read: 'Error al leer el archivo JSON.', sim: 'No se pudo iniciar la simulación. Comprueba las cookies/almacenamiento.', simMulti: 'El modo simulación 3D está optimizado para 2 carriles y solo mostrará tu trazado principal. Para visualizar circuitos de 4, 6 u 8 carriles al completo, utiliza el botón "CLUBS DE SLOT".', deco: 'No se pudo iniciar la decoración. Comprueba las cookies/almacenamiento.', pieces: '¡Añade pistas antes de generar el informe o publicar!', emptyGame: '¡Dibuja un circuito en el tablero antes de abrir el juego!', pdfLib: 'Error: Librería PDF no cargada.', pdfError: 'Error al generar el PDF. Revisa la consola.', decoMulti: 'El modo decoración actual está optimizado para 2 carriles. Solo se exportará tu trazado principal.', replaceMulti: 'Para sustituir pistas en modo Multi-Carril, elimina primero los carriles extra usando Deshacer.', welcomeEngine: '¡Bienvenido al nuevo Motor Absoluto!\n\nAhora puedes coger cualquier pieza, moverla, rotarla con el tirador azul y acercarla a otras pistas para que se peguen mágicamente.\n\nTus circuitos viejos se han migrado automáticamente a este nuevo sistema.' },
-                'Pack 3: Horquilla R1 90°': 'Pack 3: Horquilla R1 90°', 'Recta Std 34.5cm': 'Recta Std 34.5cm', 'Tercio 11.5cm': 'Tercio 11.5cm', 'Cuarto 8.6cm': 'Cuarto 8.6cm', 'Conexión Analog': 'Conexión Analog', 'Cambio X (69)': 'Cambio X (69)', 'Cambio Izq (69)': 'Cambio Izq (69)', 'Cambio Der (69)': 'Cambio Der (69)', 'Entrada Pit Carrera': 'Entrada Pit Carrera', 'Recta Pit 34.5': 'Recta Pit 34.5', 'Salida Pit Carrera': 'Salida Pit Carrera', 'R1 (60°)': 'R1 (60°)', 'R1 (30°)': 'R1 (30°)', 'R2 (30°)': 'R2 (30°)', 'R3 (30°)': 'R3 (30°)', 'R4 (15°)': 'R4 (15°)', 'Gran Chicane PT74': 'Gran Chicane PT74', 'Chicane In (PT74)': 'Chicane In (PT74)', 'Chicane Med (PT74)': 'Chicane Med (PT74)', 'Chicane Out (PT74)': 'Chicane Out (PT74)', 'Chicane Deslizante': 'Chicane Deslizante', 'Rotonda Inicio': 'Rotonda Inicio', 'Rotonda Final': 'Rotonda Final', 'Gran Chicane': 'Gran Chicane', 'Chicane In (360)': 'Chicane In (360)', 'Chicane Med (360)': 'Chicane Med (360)', 'Chicane Out (360)': 'Chicane Out (360)'
+                'Pack 3: Horquilla R1 90°': 'Pack 3: Horquilla R1 90°', 'Recta Std 34.5cm': 'Recta Std 34.5cm', 'Tercio 11.5cm': 'Tercio 11.5cm', 'Cuarto 8.6cm': 'Cuarto 8.6cm', 'Conexión Analog': 'Conexión Analog', 'Cambio X (69)': 'Cambio X (69)', 'Cambio Izq (69)': 'Cambio Izq (69)', 'Cambio Der (69)': 'Cambio Der (69)', 'Entrada Pit Carrera': 'Entrada Pit Carrera', 'Recta Pit 34.5': 'Recta Pit 34.5', 'Salida Pit Carrera': 'Salida Pit Carrera', 'R1 (60°)': 'R1 (60°)', 'R1 (30°)': 'R1 (30°)', 'R2 (30°)': 'R2 (30°)', 'R3 (30°)': 'R3 (30°)', 'R4 (15°)': 'R4 (15°)', 'Cambio Curva In': 'Cambio Curva In', 'Cambio Curva Out': 'Cambio Curva Out', 'Recta Cambio In': 'Recta Cambio In', 'Curva Cambio In': 'Curva Cambio In', 'Recta Cambio Out': 'Recta Cambio Out', 'Curva Cambio Out': 'Curva Cambio Out', 'Gran Chicane PT74': 'Gran Chicane PT74', 'Chicane In (PT74)': 'Chicane In (PT74)', 'Chicane Med (PT74)': 'Chicane Med (PT74)', 'Chicane Out (PT74)': 'Chicane Out (PT74)', 'Chicane Deslizante': 'Chicane Deslizante', 'Rotonda Inicio': 'Rotonda Inicio', 'Rotonda Final': 'Rotonda Final', 'Gran Chicane': 'Gran Chicane', 'Chicane In (360)': 'Chicane In (360)', 'Chicane Med (360)': 'Chicane Med (360)', 'Chicane Out (360)': 'Chicane Out (360)'
             },
             en: {
                 cat: { 'Rectas': 'Straights', 'Curvas': 'Curves', 'Digital': 'Digital', 'Boxes': 'Pit Box', 'RALLY': 'RALLY', 'Kits': 'Kits', 'Cruces': 'Crossings' },
@@ -2766,6 +2794,29 @@
                   newY = ((windowSize.h/2) - view.y) / view.scale;
               }
 
+              if (p.isMacro) {
+                  let currentX = newX, currentY = newY, currentRot = newRot;
+                  const newPieces = [...pieces];
+                  const addedIds = [];
+                  const newGroupId = 'macro_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+                  
+                  p.pieces.forEach((subP, index) => {
+                      const newPiece = { ...subP, direction: d, uid: Date.now() + Math.random() + index, groupId: newGroupId, elevation: workingElevation, x: currentX, y: currentY, rot: currentRot, invert: false, cat: p.cat || subP.cat };
+                      newPieces.push(newPiece);
+                      addedIds.push(newPiece.uid);
+                      
+                      const geo = getPieceGeometry(newPiece);
+                      if (geo) {
+                          currentX = geo.outX;
+                          currentY = geo.outY;
+                          currentRot = geo.outAngle;
+                      }
+                  });
+                  pushHistory(newPieces);
+                  setSelectedPieceIds(addedIds);
+                  return;
+              }
+
               const newPiece = { ...p, direction: d, uid: Date.now() + Math.random(), elevation: workingElevation, x: newX, y: newY, rot: newRot, invert: false };
               pushHistory([...pieces, newPiece]);
               setSelectedPieceIds([newPiece.uid]); 
@@ -3339,11 +3390,11 @@
               pushHistory(newPieces); setShowMultiLaneTools(false);
           };
 
-          const getCircuitDataPayload = (piecesToSend) => {
+          const getCircuitDataPayload = (piecesToSend, expandMacros = false) => {
               const bDef = TRACK_DEFINITIONS[activeBrand] || TRACK_DEFINITIONS['NINCO'];
               const bColors = { neonColor: bDef.neonColor, trackColor: bDef.trackColor, railColor: bDef.railColor, slotColor: bDef.slotColor, borderColor1: bDef.borderColor1, borderColor2: bDef.borderColor2 };
               
-              const compiledPieces = compileCircuitFor3D(piecesToSend);
+              const compiledPieces = compileCircuitFor3D(piecesToSend, expandMacros);
               
               // CENTRADO ABSOLUTO EN (0,0) PARA LOS MOTORES 3D
               // Soluciona el problema de que el 3D "no lo hace" cuando se dibuja en el 2D muy lejos del centro
@@ -3413,13 +3464,13 @@
                   alert("AVISO DE INGENIERÍA:\n\nTu circuito tiene un número IMPAR de cruces (" + crossingCount + "). Físicamente, esto fusiona los carriles en un único recorrido continuo.\n\nPor este motivo, en la simulación 3D el coche 'saltará' de carril en la línea de meta (donde no hay ningún cruce) para compensar el desajuste estructural.\n\n-> SOLUCIÓN: Añade o quita 1 cruce para que el total sea PAR y ambos carriles cierren perfectamente.");
               }
               
-              try { localStorage.setItem('slot_circuit_transfer', JSON.stringify(getCircuitDataPayload(piecesToSend))); window.location.href = '3d.html'; } catch (e) { alert(t.alerts.sim); }
+              try { localStorage.setItem('slot_circuit_transfer', JSON.stringify(getCircuitDataPayload(piecesToSend, true))); window.location.href = '3d.html'; } catch (e) { alert(t.alerts.sim); }
           };
           const goToMulti = () => {
               if (pieces.length === 0) { alert(t.alerts.pieces); return; }
               
               // Multi-lane sí envía todas las piezas (sin filtrar)
-              try { localStorage.setItem('slot_circuit_transfer', JSON.stringify(getCircuitDataPayload(pieces))); window.location.href = 'multi.html'; } catch (e) { alert(t.alerts.sim); }
+              try { localStorage.setItem('slot_circuit_transfer', JSON.stringify(getCircuitDataPayload(pieces, true))); window.location.href = 'multi.html'; } catch (e) { alert(t.alerts.sim); }
           };
 
           const goTo2DGame = () => {
@@ -3428,7 +3479,7 @@
 
           const goTo3DGame = () => {
               if (pieces.length === 0) { alert(t.alerts.emptyGame); return; }
-              try { localStorage.setItem('slot_circuit_transfer', JSON.stringify(getCircuitDataPayload(pieces))); window.location.href = 'slot-3d-game.html'; } catch (e) { alert(t.alerts.sim); }
+              try { localStorage.setItem('slot_circuit_transfer', JSON.stringify(getCircuitDataPayload(pieces, false))); window.location.href = 'slot-3d-game.html'; } catch (e) { alert(t.alerts.sim); }
           };
 
           const generateReport = () => { 
