@@ -4896,15 +4896,32 @@
                         if (yL > 0.3) needsFenceL[s] = true;
                         if (yR > 0.3) needsFenceR[s] = true;
 
-                        // 2. CURVAS, ROTONDAS Y CHICANES: Vallas por seguridad para no salir volando en pistas planas o elevadas.
-                        if (piece.type === 'curve' || piece.subtype === 'curve') {
-                            if (piece.direction === 'right') needsFenceL[s] = true; // Curva a derecha, exterior es izq
-                            if (piece.direction === 'left') needsFenceR[s] = true;  // Curva a izq, exterior es der
+                        // 2. CURVAS, ROTONDAS, CHICANES Y PITLANE
+                        const isCurve = piece.type === 'curve' || (piece.subtype && piece.subtype.toLowerCase().includes('curve'));
+                        
+                        if (isCurve) {
+                            // En las curvas, la valla exterior es VITAL. Calculamos la dirección real teniendo en cuenta si está invertida.
+                            let dir = piece.direction;
+                            if (!dir) dir = (piece.angle < 0) ? 'right' : 'left'; // Fallback por si no hay dirección explícita
+                            if (piece.invert) dir = (dir === 'left') ? 'right' : 'left'; // Invertir gira la curva hacia el otro lado
+                            
+                            if (dir === 'right') {
+                                needsFenceL[s] = true; // Curva a derecha, la fuerza centrífuga empuja a la izquierda
+                            } else if (dir === 'left') {
+                                needsFenceR[s] = true;  // Curva a izquierda, la fuerza centrífuga empuja a la derecha
+                            } else {
+                                // Fallback de seguridad: si no logramos detectar el giro, protegemos ambos lados
+                                needsFenceL[s] = true;
+                                needsFenceR[s] = true;
+                            }
                         } else if (piece.subtype === 'rotonda' || piece.type === 'rotonda') {
-                            needsFenceL[s] = true; // Rotonda: vallas en ambos lados
+                            needsFenceL[s] = true; 
                             needsFenceR[s] = true;
                         } else if (piece.type === 'chicane' || (piece.subtype && piece.subtype.includes('chicane'))) {
-                            needsFenceL[s] = true; // Chicanes: peligro de salida a ambos lados
+                            needsFenceL[s] = true; 
+                            needsFenceR[s] = true;
+                        } else if (piece.type === 'pit_entry' || piece.type === 'pit_exit' || (piece.subtype && piece.subtype.includes('pit'))) {
+                            needsFenceL[s] = true; // Toda la zona de Pitlane lleva vallas
                             needsFenceR[s] = true;
                         }
                     }
@@ -4917,18 +4934,17 @@
                         }
                     }
 
-                    // EXTENSIÓN DE SEGURIDAD (LEAD-IN / LEAD-OUT):
-                    // Ampliamos 3 segmentos antes y después para proteger zonas de frenada y aceleración.
+                    // EXTENSIÓN DE SEGURIDAD MÁXIMA PARA CURVAS (LEAD-IN / LEAD-OUT):
+                    // Ampliamos 6 segmentos (antes 3) para proteger fuertemente las entradas de frenada y salidas de aceleración
                     let expandedL = [...needsFenceL];
                     let expandedR = [...needsFenceR];
-                    for (let s = 3; s < aspVertCount - 3; s++) {
+                    const expansion = 6; 
+                    for (let s = expansion; s < aspVertCount - expansion; s++) {
                         if (needsFenceL[s]) { 
-                            expandedL[s-1] = true; expandedL[s-2] = true; expandedL[s-3] = true;
-                            expandedL[s+1] = true; expandedL[s+2] = true; expandedL[s+3] = true;
+                            for(let e=1; e<=expansion; e++) { expandedL[s-e] = true; expandedL[s+e] = true; }
                         }
                         if (needsFenceR[s]) { 
-                            expandedR[s-1] = true; expandedR[s-2] = true; expandedR[s-3] = true;
-                            expandedR[s+1] = true; expandedR[s+2] = true; expandedR[s+3] = true;
+                            for(let e=1; e<=expansion; e++) { expandedR[s-e] = true; expandedR[s+e] = true; }
                         }
                     }
                     needsFenceL = expandedL;
@@ -5763,12 +5779,12 @@
                                     loadRealTrees(glbFiles);
                                 } else {
                                     // Si no encuentra los nombres exactos, forzamos por si acaso
-                                    loadRealTrees(['pino.glb', 'alamo.glb', 'Pino.glb', 'Alamo.glb']);
+                                    loadRealTrees(['pino.glb', 'alamo.glb', 'Pino.glb', 'Alamo.glb', 'arbol.glb', 'Arbol.glb']);
                                 }
                             })
                             .catch(err => {
                                 console.warn("API bloqueada, intentando cargar lista predefinida...");
-                                loadRealTrees(['pino.glb', 'alamo.glb', 'Pino.glb', 'Alamo.glb']);
+                                loadRealTrees(['pino.glb', 'alamo.glb', 'Pino.glb', 'Alamo.glb', 'arbol.glb', 'Arbol.glb']);
                             });
 
                         // --- FIN GENERADOR BOSQUE ---
@@ -7362,7 +7378,7 @@
                       .catch(err => {
                           console.warn("GitHub API límite excedido. Usando nombres de coches por defecto...");
                           // Si la API falla, intentamos cargar los nombres conocidos directamente (sin API)
-                          const fallbacks = ['amartin.glb', 'seat_leon.glb', 'porsche.glb', 'audi.glb'];
+                          const fallbacks = ['amartin.glb', 'seat_leon.glb', 'porsche.glb', 'audi.glb', 'coche1.glb', 'coche2.glb'];
                           fallbacks.forEach((name, i) => {
                               // Reutilizamos la lista para intentar llenar los 8 huecos
                               const carToLoad = fallbacks[i] || fallbacks[0];
