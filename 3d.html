@@ -1362,6 +1362,9 @@
             });
             const [isAdding, setIsAdding] = useState(false);
             const [newForm, setNewForm] = useState({ name: 'Custom M', rpm: 25000, torque: 250, type: 'Long Can' });
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            const toggleExpand = (e) => { if (!isExpanded) { e.stopPropagation(); setIsExpanded(true); } };
 
             const handleAdd = () => {
                 const updated = { ...motors };
@@ -1391,59 +1394,68 @@
             };
 
             return (
-                <div className="w-64 h-[21rem] flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.1)] bg-[#050a05]/90 backdrop-blur-md animate-in z-50 transition-all hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] group relative">
-                    <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14]"></div>
-                    
-                    <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
-                        <div className="flex items-center gap-2"> <Zap className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('motorPower')}</h2> </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={()=>setIsAdding(true)} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Motor Personalizado"><Plus size={10}/> NUEVO</button>
-                            <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span></div>
+                <>
+                    {isExpanded && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998]" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}></div>}
+                    {isExpanded && <div className="w-64 h-[21rem] opacity-0 pointer-events-none shrink-0" />}
+                    <div onClick={toggleExpand} className={`flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 bg-[#050a05]/90 backdrop-blur-md transition-all duration-300 group relative ${isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] scale-[1.3] sm:scale-[1.6] shadow-[0_0_50px_rgba(57,255,20,0.4)] cursor-default w-64 h-[21rem]' : 'w-64 h-[21rem] shadow-[0_0_20px_rgba(57,255,20,0.1)] hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:scale-105 cursor-zoom-in z-50 animate-in'}`}>
+                        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14]"></div>
+                        
+                        <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
+                            <div className="flex items-center gap-2"> <Zap className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('motorPower')}</h2> </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true)}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Motor Personalizado"><Plus size={10}/> NUEVO</button>
+                                <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span></div>
+                                {isExpanded && (
+                                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="ml-1 text-red-500 hover:text-white bg-red-500/20 hover:bg-red-500 rounded p-1 transition-colors" title="Cerrar Zoom">
+                                        <Minimize size={12} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {isAdding && ReactDOM.createPortal(
+                            <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
+                                <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
+                                    <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVO MOTOR</h3>
+                                    <div className="space-y-4">
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">NOMBRE</label><input type="text" maxLength="15" value={newForm.name} onChange={e=>setNewForm({...newForm, name: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">RPM</label><input type="number" step="1000" value={newForm.rpm} onChange={e=>setNewForm({...newForm, rpm: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">TORQUE (g/cm)</label><input type="number" step="10" value={newForm.torque} onChange={e=>setNewForm({...newForm, torque: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">TIPO</label><select value={newForm.type} onChange={e=>setNewForm({...newForm, type: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1"><option>Long Can</option><option>Short Can</option><option>Flat</option></select></div>
+                                    </div>
+                                    <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
+                                        <button onClick={() => setIsAdding(false)} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
+                                        <button onClick={handleAdd} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
+                                    </div>
+                                </div>
+                            </div>,
+                            document.body
+                        )}
+
+                        <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
+                            {Object.entries(motors).map(([brand, list]) => (
+                                <div key={brand}>
+                                    <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="h-px w-2 bg-[#39ff14]/50"></div><h3 className="text-[9px] font-bold text-[#39ff14] uppercase tracking-wider">{brand}</h3><div className="h-px flex-1 bg-gradient-to-r from-[#39ff14]/30 to-transparent"></div></div>
+                                    <div className="space-y-1">{list.map((motor, idx) => { 
+                                        const isSelected = currentConfig.motorName === motor.name || currentConfig.motorName === motor.label; 
+                                        return (
+                                            <div key={idx} onClick={(e) => { e.stopPropagation(); onUpdate('motor', motor); }} className={`rounded-sm p-1.5 flex gap-2 transition-all group/item items-center cursor-pointer border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'bg-black/40 border-[#39ff14]/10 hover:bg-[#39ff14]/10 hover:border-[#39ff14]/40'}`}>
+                                                <div className="w-10 h-6 shrink-0"><MotorSVG type={motor.type} color={motor.color} label={motor.label} /></div>
+                                                <div className="flex-1 min-w-0 pl-1">
+                                                    <div className="flex justify-between items-baseline"><h4 className={`font-bold text-[9px] truncate transition-colors pr-4 ${isSelected ? 'text-white' : 'text-gray-300 group-hover/item:text-white'}`}>{motor.name || motor.label}</h4></div>
+                                                    <div className="flex justify-between text-[7px] text-gray-500 mt-0.5"><span className="text-[#39ff14]">{motor.rpm} rpm</span><span>{motor.torque} g/cm</span></div>
+                                                </div>
+                                                {brand === 'CUSTOM (USER)' && (
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 text-red-500 hover:bg-red-500 hover:text-white rounded p-0.5 transition-all"><X size={10}/></button>
+                                                )}
+                                            </div>
+                                        ); 
+                                    })}</div>
+                                </div>
+                            ))}
                         </div>
                     </div>
-
-                    {isAdding && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
-                            <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVO MOTOR</h3>
-                                <div className="space-y-4">
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">NOMBRE</label><input type="text" maxLength="15" value={newForm.name} onChange={e=>setNewForm({...newForm, name: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">RPM</label><input type="number" step="1000" value={newForm.rpm} onChange={e=>setNewForm({...newForm, rpm: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">TORQUE (g/cm)</label><input type="number" step="10" value={newForm.torque} onChange={e=>setNewForm({...newForm, torque: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">TIPO</label><select value={newForm.type} onChange={e=>setNewForm({...newForm, type: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1"><option>Long Can</option><option>Short Can</option><option>Flat</option></select></div>
-                                </div>
-                                <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
-                                    <button onClick={() => setIsAdding(false)} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
-                                    <button onClick={handleAdd} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-
-                    <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
-                        {Object.entries(motors).map(([brand, list]) => (
-                            <div key={brand}>
-                                <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="h-px w-2 bg-[#39ff14]/50"></div><h3 className="text-[9px] font-bold text-[#39ff14] uppercase tracking-wider">{brand}</h3><div className="h-px flex-1 bg-gradient-to-r from-[#39ff14]/30 to-transparent"></div></div>
-                                <div className="space-y-1">{list.map((motor, idx) => { 
-                                    const isSelected = currentConfig.motorName === motor.name || currentConfig.motorName === motor.label; 
-                                    return (
-                                        <div key={idx} onClick={() => onUpdate('motor', motor)} className={`rounded-sm p-1.5 flex gap-2 transition-all group/item items-center cursor-pointer border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'bg-black/40 border-[#39ff14]/10 hover:bg-[#39ff14]/10 hover:border-[#39ff14]/40'}`}>
-                                            <div className="w-10 h-6 shrink-0"><MotorSVG type={motor.type} color={motor.color} label={motor.label} /></div>
-                                            <div className="flex-1 min-w-0 pl-1">
-                                                <div className="flex justify-between items-baseline"><h4 className={`font-bold text-[9px] truncate transition-colors pr-4 ${isSelected ? 'text-white' : 'text-gray-300 group-hover/item:text-white'}`}>{motor.name || motor.label}</h4></div>
-                                                <div className="flex justify-between text-[7px] text-gray-500 mt-0.5"><span className="text-[#39ff14]">{motor.rpm} rpm</span><span>{motor.torque} g/cm</span></div>
-                                            </div>
-                                            {brand === 'CUSTOM (USER)' && (
-                                                <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 text-red-500 hover:bg-red-500 hover:text-white rounded p-0.5 transition-all"><X size={10}/></button>
-                                            )}
-                                        </div>
-                                    ); 
-                                })}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                </>
             ); 
         });
         
@@ -1463,6 +1475,9 @@
             });
             const [isAdding, setIsAdding] = useState(false);
             const [newForm, setNewForm] = useState({ name: 'Custom Grip', grip: 85, type: 'Slick' });
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            const toggleExpand = (e) => { if (!isExpanded) { e.stopPropagation(); setIsExpanded(true); } };
 
             const handleAdd = () => {
                 const updated = { ...tires };
@@ -1492,61 +1507,70 @@
             };
 
             return (
-                <div className="w-64 h-[21rem] flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.1)] bg-[#050a05]/90 backdrop-blur-md animate-in z-50 transition-all hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] group relative">
-                    <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#39ff14]"></div><div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#39ff14]"></div><div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[#39ff14]"></div><div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: 'linear-gradient(#39ff14 1px, transparent 1px), linear-gradient(90deg, #39ff14 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
-                    
-                    <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
-                        <div className="flex items-center gap-2"> <RotateCw className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('compounds')}</h2> </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={()=>setIsAdding(true)} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Neumático Personalizado"><Plus size={10}/> NUEVO</button>
-                            <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span></div>
+                <>
+                    {isExpanded && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998]" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}></div>}
+                    {isExpanded && <div className="w-64 h-[21rem] opacity-0 pointer-events-none shrink-0" />}
+                    <div onClick={toggleExpand} className={`flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 bg-[#050a05]/90 backdrop-blur-md transition-all duration-300 group relative ${isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] scale-[1.3] sm:scale-[1.6] shadow-[0_0_50px_rgba(57,255,20,0.4)] cursor-default w-64 h-[21rem]' : 'w-64 h-[21rem] shadow-[0_0_20px_rgba(57,255,20,0.1)] hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:scale-105 cursor-zoom-in z-50 animate-in'}`}>
+                        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#39ff14]"></div><div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#39ff14]"></div><div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[#39ff14]"></div><div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: 'linear-gradient(#39ff14 1px, transparent 1px), linear-gradient(90deg, #39ff14 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
+                        
+                        <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
+                            <div className="flex items-center gap-2"> <RotateCw className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('compounds')}</h2> </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true)}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Neumático Personalizado"><Plus size={10}/> NUEVO</button>
+                                <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span></div>
+                                {isExpanded && (
+                                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="ml-1 text-red-500 hover:text-white bg-red-500/20 hover:bg-red-500 rounded p-1 transition-colors" title="Cerrar Zoom">
+                                        <Minimize size={12} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {isAdding && ReactDOM.createPortal(
+                            <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
+                                <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
+                                    <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVO NEUMÁTICO</h3>
+                                    <div className="space-y-4">
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">NOMBRE</label><input type="text" maxLength="15" value={newForm.name} onChange={e=>setNewForm({...newForm, name: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">GRIP (0-100%)</label><input type="number" min="0" max="100" value={newForm.grip} onChange={e=>setNewForm({...newForm, grip: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
+                                        <div><label className="text-xs text-gray-400 font-bold tracking-wider">TIPO</label><select value={newForm.type} onChange={e=>setNewForm({...newForm, type: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1"><option>Slick</option><option>Rain</option></select></div>
+                                    </div>
+                                    <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
+                                        <button onClick={() => setIsAdding(false)} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
+                                        <button onClick={handleAdd} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
+                                    </div>
+                                </div>
+                            </div>,
+                            document.body
+                        )}
+
+                        <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
+                            {Object.entries(tires).map(([brand, list]) => (
+                                <div key={brand}>
+                                    <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="h-px w-2 bg-[#39ff14]/50"></div><h3 className="text-[9px] font-bold text-[#39ff14] uppercase tracking-wider">{brand}</h3><div className="h-px flex-1 bg-gradient-to-r from-[#39ff14]/30 to-transparent"></div></div>
+                                    <div className="space-y-1">{list.map((tire, idx) => { 
+                                        const isSelected = currentConfig.tireName === tire.name || currentConfig.tireName === tire.label; 
+                                        return (
+                                            <div key={idx} onClick={(e) => { e.stopPropagation(); onUpdate('tire', tire); }} className={`rounded-sm p-1.5 flex gap-2 transition-all group/item items-center cursor-pointer border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'bg-black/40 border-[#39ff14]/10 hover:bg-[#39ff14]/10 hover:border-[#39ff14]/40'}`}>
+                                                <div className="w-8 h-8 shrink-0 flex items-center justify-center opacity-90 group-hover/item:opacity-100 transition-opacity"><TireSVG type={tire.type} rimColor={tire.color} label={tire.label} compoundColor={tire.text} /></div>
+                                                <div className="flex-1 min-w-0 pl-1">
+                                                    <div className="flex justify-between items-baseline"><h4 className={`font-bold text-[9px] truncate transition-colors pr-4 ${isSelected ? 'text-white' : 'text-gray-300 group-hover/item:text-white'}`}>{tire.name}</h4><span className="text-[7px] text-[#39ff14]/60 font-mono">{tire.type === 'Rain' ? 'Lluvia' : tire.type}</span></div>
+                                                    <div className="flex flex-col gap-0.5 mt-0.5">
+                                                        <div className="flex justify-between text-[7px] text-gray-500"><span>{tire.compound}</span><span className="text-[#39ff14]">{tire.grip}% Grip</span></div>
+                                                        <div className="h-1 w-full bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-gray-600 to-[#39ff14]" style={{width: `${tire.grip}%`}}></div></div>
+                                                    </div>
+                                                </div>
+                                                {brand === 'CUSTOM (USER)' && (
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 text-red-500 hover:bg-red-500 hover:text-white rounded p-0.5 transition-all"><X size={10}/></button>
+                                                )}
+                                            </div>
+                                        ); 
+                                    })}</div>
+                                </div>
+                            ))}
                         </div>
                     </div>
-
-                    {isAdding && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
-                            <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVO NEUMÁTICO</h3>
-                                <div className="space-y-4">
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">NOMBRE</label><input type="text" maxLength="15" value={newForm.name} onChange={e=>setNewForm({...newForm, name: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">GRIP (0-100%)</label><input type="number" min="0" max="100" value={newForm.grip} onChange={e=>setNewForm({...newForm, grip: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1" /></div>
-                                    <div><label className="text-xs text-gray-400 font-bold tracking-wider">TIPO</label><select value={newForm.type} onChange={e=>setNewForm({...newForm, type: e.target.value})} className="w-full bg-black border border-gray-600 rounded px-3 py-2 text-sm text-white focus:border-[#39ff14] outline-none mt-1"><option>Slick</option><option>Rain</option></select></div>
-                                </div>
-                                <div className="flex gap-3 mt-6 pt-4 border-t border-gray-800">
-                                    <button onClick={() => setIsAdding(false)} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
-                                    <button onClick={handleAdd} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-
-                    <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
-                        {Object.entries(tires).map(([brand, list]) => (
-                            <div key={brand}>
-                                <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="h-px w-2 bg-[#39ff14]/50"></div><h3 className="text-[9px] font-bold text-[#39ff14] uppercase tracking-wider">{brand}</h3><div className="h-px flex-1 bg-gradient-to-r from-[#39ff14]/30 to-transparent"></div></div>
-                                <div className="space-y-1">{list.map((tire, idx) => { 
-                                    const isSelected = currentConfig.tireName === tire.name || currentConfig.tireName === tire.label; 
-                                    return (
-                                        <div key={idx} onClick={() => onUpdate('tire', tire)} className={`rounded-sm p-1.5 flex gap-2 transition-all group/item items-center cursor-pointer border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'bg-black/40 border-[#39ff14]/10 hover:bg-[#39ff14]/10 hover:border-[#39ff14]/40'}`}>
-                                            <div className="w-8 h-8 shrink-0 flex items-center justify-center opacity-90 group-hover/item:opacity-100 transition-opacity"><TireSVG type={tire.type} rimColor={tire.color} label={tire.label} compoundColor={tire.text} /></div>
-                                            <div className="flex-1 min-w-0 pl-1">
-                                                <div className="flex justify-between items-baseline"><h4 className={`font-bold text-[9px] truncate transition-colors pr-4 ${isSelected ? 'text-white' : 'text-gray-300 group-hover/item:text-white'}`}>{tire.name}</h4><span className="text-[7px] text-[#39ff14]/60 font-mono">{tire.type === 'Rain' ? 'Lluvia' : tire.type}</span></div>
-                                                <div className="flex flex-col gap-0.5 mt-0.5">
-                                                    <div className="flex justify-between text-[7px] text-gray-500"><span>{tire.compound}</span><span className="text-[#39ff14]">{tire.grip}% Grip</span></div>
-                                                    <div className="h-1 w-full bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-gray-600 to-[#39ff14]" style={{width: `${tire.grip}%`}}></div></div>
-                                                </div>
-                                            </div>
-                                            {brand === 'CUSTOM (USER)' && (
-                                                <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 text-red-500 hover:bg-red-500 hover:text-white rounded p-0.5 transition-all"><X size={10}/></button>
-                                            )}
-                                        </div>
-                                    ); 
-                                })}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                </>
             ); 
         });
         
@@ -1565,6 +1589,9 @@
             });
             const [isAdding, setIsAdding] = useState(false);
             const [newForm, setNewForm] = useState({ teeth: 27 });
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            const toggleExpand = (e) => { if (!isExpanded) { e.stopPropagation(); setIsExpanded(true); } };
 
             const handleAdd = () => {
                 const updated = { ...gears };
@@ -1584,60 +1611,69 @@
             };
 
             return (
-                <div className="w-64 h-40 flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.1)] bg-[#050a05]/90 backdrop-blur-md animate-in z-50 transition-all hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] group relative">
-                    <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14]"></div>
-                    
-                    <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('gears')}</h2> </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[8px] text-[#39ff14]/70 font-mono">EJES</span>
-                            <button onClick={()=>setIsAdding(true)} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Corona Personalizada"><Plus size={10}/> NUEVA</button>
+                <>
+                    {isExpanded && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998]" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}></div>}
+                    {isExpanded && <div className="w-64 h-40 opacity-0 pointer-events-none shrink-0" />}
+                    <div onClick={toggleExpand} className={`flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 bg-[#050a05]/90 backdrop-blur-md transition-all duration-300 group relative ${isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] scale-[1.3] sm:scale-[1.6] shadow-[0_0_50px_rgba(57,255,20,0.4)] cursor-default w-64 h-40' : 'w-64 h-40 shadow-[0_0_20px_rgba(57,255,20,0.1)] hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:scale-105 cursor-zoom-in z-50 animate-in'}`}>
+                        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14]"></div>
+                        
+                        <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('gears')}</h2> </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[8px] text-[#39ff14]/70 font-mono">EJES</span>
+                                <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true)}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Corona Personalizada"><Plus size={10}/> NUEVA</button>
+                                {isExpanded && (
+                                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="ml-1 text-red-500 hover:text-white bg-red-500/20 hover:bg-red-500 rounded p-1 transition-colors" title="Cerrar Zoom">
+                                        <Minimize size={12} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {isAdding && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
-                            <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVA CORONA</h3>
-                                <div className="flex-1 flex flex-col justify-center gap-6">
-                                    <label className="text-xs text-gray-400 font-bold tracking-wider text-center">NÚMERO DE DIENTES</label>
-                                    <div className="flex items-center justify-center gap-5">
-                                        <button onClick={()=>setNewForm({...newForm, teeth: Math.max(10, newForm.teeth - 1)})} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Minus size={20}/></button>
-                                        <span className="font-digital text-5xl text-[#39ff14] w-20 text-center drop-shadow-[0_0_10px_rgba(57,255,20,0.5)]">{newForm.teeth}</span>
-                                        <button onClick={()=>setNewForm({...newForm, teeth: Math.min(50, newForm.teeth + 1)})} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Plus size={20}/></button>
+                        {isAdding && ReactDOM.createPortal(
+                            <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
+                                <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
+                                    <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVA CORONA</h3>
+                                    <div className="flex-1 flex flex-col justify-center gap-6">
+                                        <label className="text-xs text-gray-400 font-bold tracking-wider text-center">NÚMERO DE DIENTES</label>
+                                        <div className="flex items-center justify-center gap-5">
+                                            <button onClick={(e)=>{e.stopPropagation(); setNewForm({...newForm, teeth: Math.max(10, newForm.teeth - 1)})}} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Minus size={20}/></button>
+                                            <span className="font-digital text-5xl text-[#39ff14] w-20 text-center drop-shadow-[0_0_10px_rgba(57,255,20,0.5)]">{newForm.teeth}</span>
+                                            <button onClick={(e)=>{e.stopPropagation(); setNewForm({...newForm, teeth: Math.min(50, newForm.teeth + 1)})}} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Plus size={20}/></button>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 mt-8 pt-4 border-t border-gray-800">
+                                        <button onClick={(e) => { e.stopPropagation(); setIsAdding(false); }} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleAdd(); }} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 mt-8 pt-4 border-t border-gray-800">
-                                    <button onClick={() => setIsAdding(false)} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
-                                    <button onClick={handleAdd} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
+                            </div>,
+                            document.body
+                        )}
 
-                    <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
-                        {Object.entries(gears).map(([brand, list]) => (
-                            <div key={brand}>
-                                <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="w-1 h-1 bg-[#39ff14] rounded-full"></div><h3 className="text-[9px] font-bold text-[#39ff14]/80 uppercase tracking-wide">{brand}</h3></div>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {list.map((gear, idx) => { 
-                                        const isSelected = currentConfig.gearTeeth === parseInt(gear.teeth); 
-                                        return (
-                                            <div key={idx} onClick={() => onUpdate('gear', gear)} className={`flex flex-col items-center gap-1 group/gear cursor-pointer p-1 rounded transition-all border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'border-transparent hover:bg-[#39ff14]/10'}`} title={`${gear.teeth} - ${gear.type}`}>
-                                                <div className="w-10 h-10 transition-transform duration-300 group-hover/gear:scale-110"><GearSVG teeth={gear.teeth} color={gear.color} material={gear.type} /></div>
-                                                <div className={`text-[8px] font-mono transition-colors ${isSelected ? 'text-[#39ff14]' : 'text-gray-400 group-hover/gear:text-white'}`}>{gear.teeth}</div>
-                                                {brand === 'CUSTOM (USER)' && (
-                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute -top-1 -right-1 opacity-0 group-hover/gear:opacity-100 bg-red-500/80 hover:bg-red-500 text-white rounded p-0.5 transition-all"><X size={8}/></button>
-                                                )}
-                                            </div>
-                                        ); 
-                                    })}
+                        <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
+                            {Object.entries(gears).map(([brand, list]) => (
+                                <div key={brand}>
+                                    <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="w-1 h-1 bg-[#39ff14] rounded-full"></div><h3 className="text-[9px] font-bold text-[#39ff14]/80 uppercase tracking-wide">{brand}</h3></div>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {list.map((gear, idx) => { 
+                                            const isSelected = currentConfig.gearTeeth === parseInt(gear.teeth); 
+                                            return (
+                                                <div key={idx} onClick={(e) => { e.stopPropagation(); onUpdate('gear', gear); }} className={`flex flex-col items-center gap-1 group/gear cursor-pointer p-1 rounded transition-all border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'border-transparent hover:bg-[#39ff14]/10'}`} title={`${gear.teeth} - ${gear.type}`}>
+                                                    <div className="w-10 h-10 transition-transform duration-300 group-hover/gear:scale-110"><GearSVG teeth={gear.teeth} color={gear.color} material={gear.type} /></div>
+                                                    <div className={`text-[8px] font-mono transition-colors ${isSelected ? 'text-[#39ff14]' : 'text-gray-400 group-hover/gear:text-white'}`}>{gear.teeth}</div>
+                                                    {brand === 'CUSTOM (USER)' && (
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute -top-1 -right-1 opacity-0 group-hover/gear:opacity-100 bg-red-500/80 hover:bg-red-500 text-white rounded p-0.5 transition-all"><X size={8}/></button>
+                                                    )}
+                                                </div>
+                                            ); 
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </>
             ); 
         });
         
@@ -1657,6 +1693,9 @@
             });
             const [isAdding, setIsAdding] = useState(false);
             const [newForm, setNewForm] = useState({ teeth: 9 });
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            const toggleExpand = (e) => { if (!isExpanded) { e.stopPropagation(); setIsExpanded(true); } };
 
             const handleAdd = () => {
                 const updated = { ...pinions };
@@ -1676,60 +1715,69 @@
             };
 
             return (
-                <div className="w-64 h-40 flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.1)] bg-[#050a05]/90 backdrop-blur-md animate-in z-50 transition-all hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] group relative">
-                    <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14]"></div>
-                    
-                    <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('pinions')}</h2> </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[8px] text-[#39ff14]/70 font-mono">MOTORES</span>
-                            <button onClick={()=>setIsAdding(true)} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Piñón Personalizado"><Plus size={10}/> NUEVO</button>
+                <>
+                    {isExpanded && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998]" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}></div>}
+                    {isExpanded && <div className="w-64 h-40 opacity-0 pointer-events-none shrink-0" />}
+                    <div onClick={toggleExpand} className={`flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 bg-[#050a05]/90 backdrop-blur-md transition-all duration-300 group relative ${isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] scale-[1.3] sm:scale-[1.6] shadow-[0_0_50px_rgba(57,255,20,0.4)] cursor-default w-64 h-40' : 'w-64 h-40 shadow-[0_0_20px_rgba(57,255,20,0.1)] hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:scale-105 cursor-zoom-in z-50 animate-in'}`}>
+                        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14]"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14]"></div>
+                        
+                        <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('pinions')}</h2> </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[8px] text-[#39ff14]/70 font-mono">MOTORES</span>
+                                <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true)}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Piñón Personalizado"><Plus size={10}/> NUEVO</button>
+                                {isExpanded && (
+                                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="ml-1 text-red-500 hover:text-white bg-red-500/20 hover:bg-red-500 rounded p-1 transition-colors" title="Cerrar Zoom">
+                                        <Minimize size={12} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {isAdding && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
-                            <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVO PIÑÓN</h3>
-                                <div className="flex-1 flex flex-col justify-center gap-6">
-                                    <label className="text-xs text-gray-400 font-bold tracking-wider text-center">NÚMERO DE DIENTES</label>
-                                    <div className="flex items-center justify-center gap-5">
-                                        <button onClick={()=>setNewForm({...newForm, teeth: Math.max(5, newForm.teeth - 1)})} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Minus size={20}/></button>
-                                        <span className="font-digital text-5xl text-[#39ff14] w-20 text-center drop-shadow-[0_0_10px_rgba(57,255,20,0.5)]">{newForm.teeth}</span>
-                                        <button onClick={()=>setNewForm({...newForm, teeth: Math.min(20, newForm.teeth + 1)})} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Plus size={20}/></button>
+                        {isAdding && ReactDOM.createPortal(
+                            <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in" onClick={() => setIsAdding(false)}>
+                                <div className="bg-[#050a05] border-2 border-[#39ff14] rounded-xl p-6 w-80 shadow-[0_0_50px_rgba(57,255,20,0.4)]" onClick={e => e.stopPropagation()}>
+                                    <h3 className="text-sm font-black text-[#39ff14] uppercase mb-4 border-b border-[#39ff14]/30 pb-2 tracking-widest">NUEVO PIÑÓN</h3>
+                                    <div className="flex-1 flex flex-col justify-center gap-6">
+                                        <label className="text-xs text-gray-400 font-bold tracking-wider text-center">NÚMERO DE DIENTES</label>
+                                        <div className="flex items-center justify-center gap-5">
+                                            <button onClick={(e)=>{e.stopPropagation(); setNewForm({...newForm, teeth: Math.max(5, newForm.teeth - 1)})}} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Minus size={20}/></button>
+                                            <span className="font-digital text-5xl text-[#39ff14] w-20 text-center drop-shadow-[0_0_10px_rgba(57,255,20,0.5)]">{newForm.teeth}</span>
+                                            <button onClick={(e)=>{e.stopPropagation(); setNewForm({...newForm, teeth: Math.min(20, newForm.teeth + 1)})}} className="w-12 h-12 rounded-xl bg-gray-800 text-white flex items-center justify-center transition hover:bg-gray-700 active:scale-95"><Plus size={20}/></button>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 mt-8 pt-4 border-t border-gray-800">
+                                        <button onClick={(e) => { e.stopPropagation(); setIsAdding(false); }} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleAdd(); }} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 mt-8 pt-4 border-t border-gray-800">
-                                    <button onClick={() => setIsAdding(false)} className="flex-1 py-2 rounded-lg bg-gray-800 text-gray-300 text-xs font-bold hover:bg-gray-700 transition">CANCELAR</button>
-                                    <button onClick={handleAdd} className="flex-1 py-2 rounded-lg bg-[#39ff14] text-black text-xs font-black hover:bg-white transition">GUARDAR</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
+                            </div>,
+                            document.body
+                        )}
 
-                    <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
-                        {Object.entries(pinions).map(([brand, list]) => (
-                            <div key={brand}>
-                                <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="w-1 h-1 bg-[#39ff14] rounded-full"></div><h3 className="text-[9px] font-bold text-[#39ff14]/80 uppercase tracking-wide">{brand}</h3></div>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {list.map((pinion, idx) => { 
-                                        const isSelected = currentConfig.pinionTeeth === parseInt(pinion.teeth); 
-                                        return (
-                                            <div key={idx} onClick={() => onUpdate('pinion', pinion)} className={`flex flex-col items-center gap-1 group/pinion cursor-pointer p-1 rounded transition-all border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'border-transparent hover:bg-[#39ff14]/10'}`} title={`${pinion.teeth} - ${pinion.type}`}>
-                                                <div className="w-10 h-10 transition-transform duration-300 group-hover/pinion:scale-110"><PinionSVG teeth={pinion.teeth} material={pinion.type} diameter={pinion.diameter} /></div>
-                                                <div className={`text-[8px] font-mono transition-colors ${isSelected ? 'text-[#39ff14]' : 'text-gray-400 group-hover/pinion:text-white'}`}>{pinion.teeth}</div>
-                                                {brand === 'CUSTOM (USER)' && (
-                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute -top-1 -right-1 opacity-0 group-hover/pinion:opacity-100 bg-red-500/80 hover:bg-red-500 text-white rounded p-0.5 transition-all"><X size={8}/></button>
-                                                )}
-                                            </div>
-                                        ); 
-                                    })}
+                        <div className="flex-1 overflow-y-auto p-2 space-y-3 workshop-scroll relative z-10">
+                            {Object.entries(pinions).map(([brand, list]) => (
+                                <div key={brand}>
+                                    <div className="flex items-center gap-2 mb-1.5 pl-1"><div className="w-1 h-1 bg-[#39ff14] rounded-full"></div><h3 className="text-[9px] font-bold text-[#39ff14]/80 uppercase tracking-wide">{brand}</h3></div>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {list.map((pinion, idx) => { 
+                                            const isSelected = currentConfig.pinionTeeth === parseInt(pinion.teeth); 
+                                            return (
+                                                <div key={idx} onClick={(e) => { e.stopPropagation(); onUpdate('pinion', pinion); }} className={`flex flex-col items-center gap-1 group/pinion cursor-pointer p-1 rounded transition-all border relative ${isSelected ? 'bg-[#39ff14]/20 border-[#39ff14] shadow-[0_0_10px_#39ff14]' : 'border-transparent hover:bg-[#39ff14]/10'}`} title={`${pinion.teeth} - ${pinion.type}`}>
+                                                    <div className="w-10 h-10 transition-transform duration-300 group-hover/pinion:scale-110"><PinionSVG teeth={pinion.teeth} material={pinion.type} diameter={pinion.diameter} /></div>
+                                                    <div className={`text-[8px] font-mono transition-colors ${isSelected ? 'text-[#39ff14]' : 'text-gray-400 group-hover/pinion:text-white'}`}>{pinion.teeth}</div>
+                                                    {brand === 'CUSTOM (USER)' && (
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(idx); }} className="absolute -top-1 -right-1 opacity-0 group-hover/pinion:opacity-100 bg-red-500/80 hover:bg-red-500 text-white rounded p-0.5 transition-all"><X size={8}/></button>
+                                                    )}
+                                                </div>
+                                            ); 
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </>
             ); 
         });
 
@@ -1737,6 +1785,9 @@
             const { t } = useTranslation(); 
             const [amps, setAmps] = useState(1.2); 
             const [history, setHistory] = useState(new Array(24).fill(0.2)); 
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            const toggleExpand = (e) => { if (!isExpanded) { e.stopPropagation(); setIsExpanded(true); } };
             
             useEffect(() => { 
                 const interval = setInterval(() => { 
@@ -1753,57 +1804,66 @@
             }, [voltage]); 
             
             return (
-                <div className="w-64 h-40 flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.1)] bg-[#050a05]/90 backdrop-blur-md animate-in z-50 transition-all hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] relative group">
-                    <svg className="absolute top-0 left-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M1 1 L10 1 L10 2 L2 2 L2 10 L1 10 Z" fill="#39ff14"/></svg>
-                    <svg className="absolute top-0 right-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M31 1 L22 1 L22 2 L30 2 L30 10 L31 10 Z" fill="#39ff14"/></svg>
-                    <svg className="absolute bottom-0 left-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M1 31 L10 31 L10 30 L2 30 L2 22 L1 22 Z" fill="#39ff14"/></svg>
-                    <svg className="absolute bottom-0 right-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M31 31 L22 31 L22 30 L30 30 L30 22 L31 22 Z" fill="#39ff14"/></svg>
-                    
-                    <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
-                        <div className="flex items-center gap-2"> 
-                            <Battery className="text-[#39ff14]" size={14} /> 
-                            <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('powerSupply')}</h2> 
+                <>
+                    {isExpanded && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998]" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}></div>}
+                    {isExpanded && <div className="w-64 h-40 opacity-0 pointer-events-none shrink-0" />}
+                    <div onClick={toggleExpand} className={`flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 bg-[#050a05]/90 backdrop-blur-md transition-all duration-300 relative group ${isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] scale-[1.3] sm:scale-[1.6] shadow-[0_0_50px_rgba(57,255,20,0.4)] cursor-default w-64 h-40' : 'w-64 h-40 shadow-[0_0_20px_rgba(57,255,20,0.1)] hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:scale-105 cursor-zoom-in z-50 animate-in'}`}>
+                        <svg className="absolute top-0 left-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M1 1 L10 1 L10 2 L2 2 L2 10 L1 10 Z" fill="#39ff14"/></svg>
+                        <svg className="absolute top-0 right-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M31 1 L22 1 L22 2 L30 2 L30 10 L31 10 Z" fill="#39ff14"/></svg>
+                        <svg className="absolute bottom-0 left-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M1 31 L10 31 L10 30 L2 30 L2 22 L1 22 Z" fill="#39ff14"/></svg>
+                        <svg className="absolute bottom-0 right-0 w-6 h-6 pointer-events-none opacity-50" viewBox="0 0 32 32"><path d="M31 31 L22 31 L22 30 L30 30 L30 22 L31 22 Z" fill="#39ff14"/></svg>
+                        
+                        <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
+                            <div className="flex items-center gap-2"> 
+                                <Battery className="text-[#39ff14]" size={14} /> 
+                                <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('powerSupply')}</h2> 
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                                <span className="text-[8px] text-[#39ff14]/70 font-mono">ON AIR</span>
+                                {isExpanded && (
+                                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="ml-2 text-red-500 hover:text-white bg-red-500/20 hover:bg-red-500 rounded p-1 transition-colors" title="Cerrar Zoom">
+                                        <Minimize size={12} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                            <span className="text-[8px] text-[#39ff14]/70 font-mono">ON AIR</span>
-                        </div>
-                    </div>
-                    
-                    <div className="flex flex-col p-2 gap-2 h-full relative z-10">
-                        <div className="grid grid-cols-2 gap-2 h-16">
-                            <div className="bg-black border border-[#39ff14]/30 rounded relative flex flex-col items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
-                                <span className="absolute top-0.5 left-1 text-[6px] text-[#39ff14]/60 font-bold tracking-wider">VOLTAJE</span>
-                                <div className="flex items-baseline gap-0.5 mt-1">
-                                    <span className="font-digital text-2xl font-black text-white drop-shadow-[0_0_5px_white] tracking-widest">{voltage.toFixed(1)}</span>
-                                    <span className="text-[10px] font-bold text-[#39ff14]">V</span>
+                        
+                        <div className="flex flex-col p-2 gap-2 h-full relative z-10">
+                            <div className="grid grid-cols-2 gap-2 h-16">
+                                <div className="bg-black border border-[#39ff14]/30 rounded relative flex flex-col items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                                    <span className="absolute top-0.5 left-1 text-[6px] text-[#39ff14]/60 font-bold tracking-wider">VOLTAJE</span>
+                                    <div className="flex items-baseline gap-0.5 mt-1">
+                                        <span className="font-digital text-2xl font-black text-white drop-shadow-[0_0_5px_white] tracking-widest">{voltage.toFixed(1)}</span>
+                                        <span className="text-[10px] font-bold text-[#39ff14]">V</span>
+                                    </div>
+                                </div>
+                                <div className="bg-black border border-[#39ff14]/30 rounded relative flex flex-col items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                                    <span className="absolute top-0.5 left-1 text-[6px] text-[#39ff14]/60 font-bold tracking-wider">CORRIENTE</span>
+                                    <div className="flex items-baseline gap-0.5 mt-1">
+                                        <span className="font-digital text-2xl font-black text-[#39ff14] drop-shadow-[0_0_8px_#39ff14] tracking-widest">{amps.toFixed(2)}</span>
+                                        <span className="text-[10px] font-bold text-[#39ff14]">A</span>
+                                    </div>
+                                    <div className="absolute top-1 right-1 w-1 h-1 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_red]"></div>
                                 </div>
                             </div>
-                            <div className="bg-black border border-[#39ff14]/30 rounded relative flex flex-col items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
-                                <span className="absolute top-0.5 left-1 text-[6px] text-[#39ff14]/60 font-bold tracking-wider">CORRIENTE</span>
-                                <div className="flex items-baseline gap-0.5 mt-1">
-                                    <span className="font-digital text-2xl font-black text-[#39ff14] drop-shadow-[0_0_8px_#39ff14] tracking-widest">{amps.toFixed(2)}</span>
-                                    <span className="text-[10px] font-bold text-[#39ff14]">A</span>
+                            <div className="flex-1 bg-black/50 border border-[#39ff14]/20 rounded flex items-end px-0.5 gap-[1px] relative overflow-hidden">
+                                <div className="absolute inset-0 opacity-20" style={{backgroundImage: 'linear-gradient(transparent 3px, #39ff14 3px)', backgroundSize: '100% 4px'}}></div>
+                                {history.map((h, i) => (
+                                    <div key={i} className="flex-1 bg-[#39ff14]/60 shadow-[0_0_5px_#39ff14]" style={{height: `${h * 100}%`, transition: 'height 0.1s ease'}}></div>
+                                ))}
+                                <span className="absolute top-0.5 right-1 text-[6px] text-[#39ff14]/50 font-mono">LOAD MONITOR</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={(e) => { e.stopPropagation(); setVoltage(Math.max(10, voltage - 0.5)); }} className="w-8 h-6 rounded bg-gray-900 border border-gray-700 hover:border-[#39ff14] hover:bg-[#39ff14]/20 text-gray-400 hover:text-[#39ff14] flex items-center justify-center transition-all active:scale-95"><Minus size={12}/></button>
+                                <div className="flex-1 h-1.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700 relative group-hover:border-[#39ff14]/30 transition-colors">
+                                    <div className="h-full bg-gradient-to-r from-[#39ff14]/40 to-[#39ff14] shadow-[0_0_10px_#39ff14] relative transition-all duration-300" style={{width: `${((voltage - 10) / 10) * 100}%`}}></div>
                                 </div>
-                                <div className="absolute top-1 right-1 w-1 h-1 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_red]"></div>
+                                <button onClick={(e) => { e.stopPropagation(); setVoltage(Math.min(20, voltage + 0.5)); }} className="w-8 h-6 rounded bg-gray-900 border border-gray-700 hover:border-[#39ff14] hover:bg-[#39ff14]/20 text-gray-400 hover:text-[#39ff14] flex items-center justify-center transition-all active:scale-95"><Plus size={12}/></button>
                             </div>
-                        </div>
-                        <div className="flex-1 bg-black/50 border border-[#39ff14]/20 rounded flex items-end px-0.5 gap-[1px] relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-20" style={{backgroundImage: 'linear-gradient(transparent 3px, #39ff14 3px)', backgroundSize: '100% 4px'}}></div>
-                            {history.map((h, i) => (
-                                <div key={i} className="flex-1 bg-[#39ff14]/60 shadow-[0_0_5px_#39ff14]" style={{height: `${h * 100}%`, transition: 'height 0.1s ease'}}></div>
-                            ))}
-                            <span className="absolute top-0.5 right-1 text-[6px] text-[#39ff14]/50 font-mono">LOAD MONITOR</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setVoltage(Math.max(10, voltage - 0.5))} className="w-8 h-6 rounded bg-gray-900 border border-gray-700 hover:border-[#39ff14] hover:bg-[#39ff14]/20 text-gray-400 hover:text-[#39ff14] flex items-center justify-center transition-all active:scale-95"><Minus size={12}/></button>
-                            <div className="flex-1 h-1.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700 relative group-hover:border-[#39ff14]/30 transition-colors">
-                                <div className="h-full bg-gradient-to-r from-[#39ff14]/40 to-[#39ff14] shadow-[0_0_10px_#39ff14] relative transition-all duration-300" style={{width: `${((voltage - 10) / 10) * 100}%`}}></div>
-                            </div>
-                            <button onClick={() => setVoltage(Math.min(20, voltage + 0.5))} className="w-8 h-6 rounded bg-gray-900 border border-gray-700 hover:border-[#39ff14] hover:bg-[#39ff14]/20 text-gray-400 hover:text-[#39ff14] flex items-center justify-center transition-all active:scale-95"><Plus size={12}/></button>
                         </div>
                     </div>
-                </div>
+                </>
             ); 
         });
 
@@ -1816,6 +1876,9 @@
             const totalWeight = Object.values(currentWeights).reduce((a, b) => a + (parseFloat(b) || 0), 0);
 
             const weightLabels = { body: "CARROCERÍA", chassis: "CHASIS 3D", trans: "EJES/TRANS", wheels: "LLANTAS", cockpit: "COCKPIT" };
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            const toggleExpand = (e) => { if (!isExpanded) { e.stopPropagation(); setIsExpanded(true); } };
             
             const handleWeightChange = (id, value) => {
                 const newWeights = { ...currentWeights, [id]: parseFloat(value) || 0 };
@@ -1833,59 +1896,69 @@
             };
 
             return (
-                <div className="w-64 h-40 flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.1)] bg-[#050a05]/90 backdrop-blur-md animate-in z-50 transition-all hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] relative group" title="Modifica los pesos para ajustar la física">
-                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(#39ff14 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
-                    <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
-                        <div className="flex items-center gap-2"> 
-                            <Scale className="text-[#39ff14]" size={14} /> 
-                            <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('digitalScale')}</h2> 
+                <>
+                    {isExpanded && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998]" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}></div>}
+                    {isExpanded && <div className="w-64 h-40 opacity-0 pointer-events-none shrink-0" />}
+                    <div onClick={toggleExpand} className={`flex flex-col rounded-sm overflow-hidden border border-[#39ff14]/30 bg-[#050a05]/90 backdrop-blur-md transition-all duration-300 relative group ${isExpanded ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] scale-[1.3] sm:scale-[1.6] shadow-[0_0_50px_rgba(57,255,20,0.4)] cursor-default w-64 h-40' : 'w-64 h-40 shadow-[0_0_20px_rgba(57,255,20,0.1)] hover:border-[#39ff14]/80 hover:shadow-[0_0_30px_rgba(57,255,20,0.2)] hover:scale-105 cursor-zoom-in z-50 animate-in'}`} title={isExpanded ? "" : "Modifica los pesos para ajustar la física"}>
+                        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(#39ff14 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
+                        <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
+                            <div className="flex items-center gap-2"> 
+                                <Scale className="text-[#39ff14]" size={14} /> 
+                                <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('digitalScale')}</h2> 
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-1 h-1 rounded-full bg-[#39ff14] animate-pulse"></div>
+                                <span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span>
+                                {isExpanded && (
+                                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="ml-2 text-red-500 hover:text-white bg-red-500/20 hover:bg-red-500 rounded p-1 transition-colors" title="Cerrar Zoom">
+                                        <Minimize size={12} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 rounded-full bg-[#39ff14] animate-pulse"></div>
-                            <span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-row flex-1 p-2 gap-2 relative z-10 overflow-hidden">
-                        <div className="flex-1 flex flex-col justify-between pr-1 border-r border-[#39ff14]/10">
-                            {Object.entries(weightLabels).map(([id, label], i) => (
-                                <div key={i} className="flex items-center justify-between group/row">
-                                    <span className="text-[7px] text-gray-400 font-bold uppercase tracking-tighter group-hover/row:text-white transition-colors">{label}</span>
-                                    <div className="flex items-center gap-0.5">
-                                        <button onClick={() => adjustWeight(id, -0.5)} className="w-3.5 h-3.5 flex items-center justify-center bg-black/60 border border-gray-700 hover:border-[#39ff14] text-gray-400 hover:text-[#39ff14] rounded-sm transition-all active:scale-90"><Minus size={10}/></button>
-                                        <input 
-                                            type="number"
-                                            step="0.1"
-                                            min="0"
-                                            value={currentWeights[id] === 0 ? '' : currentWeights[id]}
-                                            onChange={(e) => handleWeightChange(id, e.target.value)}
-                                            className="w-7 bg-transparent border-none text-center text-[9px] font-mono text-[#39ff14] outline-none px-0 hide-scrollbar transition-colors"
-                                        />
-                                        <button onClick={() => adjustWeight(id, 0.5)} className="w-3.5 h-3.5 flex items-center justify-center bg-black/60 border border-gray-700 hover:border-[#39ff14] text-gray-400 hover:text-[#39ff14] rounded-sm transition-all active:scale-90"><Plus size={10}/></button>
+                        <div className="flex flex-row flex-1 p-2 gap-2 relative z-10 overflow-hidden">
+                            <div className="flex-1 flex flex-col justify-between pr-1 border-r border-[#39ff14]/10">
+                                {Object.entries(weightLabels).map(([id, label], i) => (
+                                    <div key={i} className="flex items-center justify-between group/row">
+                                        <span className="text-[7px] text-gray-400 font-bold uppercase tracking-tighter group-hover/row:text-white transition-colors">{label}</span>
+                                        <div className="flex items-center gap-0.5">
+                                            <button onClick={(e) => { e.stopPropagation(); adjustWeight(id, -0.5); }} className="w-3.5 h-3.5 flex items-center justify-center bg-black/60 border border-gray-700 hover:border-[#39ff14] text-gray-400 hover:text-[#39ff14] rounded-sm transition-all active:scale-90"><Minus size={10}/></button>
+                                            <input 
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                value={currentWeights[id] === 0 ? '' : currentWeights[id]}
+                                                onClick={(e) => e.stopPropagation()}
+                                                onChange={(e) => { e.stopPropagation(); handleWeightChange(id, e.target.value); }}
+                                                className="w-7 bg-transparent border-none text-center text-[9px] font-mono text-[#39ff14] outline-none px-0 hide-scrollbar transition-colors"
+                                            />
+                                            <button onClick={(e) => { e.stopPropagation(); adjustWeight(id, 0.5); }} className="w-3.5 h-3.5 flex items-center justify-center bg-black/60 border border-gray-700 hover:border-[#39ff14] text-gray-400 hover:text-[#39ff14] rounded-sm transition-all active:scale-90"><Plus size={10}/></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="w-[72px] flex flex-col justify-between items-end">
+                                <div className="text-right mt-1">
+                                    <span className="text-[7px] text-[#39ff14]/60 font-bold tracking-widest uppercase block mb-0.5">PESO TOTAL</span>
+                                    <div className="relative inline-block bg-black/40 px-2 py-1 rounded border border-[#39ff14]/20 shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
+                                        <span className="font-digital text-xl font-black text-white drop-shadow-[0_0_10px_rgba(57,255,20,0.8)] leading-none block">{totalWeight.toFixed(1)}</span>
+                                        <span className="absolute -bottom-1.5 -right-1 text-[8px] font-bold text-[#39ff14]">g</span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="w-[72px] flex flex-col justify-between items-end">
-                            <div className="text-right mt-1">
-                                <span className="text-[7px] text-[#39ff14]/60 font-bold tracking-widest uppercase block mb-0.5">PESO TOTAL</span>
-                                <div className="relative inline-block bg-black/40 px-2 py-1 rounded border border-[#39ff14]/20 shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
-                                    <span className="font-digital text-xl font-black text-white drop-shadow-[0_0_10px_rgba(57,255,20,0.8)] leading-none block">{totalWeight.toFixed(1)}</span>
-                                    <span className="absolute -bottom-1.5 -right-1 text-[8px] font-bold text-[#39ff14]">g</span>
+                                <div className="w-full flex items-end gap-[2px] h-10 mt-2 opacity-80">
+                                    {Object.entries(weightLabels).map(([id, label], i) => {
+                                        const val = parseFloat(currentWeights[id]) || 0;
+                                        return (
+                                            <div key={i} className="flex-1 bg-[#39ff14]/20 rounded-sm relative group/bar hover:bg-[#39ff14]/40 transition-colors" title={`${label}: ${val}g`}>
+                                                <div className="absolute bottom-0 w-full bg-[#39ff14] rounded-sm transition-all duration-500 shadow-[0_0_5px_#39ff14]" style={{height: `${Math.min(100, (val / 30) * 100)}%`}}></div>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
-                            </div>
-                            <div className="w-full flex items-end gap-[2px] h-10 mt-2 opacity-80">
-                                {Object.entries(weightLabels).map(([id, label], i) => {
-                                    const val = parseFloat(currentWeights[id]) || 0;
-                                    return (
-                                        <div key={i} className="flex-1 bg-[#39ff14]/20 rounded-sm relative group/bar hover:bg-[#39ff14]/40 transition-colors" title={`${label}: ${val}g`}>
-                                            <div className="absolute bottom-0 w-full bg-[#39ff14] rounded-sm transition-all duration-500 shadow-[0_0_5px_#39ff14]" style={{height: `${Math.min(100, (val / 30) * 100)}%`}}></div>
-                                        </div>
-                                    )
-                                })}
                             </div>
                         </div>
                     </div>
-                </div>
+                </>
             ); 
         });
 
