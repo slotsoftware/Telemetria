@@ -1669,7 +1669,7 @@
 
                     // --- CIELO REALISTA TIPO PS3 (HDRI Procedural) ---
                     const skyCanvas = document.createElement('canvas');
-                    skyCanvas.width = 2048; skyCanvas.height = 1024;
+                    skyCanvas.width = 2048; skyCanvas.height = 2048; // Aumentado para envolver completamente arriba y abajo
                     const skyTex = new THREE.CanvasTexture(skyCanvas);
                     skyTex.mapping = THREE.EquirectangularReflectionMapping;
                     scene.background = skyTex;
@@ -1678,41 +1678,52 @@
 
                     const updateSky = (night) => {
                         const skyCtx = skyCanvas.getContext('2d');
-                        const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 1024);
+                        // El gradiente ahora cubre 2048px (arriba y abajo) para envolver el tablero flotante
+                        const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 2048);
                         
                         if (night) {
                             skyGrad.addColorStop(0.0, '#020617');  
-                            skyGrad.addColorStop(0.5, '#0f172a');  
-                            skyGrad.addColorStop(1.0, '#000000');  
+                            skyGrad.addColorStop(0.2, '#171133');  
+                            skyGrad.addColorStop(0.4, '#0f172a');  
+                            skyGrad.addColorStop(0.6, '#000000'); // Horizonte oscuro
+                            skyGrad.addColorStop(1.0, '#020617'); // Infinito inferior 
                         } else {
-                            skyGrad.addColorStop(0.0, '#0f172a');  
-                            skyGrad.addColorStop(0.3, '#3b82f6');  
-                            skyGrad.addColorStop(0.48, '#fcd34d'); 
-                            skyGrad.addColorStop(0.5, '#f97316');  
-                            skyGrad.addColorStop(0.52, '#1e293b'); 
-                            skyGrad.addColorStop(1.0, '#020617');  
+                            skyGrad.addColorStop(0.0, '#1e1b4b'); // Púrpura profundo  
+                            skyGrad.addColorStop(0.2, '#4c1d95'); // Violeta  
+                            skyGrad.addColorStop(0.35, '#db2777'); // Rosa intenso
+                            skyGrad.addColorStop(0.45, '#ea580c'); // Naranja fuego  
+                            skyGrad.addColorStop(0.5, '#1e293b');  // Horizonte
+                            skyGrad.addColorStop(0.6, '#4c1d95');  // Reflejo violeta inferior
+                            skyGrad.addColorStop(1.0, '#1e1b4b');  // Púrpura profundo inferior
                         }
                         
                         skyCtx.fillStyle = skyGrad;
-                        skyCtx.fillRect(0, 0, 2048, 1024);
+                        skyCtx.fillRect(0, 0, 2048, 2048);
                         
                         if (night) {
-                            // MAGIA 1: Estrellas realistas aleatorias
-                            for(let i=0; i<1200; i++) {
+                            // MAGIA 1: Estrellas realistas y Vía Láctea envolvente
+                            for(let i=0; i<3500; i++) { // Más estrellas para llenar el espacio inferior
                                 skyCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.9 + 0.1})`;
                                 skyCtx.beginPath();
-                                skyCtx.arc(Math.random() * 2048, Math.random() * 600, Math.random() * 1.5, 0, Math.PI*2);
+                                skyCtx.arc(Math.random() * 2048, Math.random() * 2048, Math.random() * 1.5, 0, Math.PI*2);
+                                skyCtx.fill();
+                            }
+                            // Nebulosa / Vía Láctea (trazos suaves)
+                            for(let i=0; i<25; i++) {
+                                skyCtx.beginPath();
+                                skyCtx.arc(Math.random() * 2048, Math.random() * 2048, 100 + Math.random() * 300, 0, Math.PI*2);
+                                skyCtx.fillStyle = `rgba(139, 92, 246, ${Math.random() * 0.05})`; // Violeta suave
                                 skyCtx.fill();
                             }
                             
                             // MAGIA 2: Luna llena hiperrealista con cráteres
-                            const moonX = 1600, moonY = 300, moonR = 45;
+                            const moonX = 1600, moonY = 400, moonR = 55;
                             // Resplandor lunar
                             skyCtx.beginPath(); skyCtx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
                             skyCtx.fillStyle = '#f8fafc';
-                            skyCtx.shadowColor = '#ffffff'; skyCtx.shadowBlur = 60; 
-                            skyCtx.fill(); skyCtx.fill(); // Doble fill para extra resplandor
-                            skyCtx.shadowBlur = 0; // Reset
+                            skyCtx.shadowColor = '#c084fc'; skyCtx.shadowBlur = 100; 
+                            skyCtx.fill(); skyCtx.fill(); 
+                            skyCtx.shadowBlur = 0; 
                             
                             // Cráteres procedimentales con sombras falsas
                             skyCtx.fillStyle = 'rgba(0, 0, 0, 0.08)';
@@ -1721,24 +1732,33 @@
                                 skyCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; skyCtx.lineWidth = 1;
                                 skyCtx.beginPath(); skyCtx.arc(cx - 1, cy - 1, cr, Math.PI, Math.PI*1.5); skyCtx.stroke();
                             };
-                            drawCrater(moonX - 10, moonY - 15, 12);
-                            drawCrater(moonX + 18, moonY + 8, 16);
-                            drawCrater(moonX - 5,  moonY + 20, 8);
-                            drawCrater(moonX + 5,  moonY - 25, 5);
-                            drawCrater(moonX + 22, moonY - 10, 7);
+                            drawCrater(moonX - 15, moonY - 20, 14);
+                            drawCrater(moonX + 22, moonY + 12, 18);
+                            drawCrater(moonX - 8,  moonY + 25, 10);
+                            drawCrater(moonX + 8,  moonY - 30, 6);
+                            drawCrater(moonX + 28, moonY - 15, 9);
                         } else {
-                            // MAGIA 3: Sol de atardecer
+                            // MAGIA 3: Sol de atardecer ESPECTACULAR
+                            const sunX = 1024, sunY = 900, sunR = 80;
                             skyCtx.beginPath();
-                            skyCtx.arc(1024, 490, 35, 0, Math.PI * 2);
+                            skyCtx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
                             skyCtx.fillStyle = '#ffffff';
                             skyCtx.shadowColor = '#fcd34d';
-                            skyCtx.shadowBlur = 100;
-                            skyCtx.fill(); skyCtx.fill(); 
+                            skyCtx.shadowBlur = 200;
+                            skyCtx.fill(); skyCtx.fill(); skyCtx.fill();
                             skyCtx.shadowBlur = 0;
+                            
+                            // Nubes estilizadas en el horizonte
+                            skyCtx.fillStyle = 'rgba(251, 113, 133, 0.2)'; // Rosa suave
+                            for(let i=0; i<30; i++) {
+                                skyCtx.beginPath();
+                                skyCtx.ellipse(Math.random() * 2048, 850 + Math.random() * 80, 100 + Math.random() * 200, 15 + Math.random() * 25, 0, 0, Math.PI*2);
+                                skyCtx.fill();
+                            }
                         }
                         
                         skyTex.needsUpdate = true;
-                        scene.fog.color.setHex(night ? 0x0f172a : 0xf97316);
+                        scene.fog.color.setHex(night ? 0x0f172a : 0xbe123c);
                         scene.fog.density = night ? 0.003 : 0.0015;
                     };
                     scene.userData.updateSky = updateSky;
@@ -1772,8 +1792,8 @@
                     scene.userData.ambientLight = ambLight;
 
                     const dl = new THREE.DirectionalLight(0xfffae8, 1.2); // Luz de Sol directa y brillante
-                    dl.position.set(0, 100, -300); // Sol bajo en el horizonte apuntando hacia los coches
-                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1024; dl.shadow.mapSize.height = 1024; // Sombras con buen equilibrio de detalle
+                    dl.position.set(200, 300, -200); // Sol inclinado para generar sombras con forma
+                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1024; dl.shadow.mapSize.height = 1024; // Resolución balanceada para sombras reales
                     dl.shadow.camera.near = 0.5; dl.shadow.camera.far = 1500; dl.shadow.camera.left = -400; dl.shadow.camera.right = 400; dl.shadow.camera.top = 400; dl.shadow.camera.bottom = -400; dl.shadow.bias = -0.001; scene.add(dl);
                     dirLightRef.current = dl;
                     
@@ -2621,29 +2641,13 @@
                         const boardMesh = new THREE.Mesh(terrainGeo, terrainMat); 
                         boardMesh.scale.set(baseW, 1.0, baseD); 
                         boardMesh.position.y = -0.5; 
-                        // ACTIVAR SOMBRAS EN EL TERRENO: Ahora recibe las sombras formales de árboles y coches
+                        // Activamos la recepción de sombras para ver la forma de los árboles en el suelo
                         boardMesh.receiveShadow = true; 
                         scene.add(boardMesh); 
                         boardMeshRef.current = boardMesh; 
                         
                         setBoardSettings(prev => ({ ...prev, width: baseW, depth: baseD, x: 0, z: 0, material: 'grass' }));
                         const maxDim = Math.max(size.x, size.z); spherical.radius = maxDim * 1.5; spherical.phi = Math.PI / 6; 
-
-                        // --- 2. EL AGUA NO ES AGUA (Shaders y planos) ---
-                        // Creamos un plano gigante que simula el océano o un gran lago de fondo
-                        const waterGeo = new THREE.PlaneGeometry(baseW * 2, baseD * 2, 64, 64);
-                        waterGeo.rotateX(-Math.PI / 2);
-                        const waterMat = new THREE.MeshPhongMaterial({
-                            color: 0x0088ff,
-                            transparent: true,
-                            opacity: 0.7,
-                            shininess: 90
-                        });
-                        const water = new THREE.Mesh(waterGeo, waterMat);
-                        water.position.y = -2.5; // Nivel del mar, por debajo del terreno
-                        water.receiveShadow = false;
-                        scene.add(water);
-                        scene.userData.water = water;
 
                         // --- 3. EDIFICIOS COMO PIEZAS DE LEGO (Diseño Modular y Decals) ---
                         // Usamos un Canvas invisible para dibujar las "pegatinas" de las ventanas iluminadas
@@ -3400,20 +3404,6 @@
 
                         const avgRaceTime = raceStateRef.current.laps > 0 ? (raceStateRef.current.completedLapsTotalTime / raceStateRef.current.laps) : 0;
 
-                        // --- MAGIA DEL AGUA: Animamos las olas matemáticamente ---
-                        if (sceneRef.current && sceneRef.current.userData.water) {
-                            const time = nowTime * 2.0; // Velocidad del mar
-                            const w = sceneRef.current.userData.water;
-                            const posA = w.geometry.attributes.position;
-                            for (let i = 0; i < posA.count; i++) {
-                                const u = posA.getX(i);
-                                const v = posA.getZ(i);
-                                // Seno y Coseno levantan y hunden la geometría engañando a tus ojos
-                                posA.setY(i, Math.sin(u * 0.05 + time) * 0.4 + Math.cos(v * 0.05 + time) * 0.4);
-                            }
-                            w.geometry.attributes.position.needsUpdate = true;
-                        }
-
                         // --- MAGIA ANIMAL: Aves volando de fondo ---
                         if (sceneRef.current && sceneRef.current.userData.birds) {
                             const bMesh = sceneRef.current.userData.birds.mesh;
@@ -3678,8 +3668,7 @@
                             const model = gltf.scene;
                             model.traverse(child => { 
                                 if (child.isMesh) { 
-                                    // ACTIVAR SOMBRAS REALES PARA TODO (Coches y Decoración)
-                                    child.castShadow = true; 
+                                    child.castShadow = true; // ACTIVADO: Sombras reales con la forma del modelo
                                     child.receiveShadow = true; 
                                     
                                     // ALTERNATIVA ROBUSTA: RECONSTRUCCIÓN LIMPIA DE GEOMETRÍA
@@ -3809,13 +3798,11 @@
                     if (isDecor) {
                         rawModel.name = "REAL_MODEL";
                         rawModel.position.y += isPrado ? 0 : 0.5;
-                        // Aseguramos que la decoración suelta también proyecte sombra
                         rawModel.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
                         templateGroup.add(rawModel);
                     } else {
                         templateGroup.add(rawModel);
 
-                        // Mantenemos la sombra falsa circular SOLO para los coches para darles más peso
                         const fakeTex = getFakeShadowTexture();
                         const shadowGeo = new THREE.PlaneGeometry(finalSize.x * 1.4, finalSize.z * 1.3);
                         shadowGeo.rotateX(-Math.PI / 2);
@@ -3893,15 +3880,10 @@
                 const maxInstances = isPrado ? 600 : Math.min(count * 5, 250);
                 const instancedGroups = meshesToInstance.map(m => {
                     const im = new THREE.InstancedMesh(m.geometry, m.material, maxInstances);
-                    // SOMBRAS REALES PARA BOSQUES: Las instancias (árboles masivos) ahora proyectan su forma real
-                    im.castShadow = true; 
-                    im.receiveShadow = true;
+                    im.castShadow = true; im.receiveShadow = true; // Sombras formales reales activadas
                     container.add(im);
                     return { im, localMatrix: m.localMatrix };
                 });
-
-                // ELIMINADA la sombra falsa circular (shadowIm) para los árboles. 
-                // Ahora usamos sus sombras formales calculadas por Three.js
 
                 const dummy = new THREE.Object3D();
                 const bRef = boardSettingsRef.current;
