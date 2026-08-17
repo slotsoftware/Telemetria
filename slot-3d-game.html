@@ -115,9 +115,18 @@
             </svg>
         </div>
         
-        <h1 class="title-futuristic font-black text-white mb-6 tracking-[0.1em] leading-none text-center block">
-            <div class="text-glow-orange text-5xl md:text-6xl whitespace-nowrap">3D SLOT</div>
-            <div class="text-glow-cyan text-6xl md:text-7xl mt-2">GAME</div>
+        <h1 class="font-sans text-center flex flex-col items-center mb-8 w-full">
+            <div class="flex items-center gap-4 w-full max-w-[280px] justify-center mb-[-10px] z-10">
+                <div class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/40"></div>
+                <span class="text-3xl font-light text-white/80 tracking-[0.5em]">3D</span>
+                <div class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/40"></div>
+            </div>
+            <div class="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-[0.2em] drop-shadow-2xl z-20">
+                SLOT
+            </div>
+            <div class="text-[10px] text-[#00f0ff] font-bold tracking-[1em] uppercase mt-2 ml-3">
+                Game
+            </div>
         </h1>
         
         <div class="text-[#00f0ff] font-mono text-xs md:text-sm tracking-[0.4em] animate-pulse font-bold">
@@ -142,11 +151,11 @@
             switch(mode) {
                 case 'ULTRA': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 1.5) : 1, aa: true, shadow: true };
                 case 'HIGH': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 1.0) : 1, aa: true, shadow: true };
-                case 'MED': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 0.9) : 0.9, aa: false, shadow: false };
-                case 'LOW': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 0.7) : 0.7, aa: false, shadow: false };
-                case 'MIN': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 0.5) : 0.5, aa: false, shadow: false };
-                case 'PS2': return { pr: 0.35, aa: false, shadow: false };
-                default: return { pr: 1.0, aa: false, shadow: false };
+                case 'MED': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 0.9) : 0.9, aa: false, shadow: true };
+                case 'LOW': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 0.7) : 0.7, aa: false, shadow: true };
+                case 'MIN': return { pr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 0.5) : 0.5, aa: false, shadow: true };
+                case 'PS2': return { pr: 0.35, aa: false, shadow: true };
+                default: return { pr: 1.0, aa: false, shadow: true };
             }
         };
 
@@ -975,6 +984,8 @@
                 const renderer = new THREE.WebGLRenderer({ antialias: qSettings.aa, powerPreference: "high-performance", alpha: true });
                 renderer.setSize(width, height);
                 renderer.setClearColor(0x000000, 0); // Canvas transparente
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 
                 // OPTIMIZACIÓN GARAJE: Limitar pixelRatio máximo a 1.0 en el menú. Evita que portátiles 4K o móviles colapsen.
                 renderer.setPixelRatio(Math.min(qSettings.pr, 1.0)); 
@@ -985,10 +996,20 @@
                 rendererRef.current = renderer;
 
                 // OPTIMIZACIÓN GARAJE: Reemplazar SpotLights costosas por luces básicas
-                scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+                scene.add(new THREE.AmbientLight(0xffffff, 0.6));
                 
-                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                dirLight.position.set(5, 10, 5);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                dirLight.position.set(5, 8, 5);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 1024;
+                dirLight.shadow.mapSize.height = 1024;
+                dirLight.shadow.camera.near = 0.5;
+                dirLight.shadow.camera.far = 25;
+                dirLight.shadow.camera.left = -5;
+                dirLight.shadow.camera.right = 5;
+                dirLight.shadow.camera.top = 5;
+                dirLight.shadow.camera.bottom = -5;
+                dirLight.shadow.bias = -0.001;
                 scene.add(dirLight);
 
                 const blueLight = new THREE.PointLight(0x3b82f6, 1.5, 15);
@@ -1147,24 +1168,80 @@
                         model.position.z -= center.z;
                         model.position.y -= smartBottomY; // Alineación matemática con la rueda
                         
-                        // Restablecemos el anclaje exacto de la guía para los modelos estándar
-                        model.position.z -= finalSize.z * 0.25;
-
-                        // --- NUEVO: SOMBRA FALSA OPTIMIZADA PARA EL GARAJE ---
-                        const tex = getFakeShadowTexture();
-                        const shadowW = finalSize.x * 1.4;
-                        const shadowL = finalSize.z * 1.3;
-                        const shadowGeo = new THREE.PlaneGeometry(shadowW, shadowL);
-                        shadowGeo.rotateX(-Math.PI / 2);
-                        const shadowMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, depthWrite: false, color: 0x000000 });
-                        const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-                        shadowMesh.position.set(0, 0.02, -finalSize.z * 0.25);
+                        // Activar sombras reales
+                        model.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
                         
-                        // Apagar sombras reales masivas
-                        model.traverse(child => { if (child.isMesh) { child.castShadow = false; child.receiveShadow = false; } });
-                        
-                        carGroup.add(shadowMesh);
                         carGroup.add(model);
+                        
+                        // --- NUEVO: PISTA DE SLOT CLÁSICA ULTRA-REALISTA ---
+                        const trackWidth = finalSize.x * 1.0; // Ajustado exactamente al ancho del coche
+                        const trackLength = finalSize.z * 1.2; // Ligeramente más largo que el coche
+                        const trackThickness = 0.05; // Pista ultra fina
+                        const slotWidth = 0.12; // Ranura central estrecha real
+                        const railWidth = 0.05; // Raíles visibles
+                        
+                        const displayTrackGroup = new THREE.Group();
+                        displayTrackGroup.name = "GarageDisplayTrack";
+                        
+                        // Material de Plástico Oscuro Mate Liso (Sin textura de asfalto/ruido)
+                        const trackMat = new THREE.MeshStandardMaterial({
+                            color: 0x111111, 
+                            roughness: 0.8, 
+                            metalness: 0.1
+                        });
+                        
+                        const halfSlot = slotWidth / 2;
+                        const plasticStart = halfSlot + railWidth;
+                        const sideWidth = (trackWidth / 2) - plasticStart;
+                        const sideCenterX = plasticStart + (sideWidth / 2);
+
+                        // Superficie Plástica Izquierda
+                        const leftGeo = new THREE.BoxGeometry(sideWidth, trackThickness, trackLength);
+                        const leftMesh = new THREE.Mesh(leftGeo, trackMat);
+                        leftMesh.position.set(-sideCenterX, -trackThickness/2, 0);
+                        leftMesh.receiveShadow = true;
+                        displayTrackGroup.add(leftMesh);
+
+                        // Superficie Plástica Derecha
+                        const rightGeo = new THREE.BoxGeometry(sideWidth, trackThickness, trackLength);
+                        const rightMesh = new THREE.Mesh(rightGeo, trackMat);
+                        rightMesh.position.set(sideCenterX, -trackThickness/2, 0);
+                        rightMesh.receiveShadow = true;
+                        displayTrackGroup.add(rightMesh);
+
+                        // 2. Raíles metálicos de plata brillante flanqueando la ranura
+                        const railGeo = new THREE.BoxGeometry(railWidth, trackThickness, trackLength);
+                        // FIX: Cambiamos a Phong. Standard(metalness=1) se ve negro sin un mapa de entorno HDRI.
+                        // Phong genera brillos espectaculares con las luces puntuales del garaje.
+                        const railMat = new THREE.MeshPhongMaterial({
+                            color: 0xffffff, 
+                            specular: 0xffffff,
+                            shininess: 150 
+                        });
+                        
+                        const railCenterX = halfSlot + (railWidth / 2);
+
+                        const railL = new THREE.Mesh(railGeo, railMat);
+                        // Elevados 0.002 para evitar Z-fighting y asegurar que atrapen la luz
+                        railL.position.set(-railCenterX, -trackThickness/2 + 0.002, 0);
+                        railL.receiveShadow = true;
+                        displayTrackGroup.add(railL);
+                        
+                        const railR = new THREE.Mesh(railGeo, railMat);
+                        railR.position.set(railCenterX, -trackThickness/2 + 0.002, 0);
+                        railR.receiveShadow = true;
+                        displayTrackGroup.add(railR);
+                        
+                        // 3. Fondo de la ranura del slot (Oscuro y profundo)
+                        const slotBottomGeo = new THREE.BoxGeometry(slotWidth, 0.1, trackLength);
+                        const slotBottomMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                        const slotBottomMesh = new THREE.Mesh(slotBottomGeo, slotBottomMat);
+                        slotBottomMesh.position.set(0, -trackThickness, 0); 
+                        slotBottomMesh.receiveShadow = true;
+                        displayTrackGroup.add(slotBottomMesh);
+
+                        displayTrackGroup.position.y = 0;
+                        carGroup.add(displayTrackGroup);
                     });
                 }
 
@@ -1515,7 +1592,6 @@
             const createStoneTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#6b7280'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#4b5563' : '#9ca3af'; const x = Math.random() * 600 - 50; const y = Math.random() * 600 - 50; const w = Math.random() * 160 + 60; const h = Math.random() * 80 + 30; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 4; ctx.strokeRect(x,y,w,h); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(0.5, 0.5); return texture; };
             const createKerbTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 64; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ef4444'; ctx.fillRect(0, 0, 64, 64); ctx.fillStyle = '#ffffff'; ctx.fillRect(64, 0, 64, 64); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
             const createWallTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#dd1111'; ctx.fillRect(0, 0, 128, 128); ctx.fillStyle = '#eeeeee'; ctx.fillRect(128, 0, 128, 128); ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, 256, 16); ctx.fillStyle = '#444444'; ctx.fillRect(0, 16, 256, 8); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
-            const createAsphaltTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 15000; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111111' : '#333333'; ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(6, 6); return texture; };
             const createCar = (id, color) => { 
                 const pg = new THREE.Group(), vg = new THREE.Group(); 
                 pg.add(vg); 
@@ -1697,7 +1773,7 @@
 
                     const dl = new THREE.DirectionalLight(0xfffae8, 1.2); // Luz de Sol directa y brillante
                     dl.position.set(0, 100, -300); // Sol bajo en el horizonte apuntando hacia los coches
-                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 512; dl.shadow.mapSize.height = 512; // OPTIMIZADO: Sombras de 1024 a 512px
+                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1024; dl.shadow.mapSize.height = 1024; // Sombras con buen equilibrio de detalle
                     dl.shadow.camera.near = 0.5; dl.shadow.camera.far = 1500; dl.shadow.camera.left = -400; dl.shadow.camera.right = 400; dl.shadow.camera.top = 400; dl.shadow.camera.bottom = -400; dl.shadow.bias = -0.001; scene.add(dl);
                     dirLightRef.current = dl;
                     
@@ -2421,14 +2497,11 @@
                     for (let i = 0; i < aspVertCount - 1; i++) { const tl = i * 2; const tr = i * 2 + 1; const ntl = (i + 1) * 2; const ntr = (i + 1) * 2 + 1; const bl = tl + totalTopVerts; const br = tr + totalTopVerts; const nbl = ntl + totalTopVerts; const nbr = ntr + totalTopVerts; solidIndices.push(tl, bl, ntl); solidIndices.push(bl, nbl, ntl); solidIndices.push(tr, ntr, br); solidIndices.push(ntr, nbr, br); }
                     const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(solidVerts, 3)); ag.setAttribute('uv', new THREE.Float32BufferAttribute(solidUVs, 2)); ag.setIndex(solidIndices); ag.computeVertexNormals(); 
                     
-                    const asphaltTex = createAsphaltTexture();
-                    // MATERIALES V.2.0: Standard PBR para máximo realismo y fluidez visual
+                    // MATERIALES V.2.0: Plástico clásico de Slot (Sin textura de asfalto)
                     const am = new THREE.Mesh(ag, new THREE.MeshStandardMaterial({ 
-                        map: asphaltTex, 
-                        roughnessMap: asphaltTex,
-                        roughness: 0.8,
-                        metalness: 0.15,
-                        color: 0x999999, 
+                        color: 0x1a1a1a, 
+                        roughness: 0.7,
+                        metalness: 0.1,
                         side: THREE.DoubleSide 
                     })); 
                     am.receiveShadow = true; am.castShadow = false; am.position.y = 0.0; trackGroup.add(am);
@@ -2548,8 +2621,8 @@
                         const boardMesh = new THREE.Mesh(terrainGeo, terrainMat); 
                         boardMesh.scale.set(baseW, 1.0, baseD); 
                         boardMesh.position.y = -0.5; 
-                        // TRUCO NFS #3: El terreno gigante no recibe sombras dinámicas de los coches (ahorra GPU)
-                        boardMesh.receiveShadow = false; 
+                        // ACTIVAR SOMBRAS EN EL TERRENO: Ahora recibe las sombras formales de árboles y coches
+                        boardMesh.receiveShadow = true; 
                         scene.add(boardMesh); 
                         boardMeshRef.current = boardMesh; 
                         
@@ -3605,8 +3678,9 @@
                             const model = gltf.scene;
                             model.traverse(child => { 
                                 if (child.isMesh) { 
-                                    child.castShadow = false; // OPTIMIZACIÓN: NINGÚN coche ni árbol genera sombras pesadas
-                                    child.receiveShadow = false; 
+                                    // ACTIVAR SOMBRAS REALES PARA TODO (Coches y Decoración)
+                                    child.castShadow = true; 
+                                    child.receiveShadow = true; 
                                     
                                     // ALTERNATIVA ROBUSTA: RECONSTRUCCIÓN LIMPIA DE GEOMETRÍA
                                     // Previene el crash de 'isGLBufferAttribute' en WebGLRenderer
@@ -3731,16 +3805,18 @@
                 // COCHES Y OBJETOS ÚNICOS
                 if (!isDecor || count <= 1) { 
                     const templateGroup = new THREE.Group();
-                    const fakeTex = getFakeShadowTexture();
-
+                    
                     if (isDecor) {
                         rawModel.name = "REAL_MODEL";
                         rawModel.position.y += isPrado ? 0 : 0.5;
-                        rawModel.traverse(child => { if (child.isMesh) { child.castShadow = false; child.receiveShadow = false; } });
+                        // Aseguramos que la decoración suelta también proyecte sombra
+                        rawModel.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
                         templateGroup.add(rawModel);
                     } else {
                         templateGroup.add(rawModel);
 
+                        // Mantenemos la sombra falsa circular SOLO para los coches para darles más peso
+                        const fakeTex = getFakeShadowTexture();
                         const shadowGeo = new THREE.PlaneGeometry(finalSize.x * 1.4, finalSize.z * 1.3);
                         shadowGeo.rotateX(-Math.PI / 2);
                         const shadowMat = new THREE.MeshBasicMaterial({ map: fakeTex, transparent: true, opacity: 0.9, depthWrite: false, color: 0x000000 });
@@ -3817,24 +3893,17 @@
                 const maxInstances = isPrado ? 600 : Math.min(count * 5, 250);
                 const instancedGroups = meshesToInstance.map(m => {
                     const im = new THREE.InstancedMesh(m.geometry, m.material, maxInstances);
-                    im.castShadow = false; im.receiveShadow = false;
+                    // SOMBRAS REALES PARA BOSQUES: Las instancias (árboles masivos) ahora proyectan su forma real
+                    im.castShadow = true; 
+                    im.receiveShadow = true;
                     container.add(im);
                     return { im, localMatrix: m.localMatrix };
                 });
 
-                // Sombra falsa instanciada (solo para árboles/arbustos)
-                let shadowIm = null;
-                if (!isPrado) {
-                    const fakeTex = getFakeShadowTexture();
-                    const shadowGeo = new THREE.PlaneGeometry(finalSize.x * 2.0, finalSize.z * 2.0);
-                    shadowGeo.rotateX(-Math.PI / 2);
-                    const shadowMat = new THREE.MeshBasicMaterial({ map: fakeTex, transparent: true, opacity: 0.8, depthWrite: false, color: 0x000000 });
-                    shadowIm = new THREE.InstancedMesh(shadowGeo, shadowMat, maxInstances);
-                    container.add(shadowIm);
-                }
+                // ELIMINADA la sombra falsa circular (shadowIm) para los árboles. 
+                // Ahora usamos sus sombras formales calculadas por Three.js
 
                 const dummy = new THREE.Object3D();
-                const dummyShadow = new THREE.Object3D();
                 const bRef = boardSettingsRef.current;
                 const centers = pathPointsRef.current || [];
                 let placed = 0;
@@ -3849,6 +3918,8 @@
                     const rows = Math.ceil(bRef.depth / tileD);
                     const startX = - (cols * tileW) / 2;
                     const startZ = - (rows * tileD) / 2;
+                    
+                    const pradoY = 0.72 - finalSize.y; 
 
                     for(let cx = 0; cx < cols; cx++) {
                         for(let cz = 0; cz < rows; cz++) {
@@ -3859,15 +3930,16 @@
                             
                             // Ajuste crítico: La pista está en Y=0.8 y su grosor baja a 0.5. 
                             // Colocamos el césped en 0.72. La pista se dibuja POR ENCIMA, "recortando" el césped visualmente.
-                            dummy.position.set(rX, 0.72 - finalSize.y, rZ); 
+                            dummy.position.set(rX, pradoY, rZ); 
                             dummy.rotation.set(0, 0, 0);
                             dummy.scale.setScalar(pradoScale);
                             dummy.updateMatrix();
 
-                            instancedGroups.forEach(g => {
+                            for(let gi=0; gi<instancedGroups.length; gi++) {
+                                const g = instancedGroups[gi];
                                 const instanceMatrix = new THREE.Matrix4().multiplyMatrices(dummy.matrix, g.localMatrix);
                                 g.im.setMatrixAt(placed, instanceMatrix);
-                            });
+                            }
                             placed++;
                         }
                     }
@@ -3900,17 +3972,10 @@
                             dummy.scale.setScalar(s);
                             dummy.updateMatrix();
 
-                            instancedGroups.forEach(g => {
+                            for(let gi=0; gi<instancedGroups.length; gi++) {
+                                const g = instancedGroups[gi];
                                 const instanceMatrix = new THREE.Matrix4().multiplyMatrices(dummy.matrix, g.localMatrix);
                                 g.im.setMatrixAt(placed, instanceMatrix);
-                            });
-
-                            if (shadowIm) {
-                                dummyShadow.position.set(rX, ry + 0.05, rZ);
-                                dummyShadow.rotation.set(0, dummy.rotation.y, 0);
-                                dummyShadow.scale.setScalar(s);
-                                dummyShadow.updateMatrix();
-                                shadowIm.setMatrixAt(placed, dummyShadow.matrix);
                             }
                             placed++;
                         }
@@ -3919,12 +3984,9 @@
 
                 // Actualizar las mallas instanciadas
                 instancedGroups.forEach(g => { g.im.count = placed; g.im.instanceMatrix.needsUpdate = true; });
-                if (shadowIm) { shadowIm.count = placed; shadowIm.instanceMatrix.needsUpdate = true; }
             };
             
             const mySetupInfo = customCarAssets[1]?.setup;
-
-            const carbonFiberStyle = { backgroundColor: '#111', backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)', backgroundSize: '8px 8px', backgroundPosition: '0 0, 4px 4px' };
 
             return ( 
                 <div className="absolute inset-0 z-50 bg-[#3b5f7d] text-white font-sans overflow-hidden animate-in"> 
@@ -3933,7 +3995,7 @@
                     {/* SEMÁFORO ESTILO F1 (Top Center) */}
                     {countdown !== null && (
                         <div className="absolute inset-0 z-[100] flex flex-col items-center justify-start pt-[15vh] pointer-events-none bg-black/40 backdrop-blur-sm transition-all duration-500">
-                            <div className="bg-[#111] p-6 rounded-[2rem] border-4 border-gray-800 shadow-[0_40px_100px_rgba(0,0,0,1)] flex gap-6 relative overflow-hidden">
+                            <div className="bg-black/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl flex gap-6 relative overflow-hidden">
                                 <div className="absolute inset-0 opacity-20" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'}}></div>
                                 
                                 {[1, 2, 3, 4, 5].map(num => {
@@ -3974,8 +4036,8 @@
 
                     {/* TOP LEFT: COMPREHENSIVE TELEMETRY & SPECS DASHBOARD */}
                     <div className="absolute top-6 left-6 z-[85] flex flex-col gap-2 pointer-events-auto w-[420px]">
-                        <div className="w-full border-t-4 border-[#00f0ff] rounded-t-2xl rounded-b-lg p-4 shadow-[0_15px_30px_rgba(0,0,0,0.9)] flex flex-col relative overflow-hidden" style={carbonFiberStyle}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80 pointer-events-none"></div>
+                        <div className="w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl flex flex-col relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
                             
                             {/* LAPS & TIMING */}
                             <div className="relative z-10 flex gap-4 mb-3 border-b border-gray-700/80 pb-3">
@@ -3988,23 +4050,23 @@
                                         <span className="font-digital text-2xl text-gray-300">{targetLaps}</span>
                                     </div>
                                     <div className="flex items-center gap-2 mt-2 w-full px-1">
-                                        <button onClick={() => setTargetLaps(Math.max(1, targetLaps - 1))} className="flex-1 bg-gray-800 hover:bg-[#00f0ff] hover:text-black hover:border-[#00f0ff] text-gray-300 rounded text-sm font-bold py-0.5 border border-gray-600 transition-colors active:scale-95">-</button>
-                                        <button onClick={() => setTargetLaps(targetLaps + 1)} className="flex-1 bg-gray-800 hover:bg-[#00f0ff] hover:text-black hover:border-[#00f0ff] text-gray-300 rounded text-sm font-bold py-0.5 border border-gray-600 transition-colors active:scale-95">+</button>
+                                        <button onClick={() => setTargetLaps(Math.max(1, targetLaps - 1))} className="flex-1 bg-gray-800 hover:bg-[#00f0ff] hover:text-black hover:border-[#00f0ff] text-gray-300 rounded text-xs font-bold py-0.5 border border-gray-600 transition-colors active:scale-95" title={lang === 'es' ? 'Menos Vueltas' : 'Less Laps'}>-1</button>
+                                        <button onClick={() => setTargetLaps(targetLaps + 1)} className="flex-1 bg-gray-800 hover:bg-[#00f0ff] hover:text-black hover:border-[#00f0ff] text-gray-300 rounded text-xs font-bold py-0.5 border border-gray-600 transition-colors active:scale-95" title={lang === 'es' ? 'Más Vueltas' : 'More Laps'}>+1</button>
                                     </div>
                                 </div>
 
                                 {/* TIMERS */}
                                 <div className="flex-1 flex flex-col gap-2">
-                                    <div className="flex justify-between items-end bg-black/40 p-2 rounded-lg border border-gray-800 shadow-inner">
-                                        <span className="text-[9px] text-gray-400 font-bold tracking-widest uppercase">{t.totalTime}</span>
+                                    <div className="flex justify-between items-end bg-black/40 p-2.5 rounded-xl border border-white/10">
+                                        <span className="text-[9px] text-white/50 font-bold tracking-widest uppercase">{t.totalTime}</span>
                                         <span ref={telemetryRefs.totalTime} className="text-3xl font-digital tabular-nums tracking-tighter text-white leading-none font-bold drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">0.00</span>
                                     </div>
                                     <div className="flex gap-2">
-                                        <div className="flex-1 flex flex-col justify-center items-center bg-black/40 p-1.5 rounded-lg border border-gray-800 shadow-inner">
+                                        <div className="flex-1 flex flex-col justify-center items-center bg-black/40 p-2 rounded-xl border border-white/10">
                                             <span className="text-[8px] text-[#39ff14] font-bold tracking-widest uppercase mb-0.5">{t.currentLap}</span>
                                             <span ref={telemetryRefs.currentLap} className="text-xl font-digital tabular-nums tracking-tight text-[#39ff14] font-bold">0.00</span>
                                         </div>
-                                        <div className="flex-1 flex flex-col justify-center items-center bg-yellow-500/10 p-1.5 rounded-lg border border-yellow-500/30 shadow-[inset_0_0_10px_rgba(234,179,8,0.1)]">
+                                        <div className="flex-1 flex flex-col justify-center items-center bg-yellow-500/10 p-2 rounded-xl border border-yellow-500/30">
                                             <span className="text-[8px] text-yellow-500 font-bold tracking-widest uppercase mb-0.5">{t.bestLap}</span>
                                             <span ref={telemetryRefs.bestTime} className="text-xl font-digital tabular-nums tracking-tight text-yellow-400 font-bold drop-shadow-[0_0_8px_#eab308]">--.--</span>
                                         </div>
@@ -4014,17 +4076,17 @@
 
                             {/* SPECS BOARD */}
                             <div className="relative z-10 flex flex-col">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">{t.carSpecs}</span>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-[10px] font-black text-white/50 tracking-widest uppercase">{t.carSpecs}</span>
                                     <span className="text-[9px] font-black text-black bg-[#39ff14] px-2 py-0.5 rounded-sm shadow-[0_0_5px_#39ff14]">{mySetupInfo?.name || 'STOCK'}</span>
                                 </div>
-                                <div className="text-sm font-black text-[#00f0ff] truncate mb-2 drop-shadow-[0_0_5px_#00f0ff]">
+                                <div className="text-sm font-black text-[#00f0ff] truncate mb-3 drop-shadow-[0_0_5px_#00f0ff]">
                                     {customCarAssets[1]?.glbName ? customCarAssets[1].glbName.replace(/\.glb|\.gltf/gi, '').toUpperCase() : 'HOLO CHASIS'}
                                 </div>
                                 
                                 <div className="grid grid-cols-4 gap-2">
-                                    <div className="col-span-2 bg-gray-900/80 border border-gray-700 p-2 rounded-lg flex flex-col shadow-inner">
-                                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">{t.motor || 'MOTOR'}</span>
+                                    <div className="col-span-2 bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col">
+                                        <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider">{t.motor || 'MOTOR'}</span>
                                         <span className="text-[11px] text-white font-bold truncate mt-0.5">{mySetupInfo?.motorName || 'V8 STANDARD'}</span>
                                         <div className="flex justify-between mt-1">
                                             <span className="text-[9px] text-[#00f0ff] font-mono">{mySetupInfo?.motorRPM || '18000'} RPM</span>
@@ -4032,19 +4094,19 @@
                                         </div>
                                     </div>
                                     
-                                    <div className="bg-gray-900/80 border border-gray-700 p-2 rounded-lg flex flex-col justify-between shadow-inner">
-                                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">{t.tires || 'TIRES'}</span>
+                                    <div className="bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col justify-between">
+                                        <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider">{t.tires || 'TIRES'}</span>
                                         <span className="text-[10px] text-[#39ff14] font-bold truncate">{mySetupInfo?.tireName || 'STD'}</span>
-                                        <span className="text-[9px] text-gray-400 font-mono">G: {mySetupInfo?.tireGrip || '80'}</span>
+                                        <span className="text-[9px] text-white/50 font-mono">G: {mySetupInfo?.tireGrip || '80'}</span>
                                     </div>
 
-                                    <div className="bg-gray-900/80 border border-gray-700 p-2 rounded-lg flex flex-col justify-between shadow-inner">
+                                    <div className="bg-white/5 border border-white/10 p-2 rounded-xl flex flex-col justify-between">
                                         <div className="flex flex-col">
-                                            <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">{t.ratio || 'RATIO'}</span>
+                                            <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider">{t.ratio || 'RATIO'}</span>
                                             <span className="text-[10px] text-white font-mono">{mySetupInfo?.gearRatio || '3.0'}</span>
                                         </div>
                                         <div className="flex flex-col mt-1">
-                                            <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">{t.weight || 'WGT'}</span>
+                                            <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider">{t.weight || 'WGT'}</span>
                                             <span className="text-[10px] text-white font-mono">{mySetupInfo?.weight || '85'}g</span>
                                         </div>
                                     </div>
@@ -4052,17 +4114,17 @@
                             </div>
                             
                             {/* FINISH OVERLAY */}
-                            <div ref={telemetryRefs.finishOverlay} className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-500 backdrop-blur-sm">
+                            <div ref={telemetryRefs.finishOverlay} className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-500 backdrop-blur-sm rounded-2xl">
                                 <span className="font-digital text-5xl text-[#39ff14] font-black italic drop-shadow-[0_0_30px_#39ff14]">FINISHED!</span>
                                 <span className="text-white text-sm font-bold tracking-widest mt-2">{lang === 'es' ? 'CARRERA COMPLETADA' : 'RACE COMPLETED'}</span>
-                                <button onClick={handleRestartRace} className="mt-8 px-8 py-3 bg-gradient-to-b from-[#39ff14] to-green-600 hover:from-[#00f0ff] hover:to-blue-600 text-black font-black uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(57,255,20,0.5)] transition-all active:scale-95 flex items-center gap-3">
+                                <button onClick={handleRestartRace} className="mt-8 px-8 py-3 bg-white/10 hover:bg-[#39ff14] hover:text-black hover:shadow-[0_0_20px_rgba(57,255,20,0.5)] border border-white/20 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center gap-3">
                                     <Repeat size={20} /> {t.btnRestart}
                                 </button>
                             </div>
                         </div>
 
                         {/* PROGRESS BAR */}
-                        <div className="w-full h-3 bg-gray-900 rounded-full overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.8)] border border-gray-800">
+                        <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-lg">
                             <div ref={telemetryRefs.progress} className="h-full bg-gradient-to-r from-[#00f0ff] to-[#39ff14] w-0 transition-all duration-100 shadow-[0_0_15px_#39ff14]"></div>
                         </div>
                     </div>
@@ -4070,39 +4132,39 @@
                     {/* BOTTOM LEFT: LEADERBOARD & AI DASHBOARD (Sim-Racing Style) */}
                     <div className="absolute bottom-6 left-6 z-[85] flex flex-col gap-3 pointer-events-auto w-[340px]">
                         {peerConn && peerConn.open ? (
-                            <div className="w-full border-t-4 border-blue-500 rounded-t-2xl rounded-b-lg p-5 shadow-[0_15px_30px_rgba(0,0,0,0.9)] flex flex-col relative overflow-hidden" style={carbonFiberStyle}>
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80 pointer-events-none"></div>
+                            <div className="w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl flex flex-col relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
                                 <div className="relative z-10">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 block border-b border-gray-700/80 pb-1">
+                                    <span className="text-[10px] text-white/50 font-black uppercase tracking-widest mb-3 block border-b border-white/10 pb-2">
                                         LEADERBOARD
                                     </span>
                                     <div className="flex flex-col gap-2">
-                                        <div className="flex justify-between items-center bg-blue-900/30 px-3 py-2 rounded-lg border border-blue-500/50 shadow-inner">
+                                        <div className="flex justify-between items-center bg-blue-500/20 px-3 py-2 rounded-xl border border-blue-500/30">
                                             <span className="text-blue-400 font-black italic text-sm">P1</span>
                                             <span className="text-white text-sm font-black">{lang === 'en' ? 'YOU' : 'TÚ'}</span>
                                         </div>
-                                        <div className="flex justify-between items-center bg-gray-900/80 px-3 py-2 rounded-lg border border-gray-700 shadow-inner">
-                                            <span className="text-gray-500 font-black italic text-sm">P2</span>
-                                            <span className="text-gray-400 text-sm font-bold truncate max-w-[120px]">{multiplayerSession?.rivalName || 'RIVAL'}</span>
+                                        <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-xl border border-white/10">
+                                            <span className="text-white/40 font-black italic text-sm">P2</span>
+                                            <span className="text-white/70 text-sm font-bold truncate max-w-[120px]">{multiplayerSession?.rivalName || 'RIVAL'}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full border-t-4 border-[#39ff14] rounded-t-2xl rounded-b-lg p-5 shadow-[0_15px_30px_rgba(0,0,0,0.9)] flex flex-col relative overflow-hidden" style={carbonFiberStyle}>
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80 pointer-events-none"></div>
+                            <div className="w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl flex flex-col relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
                                 <div className="relative z-10">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 flex items-center justify-between border-b border-gray-700/80 pb-1">
+                                    <span className="text-[10px] text-white/50 font-black uppercase tracking-widest mb-3 flex items-center justify-between border-b border-white/10 pb-2">
                                         <span>VS IA (RIVAL)</span>
                                         {aiDifficulty > 0 && <span className="text-[#39ff14] animate-pulse">ON</span>}
                                     </span>
                                     <div className="flex items-center gap-1.5 mt-2">
-                                        <button onClick={() => setAiDifficulty(0)} className={`flex-1 py-2 text-[11px] font-black rounded-lg transition-all ${aiDifficulty === 0 ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-500 hover:bg-gray-700'}`}>OFF</button>
-                                        <button onClick={() => setAiDifficulty(1)} className={`flex-1 py-2 text-[11px] font-black rounded-lg transition-all ${aiDifficulty === 1 ? 'bg-[#39ff14] text-black shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700'}`}>1</button>
-                                        <button onClick={() => setAiDifficulty(2)} className={`flex-1 py-2 text-[11px] font-black rounded-lg transition-all ${aiDifficulty === 2 ? 'bg-[#39ff14] text-black shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700'}`}>2</button>
-                                        <button onClick={() => setAiDifficulty(3)} className={`flex-1 py-2 text-[11px] font-black rounded-lg transition-all ${aiDifficulty === 3 ? 'bg-[#39ff14] text-black shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700'}`}>3</button>
-                                        <button onClick={() => setAiDifficulty(4)} className={`flex-1 py-2 text-[11px] font-black rounded-lg transition-all ${aiDifficulty === 4 ? 'bg-[#39ff14] text-black shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700'}`}>4</button>
-                                        <button onClick={() => setAiDifficulty(5)} className={`flex-1 py-2 text-[11px] font-black rounded-lg transition-all ${aiDifficulty === 5 ? 'bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700'}`}>5</button>
+                                        <button onClick={() => setAiDifficulty(0)} className={`flex-1 py-2 text-[11px] font-black rounded-xl transition-all ${aiDifficulty === 0 ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>OFF</button>
+                                        <button onClick={() => setAiDifficulty(1)} className={`flex-1 py-2 text-[11px] font-black rounded-xl transition-all ${aiDifficulty === 1 ? 'bg-[#39ff14]/20 text-[#39ff14] border border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>1</button>
+                                        <button onClick={() => setAiDifficulty(2)} className={`flex-1 py-2 text-[11px] font-black rounded-xl transition-all ${aiDifficulty === 2 ? 'bg-[#39ff14]/20 text-[#39ff14] border border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>2</button>
+                                        <button onClick={() => setAiDifficulty(3)} className={`flex-1 py-2 text-[11px] font-black rounded-xl transition-all ${aiDifficulty === 3 ? 'bg-[#39ff14]/20 text-[#39ff14] border border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>3</button>
+                                        <button onClick={() => setAiDifficulty(4)} className={`flex-1 py-2 text-[11px] font-black rounded-xl transition-all ${aiDifficulty === 4 ? 'bg-[#39ff14]/20 text-[#39ff14] border border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.5)]' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>4</button>
+                                        <button onClick={() => setAiDifficulty(5)} className={`flex-1 py-2 text-[11px] font-black rounded-xl transition-all ${aiDifficulty === 5 ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>5</button>
                                     </div>
                                 </div>
                             </div>
@@ -4111,55 +4173,55 @@
 
                     {/* TOP RIGHT: SETTINGS & CAMERAS */}
                     <div className="absolute top-6 right-6 z-[85] flex flex-col items-end gap-3 pointer-events-auto">
-                        <div className="flex bg-black/90 p-1.5 rounded-xl border border-gray-800 shadow-[0_10px_20px_rgba(0,0,0,0.8)] gap-1 transform -skew-x-6">
-                            <button onClick={() => setIsNightMode(!isNightMode)} title={isNightMode ? 'DÍA' : 'NOCHE'} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${isNightMode ? 'text-indigo-400 bg-gray-800' : 'text-yellow-400 hover:text-white hover:bg-gray-800'}`}>
+                        <div className="flex bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg gap-1">
+                            <button onClick={() => setIsNightMode(!isNightMode)} title={isNightMode ? 'DÍA' : 'NOCHE'} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${isNightMode ? 'text-indigo-400 bg-white/10' : 'text-yellow-400 hover:text-white hover:bg-white/10'}`}>
                                 {isNightMode ? <Moon size={14}/> : <Sun size={14}/>} {isNightMode ? 'NOCHE' : 'DÍA'}
                             </button>
-                            <button onClick={toggleQuality} title={t.qualityTooltip} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${['LOW', 'MIN', 'PS2'].includes(qualityMode) ? 'text-orange-400 bg-gray-800' : (qualityMode === 'ULTRA' ? 'text-purple-400 bg-gray-800' : 'text-gray-500 hover:text-white hover:bg-gray-800')}`}>
+                            <button onClick={toggleQuality} title={t.qualityTooltip} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${['LOW', 'MIN', 'PS2'].includes(qualityMode) ? 'text-orange-400 bg-white/10' : (qualityMode === 'ULTRA' ? 'text-purple-400 bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/10')}`}>
                                 <Zap size={14}/> {qualityMode === 'ULTRA' ? 'ULTRA (PS3)' : qualityMode === 'PS2' ? 'RETRO (PS2)' : qualityMode}
                             </button>
-                            <button onClick={toggleMusic} title={t.btnMusic} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${musicEnabled ? 'text-[#00f0ff] hover:bg-gray-800' : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={toggleMusic} title={t.btnMusic} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${musicEnabled ? 'text-[#00f0ff] hover:bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 {musicEnabled ? <Volume2 size={14}/> : <VolumeX size={14}/>}
                                 {t.btnMusic}
                             </button>
-                            <button onClick={toggleAudio} title={t.btnVoice} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${audioEnabled ? 'text-[#39ff14] hover:bg-gray-800' : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={toggleAudio} title={t.btnVoice} className={`px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${audioEnabled ? 'text-[#39ff14] hover:bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 {audioEnabled ? <Volume2 size={14}/> : <VolumeX size={14}/>}
                                 {t.btnVoice}
                             </button>
-                            <button onClick={onGoTo2D} title={t.btn2d} className="px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded text-gray-400 hover:text-white hover:bg-gray-800 flex items-center gap-2 transform skew-x-6">
+                            <button onClick={onGoTo2D} title={t.btn2d} className="px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl text-white/60 hover:text-white hover:bg-white/10 flex items-center gap-2">
                                 <Layers size={14}/> 2D
                             </button>
-                            <button onClick={toggleFullscreen} title={t.btnFullscreen} className="px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded text-gray-400 hover:text-white hover:bg-gray-800 flex items-center gap-2 transform skew-x-6">
+                            <button onClick={toggleFullscreen} title={t.btnFullscreen} className="px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl text-white/60 hover:text-white hover:bg-white/10 flex items-center gap-2">
                                 {isFullscreen ? <Minimize size={14}/> : <Maximize size={14}/>}
                                 <span>{t.screen}</span>
                             </button>
-                            <div className="w-px bg-gray-800 my-1 mx-1 transform skew-x-6"></div>
-                            <button onClick={() => setLang('es')} title="Español" className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center justify-center transform skew-x-6 ${lang === 'es' ? 'text-[#00f0ff] bg-gray-800' : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}>
+                            <div className="w-px bg-white/10 my-1 mx-1"></div>
+                            <button onClick={() => setLang('es')} title="Español" className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center justify-center ${lang === 'es' ? 'text-white bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 ES
                             </button>
-                            <button onClick={() => setLang('en')} title="English" className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center justify-center transform skew-x-6 ${lang === 'en' ? 'text-[#00f0ff] bg-gray-800' : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={() => setLang('en')} title="English" className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center justify-center ${lang === 'en' ? 'text-white bg-white/10' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 EN
                             </button>
-                            <div className="w-px bg-gray-800 my-1 mx-1 transform skew-x-6"></div>
-                            <button onClick={onClose} title={t.exit} className="px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded text-red-500 hover:text-white hover:bg-red-600 flex items-center gap-2 transform skew-x-6">
+                            <div className="w-px bg-white/10 my-1 mx-1"></div>
+                            <button onClick={onClose} title={t.exit} className="px-4 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl text-red-500 hover:text-white hover:bg-red-500/20 flex items-center gap-2">
                                 <XIcon size={14}/> {t.exit}
                             </button>
                         </div>
 
-                        <div className="flex bg-black/90 p-1.5 rounded-xl border border-gray-800 shadow-[0_10px_20px_rgba(0,0,0,0.8)] gap-1 transform -skew-x-6">
-                            <button onClick={() => setCameraMode('BIRD')} title={t.camBird} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${cameraMode === 'BIRD' ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_#00f0ff]' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                        <div className="flex bg-black/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-lg gap-1">
+                            <button onClick={() => setCameraMode('BIRD')} title={t.camBird} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'BIRD' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Eye size={12}/> BIRD
                             </button>
-                            <button onClick={() => setCameraMode('CHASE')} title={t.camChase} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${cameraMode === 'CHASE' ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_#00f0ff]' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={() => setCameraMode('CHASE')} title={t.camChase} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'CHASE' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Video size={12}/> CHASE
                             </button>
-                            <button onClick={() => setCameraMode('PILOT')} title={t.camPilot} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${cameraMode === 'PILOT' ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_#00f0ff]' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={() => setCameraMode('PILOT')} title={t.camPilot} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'PILOT' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Crosshair size={12}/> PILOT
                             </button>
-                            <button onClick={() => setCameraMode('FRONT')} title={t.camFront} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${cameraMode === 'FRONT' ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_#00f0ff]' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={() => setCameraMode('FRONT')} title={t.camFront} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'FRONT' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Car size={12}/> FRONT
                             </button>
-                            <button onClick={() => setCameraMode('REAR')} title={t.camRear} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded flex items-center gap-2 transform skew-x-6 ${cameraMode === 'REAR' ? 'bg-[#00f0ff] text-black shadow-[0_0_10px_#00f0ff]' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                            <button onClick={() => setCameraMode('REAR')} title={t.camRear} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'REAR' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Undo2 size={12}/> REAR
                             </button>
                         </div>
@@ -4169,60 +4231,60 @@
                     <div className="absolute bottom-6 right-6 z-[90] flex flex-col items-end gap-2 pointer-events-auto w-[380px]">
                         
                         {/* Speedometer & RPM Display Unit */}
-                        <div className="w-full border-t-4 border-[#00f0ff] rounded-t-2xl rounded-b-lg p-5 shadow-[0_15px_30px_rgba(0,0,0,0.9)] flex flex-col relative overflow-hidden" style={carbonFiberStyle}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/80 pointer-events-none"></div>
+                        <div className="w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl flex flex-col relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
                             
-                            <div className="flex justify-between items-end z-10 mb-2">
+                            <div className="flex justify-between items-end z-10 mb-3">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">{t.speed}</span>
+                                    <span className="text-[10px] text-white/50 font-black uppercase tracking-widest mb-1">{t.speed}</span>
                                     <div className="flex items-baseline gap-1">
                                         <span ref={telemetryRefs.speed} className="font-digital italic text-6xl text-white tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]">000</span>
                                         <span className="text-sm text-[#00f0ff] font-black italic ml-1">KM/H</span>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col items-end w-28 gap-1.5 bg-black/60 p-2 rounded-lg border border-gray-800">
+                                <div className="flex flex-col items-end w-28 gap-1.5 bg-black/40 p-2.5 rounded-xl border border-white/10">
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase w-full">
-                                        <span ref={telemetryRefs.fuelStatus} className="text-gray-400">FUEL</span>
+                                        <span ref={telemetryRefs.fuelStatus} className="text-white/50">FUEL</span>
                                         <span ref={telemetryRefs.fuelText} className="text-[#39ff14]">100%</span>
                                     </div>
-                                    <div className="w-full h-3 bg-gray-950 rounded-[2px] overflow-hidden border border-gray-800 relative shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)]">
+                                    <div className="w-full h-3 bg-black/60 rounded-[2px] overflow-hidden border border-white/10 relative shadow-inner">
                                         <div ref={telemetryRefs.fuelBar} className="absolute left-0 top-0 bottom-0 bg-[#39ff14] transition-all duration-75 shadow-[0_0_10px_#39ff14] z-10"></div>
-                                        <div className="absolute inset-0 z-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(to right, transparent, transparent 5px, #0a0a0a 5px, #0a0a0a 7px)'}}></div>
+                                        <div className="absolute inset-0 z-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(to right, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 7px)'}}></div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="w-full mt-2 z-10 bg-black/60 p-2 rounded-lg border border-gray-800">
-                                <div className="flex justify-between text-[9px] font-black text-gray-500 mb-1.5 uppercase tracking-wider">
-                                    <span>RPM</span><span className="text-red-500">MAX</span>
+                            <div className="w-full z-10 bg-black/40 p-2.5 rounded-xl border border-white/10">
+                                <div className="flex justify-between text-[9px] font-black text-white/50 mb-2 uppercase tracking-wider">
+                                    <span>RPM</span><span className="text-red-400">MAX</span>
                                 </div>
-                                <div className="w-full h-3 bg-gray-950 rounded-[2px] overflow-hidden shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] border border-gray-800 relative flex items-center">
+                                <div className="w-full h-3 bg-black/60 rounded-[2px] overflow-hidden shadow-inner border border-white/10 relative flex items-center">
                                     <div ref={telemetryRefs.rpmBar} className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-blue-500 via-yellow-400 to-red-500 w-0 transition-all duration-75 z-10"></div>
-                                    <div className="absolute inset-0 z-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(to right, transparent, transparent 8px, #0a0a0a 8px, #0a0a0a 10px)'}}></div>
+                                    <div className="absolute inset-0 z-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(to right, transparent, transparent 8px, rgba(255,255,255,0.1) 8px, rgba(255,255,255,0.1) 10px)'}}></div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Action Buttons Row */}
-                        <div className="flex gap-2 w-full">
-                            <button onClick={() => setIsPaused(!isPaused)} title={t.btnPlayPause} className={`px-4 min-w-[120px] h-14 flex items-center justify-center gap-2 rounded-xl border-b-4 transition-all active:translate-y-1 active:border-b-0 ${isPaused ? 'bg-red-500/20 border-red-600 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-gray-800 border-gray-900 text-white hover:bg-gray-700'}`}>
+                        <div className="flex gap-2 w-full mt-1">
+                            <button onClick={() => setIsPaused(!isPaused)} title={t.btnPlayPause} className={`px-4 min-w-[120px] h-14 flex items-center justify-center gap-2 rounded-2xl border transition-all active:scale-95 ${isPaused ? 'bg-red-500/20 border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/40 backdrop-blur-xl border-white/10 text-white hover:bg-white/10'}`}>
                                 {isPaused ? <Play size={18} className="fill-current" /> : <Pause size={18} className="fill-current" />}
                                 <span className="text-[10px] font-black uppercase tracking-widest">{isPaused ? t.play : t.pause}</span>
                             </button>
-                            <button disabled={!isDigitalCircuit} onClick={() => setLaneChangeActive(!laneChangeActive)} title={t.btnLaneChange} className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-xl border-b-4 transition-all ${!isDigitalCircuit ? 'opacity-50 cursor-not-allowed bg-gray-900 border-gray-950 text-gray-600' : (laneChangeActive ? 'bg-blue-500 border-blue-700 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] active:translate-y-1 active:border-b-0' : 'bg-gray-800 border-gray-900 text-gray-400 hover:bg-gray-700 hover:text-white active:translate-y-1 active:border-b-0')}`}>
+                            <button disabled={!isDigitalCircuit} onClick={() => setLaneChangeActive(!laneChangeActive)} title={t.btnLaneChange} className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border transition-all active:scale-95 ${!isDigitalCircuit ? 'opacity-50 cursor-not-allowed bg-black/40 backdrop-blur-xl border-white/5 text-white/30' : (laneChangeActive ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : 'bg-black/40 backdrop-blur-xl border-white/10 text-white/60 hover:bg-white/10 hover:text-white')}`}>
                                 <Zap size={20} className={laneChangeActive ? "animate-pulse fill-current" : ""} />
                                 <span className="text-[11px] font-black uppercase tracking-widest">{t.laneChange}</span>
                             </button>
-                            <button disabled={!isDigitalCircuit} onClick={() => setPitEntryActive(!pitEntryActive)} title={t.btnPit} className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-xl border-b-4 transition-all ${!isDigitalCircuit ? 'opacity-50 cursor-not-allowed bg-gray-900 border-gray-950 text-gray-600' : (pitEntryActive ? 'bg-yellow-500 border-yellow-700 text-black shadow-[0_0_20px_rgba(234,179,8,0.6)] active:translate-y-1 active:border-b-0' : 'bg-gray-800 border-gray-900 text-gray-400 hover:bg-gray-700 hover:text-white active:translate-y-1 active:border-b-0')}`}>
+                            <button disabled={!isDigitalCircuit} onClick={() => setPitEntryActive(!pitEntryActive)} title={t.btnPit} className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl border transition-all active:scale-95 ${!isDigitalCircuit ? 'opacity-50 cursor-not-allowed bg-black/40 backdrop-blur-xl border-white/5 text-white/30' : (pitEntryActive ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.6)]' : 'bg-black/40 backdrop-blur-xl border-white/10 text-white/60 hover:bg-white/10 hover:text-white')}`}>
                                 <Fuel size={20} className={pitEntryActive ? "animate-pulse" : ""} />
                                 <span className="text-[11px] font-black uppercase tracking-widest">{t.pitEntry}</span>
                             </button>
                         </div>
 
                         {/* Horizontal Throttle Pedal/Trigger */}
-                        <div className="relative w-full h-24 bg-gray-900 rounded-2xl border-[3px] border-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.9)] overflow-hidden flex items-center group cursor-pointer mt-1">
-                            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.5) 10px, rgba(255,255,255,0.5) 20px)'}}></div>
+                        <div className="relative w-full h-24 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex items-center group cursor-pointer mt-1">
+                            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'}}></div>
                             
                             {/* Visual Fill Glow */}
                             <div ref={throttleFillRef} className="absolute left-0 top-0 bottom-0 transition-all duration-75 z-10" style={{ width: `0%`, background: `linear-gradient(to right, #3b82f6 0%, #39ff14 50%, #ef4444 100%)`, boxShadow: `none` }}></div>
@@ -4236,16 +4298,16 @@
                                 }
                                 if (throttleTextRef.current) {
                                     throttleTextRef.current.textContent = Math.round(val);
-                                    throttleTextRef.current.className = `font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${val>90?'text-red-400':val>10?'text-white':'text-gray-700'}`;
+                                    throttleTextRef.current.className = `font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${val>90?'text-red-400':val>10?'text-white':'text-white/30'}`;
                                 }
                                 if (throttleLabelRef.current) {
-                                    throttleLabelRef.current.className = `text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${val>10 ? 'text-white' : 'text-gray-600'}`;
+                                    throttleLabelRef.current.className = `text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${val>10 ? 'text-white' : 'text-white/40'}`;
                                 }
                             }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
                             
                             <div className="relative z-30 flex justify-between items-center w-full px-6 pointer-events-none">
-                                <span ref={throttleLabelRef} className="text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-gray-600">{t.controller}</span>
-                                <span ref={throttleTextRef} className="font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-gray-700">0</span>
+                                <span ref={throttleLabelRef} className="text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/40">{t.controller}</span>
+                                <span ref={throttleTextRef} className="font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/30">0</span>
                             </div>
                         </div>
 
@@ -4253,45 +4315,45 @@
 
                     {/* MENÚS FLOTANTES (Right Side) */}
                     {showMultiMenu && (
-                        <div className="absolute right-6 top-48 w-[24rem] bg-[#0f172a]/95 backdrop-blur-xl border-2 border-blue-500 rounded-xl shadow-[0_0_60px_rgba(59,130,246,0.3)] flex flex-col overflow-hidden animate-in z-[100] pointer-events-auto">
-                            <div className="bg-blue-500/20 p-4 flex items-center justify-between border-b border-blue-500/30">
-                                <h3 className="text-sm font-black text-white tracking-[0.2em] flex items-center gap-2 uppercase"><Gamepad2 size={18} className="text-blue-400"/> {t.multiTitle}</h3>
-                                <button onClick={() => setShowMultiMenu(false)} className="text-blue-500 hover:text-white bg-black/40 p-1.5 rounded hover:bg-blue-500/40 transition"><XIcon size={16}/></button>
+                        <div className="absolute right-6 top-48 w-[24rem] bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in z-[100] pointer-events-auto">
+                            <div className="bg-white/5 p-4 flex items-center justify-between border-b border-white/10">
+                                <h3 className="text-sm font-black text-white tracking-[0.2em] flex items-center gap-2 uppercase"><Gamepad2 size={18} className="text-white/70"/> {t.multiTitle}</h3>
+                                <button onClick={() => setShowMultiMenu(false)} className="text-white/50 hover:text-white bg-white/5 p-1.5 rounded-lg hover:bg-white/10 transition"><XIcon size={16}/></button>
                             </div>
                             <div className="p-6 flex flex-col gap-4">
-                                <p className="text-[11px] text-gray-300 text-center leading-relaxed font-bold mb-2">
+                                <p className="text-[11px] text-white/70 text-center leading-relaxed font-bold mb-2">
                                     {lang === 'es' ? 'El anfitrión elige el circuito. ¡Crea una sala pública para que cualquiera pueda unirse!' : 'Host chooses the track. Create a public room so anyone can join!'}
                                 </p>
 
                                 {!(peerConn && peerConn.open) && !isSearching && !myPeerID && (
                                     <div className="flex flex-col gap-4">
                                         {/* BOTÓN GIGANTE CREAR PÚBLICA */}
-                                        <button onClick={startPublicHost} className="relative w-full bg-blue-600 hover:bg-blue-500 text-white border-2 border-blue-400 font-black py-5 rounded-xl text-[14px] uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] active:scale-95 flex justify-center items-center gap-3 overflow-hidden group">
+                                        <button onClick={startPublicHost} className="relative w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 font-black py-4 rounded-xl text-[14px] uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 flex justify-center items-center gap-3 overflow-hidden group">
                                             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none group-hover:opacity-40"></div>
                                             <Plus size={24} className="group-hover:rotate-90 transition-transform duration-300 z-10"/> <span className="z-10">{t.createRoomPublic}</span>
                                         </button>
                                         
                                         {/* LISTA DE SALAS PÚBLICAS */}
-                                        <div className="bg-black/60 rounded-xl border border-blue-500/30 p-3 min-h-[140px] flex flex-col max-h-[220px] overflow-y-auto hide-scrollbar shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative">
-                                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-blue-500/30">
-                                                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{t.publicRooms}</span>
-                                                <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded text-[8px] font-bold animate-pulse border border-blue-500/50">LIVE</span>
+                                        <div className="bg-black/40 rounded-xl border border-white/10 p-3 min-h-[140px] flex flex-col max-h-[220px] overflow-y-auto hide-scrollbar shadow-inner relative">
+                                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+                                                <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{t.publicRooms}</span>
+                                                <span className="bg-white/10 text-white/80 px-2 py-0.5 rounded text-[8px] font-bold animate-pulse border border-white/20">LIVE</span>
                                             </div>
                                             
                                             {publicRooms.length === 0 ? (
                                                 <div className="flex-1 flex flex-col items-center justify-center opacity-50 py-4">
-                                                    <Cloud size={24} className="mb-2 text-gray-500"/>
-                                                    <span className="text-[10px] text-center uppercase tracking-wider font-bold text-gray-400">{t.noRooms}</span>
+                                                    <Cloud size={24} className="mb-2 text-white/30"/>
+                                                    <span className="text-[10px] text-center uppercase tracking-wider font-bold text-white/50">{t.noRooms}</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col gap-2">
                                                     {publicRooms.map(room => (
-                                                        <div key={room.id} className="flex justify-between items-center bg-gray-900/80 border border-gray-700 p-2.5 rounded-lg hover:border-blue-500 transition-colors shadow-md">
+                                                        <div key={room.id} className="flex justify-between items-center bg-white/5 border border-white/10 p-2.5 rounded-lg hover:border-white/20 transition-colors shadow-sm">
                                                             <div className="flex flex-col">
-                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">HOST</span>
+                                                                <span className="text-[8px] text-white/40 font-bold uppercase tracking-widest">HOST</span>
                                                                 <span className="text-xs font-black text-white">{room.hostName}</span>
                                                             </div>
-                                                            <button onClick={() => joinPublicRoom(room)} className="bg-emerald-500 hover:bg-emerald-400 text-black border border-emerald-400 px-5 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(16,185,129,0.5)] active:scale-95">
+                                                            <button onClick={() => joinPublicRoom(room)} className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-5 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
                                                                 {t.joinRoom}
                                                             </button>
                                                         </div>
@@ -4301,16 +4363,16 @@
                                         </div>
 
                                         {/* SECCIÓN PRIVADA (PEQUEÑA ABAJO) */}
-                                        <div className="mt-2 pt-4 border-t border-gray-800 flex flex-col gap-3">
-                                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">{lang === 'es' ? 'Conexión Privada (Opcional)' : 'Private Connection (Optional)'}</span>
+                                        <div className="mt-2 pt-4 border-t border-white/10 flex flex-col gap-3">
+                                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest text-center">{lang === 'es' ? 'Conexión Privada (Opcional)' : 'Private Connection (Optional)'}</span>
                                             <div className="flex gap-2">
-                                                <button disabled={!!(peerConn && peerConn.open)} onClick={startHost} className="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 font-bold py-2 rounded text-[10px] uppercase tracking-widest transition">
+                                                <button disabled={!!(peerConn && peerConn.open)} onClick={startHost} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-bold py-2 rounded text-[10px] uppercase tracking-widest transition">
                                                     {t.createRoomPrivate}
                                                 </button>
                                             </div>
                                             <div className="flex gap-2">
-                                                <input disabled={!!(peerConn && peerConn.open)} type="text" placeholder={t.roomCode} value={joinID} onChange={e=>setJoinID(e.target.value.toUpperCase())} className="w-1/2 bg-black/60 border border-gray-600 rounded px-3 text-center font-mono font-bold text-white focus:border-blue-500 outline-none uppercase text-xs"/>
-                                                <button disabled={!!(peerConn && peerConn.open)} onClick={startJoin} className="w-1/2 bg-gray-700 hover:bg-gray-600 border border-gray-500 text-white font-bold px-4 py-2 rounded text-[10px] transition uppercase tracking-widest">{t.joinRoom}</button>
+                                                <input disabled={!!(peerConn && peerConn.open)} type="text" placeholder={t.roomCode} value={joinID} onChange={e=>setJoinID(e.target.value.toUpperCase())} className="w-1/2 bg-black/40 border border-white/10 rounded px-3 text-center font-mono font-bold text-white focus:border-white/30 outline-none uppercase text-xs"/>
+                                                <button disabled={!!(peerConn && peerConn.open)} onClick={startJoin} className="w-1/2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-bold px-4 py-2 rounded text-[10px] transition uppercase tracking-widest">{t.joinRoom}</button>
                                             </div>
                                         </div>
                                     </div>
@@ -4318,14 +4380,13 @@
 
                                 {/* EL RADAR (CUANDO BUSCA PÚBLICA) */}
                                 {isSearching && !(peerConn && peerConn.open) && (
-                                    <div className="text-center w-full bg-black/60 p-8 rounded-2xl border-2 border-blue-500/50 shadow-[inset_0_0_30px_rgba(59,130,246,0.2)] animate-in flex flex-col items-center gap-4 relative overflow-hidden mt-2">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-                                        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_#3b82f6]"></div>
-                                        <h3 className="text-sm font-black text-blue-400 tracking-widest uppercase animate-pulse drop-shadow-[0_0_8px_#3b82f6]">{t.waiting}</h3>
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-wider max-w-[80%] font-bold">
+                                    <div className="text-center w-full bg-black/40 p-8 rounded-2xl border border-white/10 shadow-inner animate-in flex flex-col items-center gap-4 relative overflow-hidden mt-2">
+                                        <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin shadow-[0_0_15px_rgba(255,255,255,0.2)]"></div>
+                                        <h3 className="text-sm font-black text-white/80 tracking-widest uppercase animate-pulse">{t.waiting}</h3>
+                                        <p className="text-[10px] text-white/50 uppercase tracking-wider max-w-[80%] font-bold">
                                             {lang === 'es' ? 'Tú eres el anfitrión. Esperando a que otro piloto se una...' : 'You are the host. Waiting for a racer to join...'}
                                         </p>
-                                        <button onClick={cancelSearch} className="mt-4 px-6 py-2 bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-500 rounded text-[10px] font-black uppercase tracking-widest transition-all">
+                                        <button onClick={cancelSearch} className="mt-4 px-6 py-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 hover:text-white border border-red-500/50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                                             {t.cancel}
                                         </button>
                                     </div>
@@ -4333,15 +4394,15 @@
 
                                 {/* WAITING FOR PRIVATE (CON CÓDIGO) */}
                                 {myPeerID && !isSearching && !(peerConn && peerConn.open) && (
-                                    <div className="text-center w-full bg-black/50 p-6 rounded-2xl border border-gray-600 shadow-inner animate-in">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">{t.roomCode}:</span>
+                                    <div className="text-center w-full bg-black/40 p-6 rounded-2xl border border-white/10 shadow-inner animate-in">
+                                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest block mb-2">{t.roomCode}:</span>
                                         <div className="text-4xl font-mono font-black text-white tracking-widest mb-4 select-all drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{myPeerID}</div>
-                                        <button onClick={()=>{navigator.clipboard.writeText(myPeerID); alert(lang === 'es' ? "¡ID Copiada!" : "ID Copied!")}} className="text-[10px] text-blue-400 uppercase font-bold tracking-wider hover:text-white transition flex items-center justify-center gap-2 mx-auto bg-blue-500/20 px-4 py-2 rounded border border-blue-500/50"><Copy size={12}/> {t.copy}</button>
+                                        <button onClick={()=>{navigator.clipboard.writeText(myPeerID); alert(lang === 'es' ? "¡ID Copiada!" : "ID Copied!")}} className="text-[10px] text-white/70 uppercase font-bold tracking-wider hover:text-white transition flex items-center justify-center gap-2 mx-auto bg-white/5 px-4 py-2 rounded-xl border border-white/10"><Copy size={12}/> {t.copy}</button>
                                         <div className="mt-6 flex items-center justify-center gap-3">
-                                            <div className="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-                                            <span className="text-[10px] text-yellow-500 font-bold animate-pulse uppercase tracking-wider">{t.waiting}</span>
+                                            <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                                            <span className="text-[10px] text-yellow-400 font-bold animate-pulse uppercase tracking-wider">{t.waiting}</span>
                                         </div>
-                                        <button onClick={cancelSearch} className="mt-4 px-6 py-2 bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-500 rounded text-[10px] font-black uppercase tracking-widest transition-all">
+                                        <button onClick={cancelSearch} className="mt-4 px-6 py-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 hover:text-white border border-red-500/50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                                             {t.cancel}
                                         </button>
                                     </div>
@@ -4349,7 +4410,7 @@
                                 
                                 {/* CONECTADO */}
                                 {peerConn && peerConn.open && (
-                                    <div className="relative w-full bg-green-900/20 border-2 border-green-500 p-4 rounded-xl text-center text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.4)] animate-in slide-in-bottom mt-2 overflow-hidden">
+                                    <div className="relative w-full bg-green-500/10 border border-green-500/30 p-4 rounded-xl text-center text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.2)] animate-in slide-in-bottom mt-2 overflow-hidden">
                                         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none"></div>
                                         <span className="font-black uppercase tracking-widest text-sm drop-shadow-md flex items-center justify-center gap-2 relative z-10"><Bluetooth size={18} className="animate-pulse"/> CONECTADO CON {multiplayerSession?.rivalName || 'RIVAL'}</span>
                                         <p className="text-[10px] text-green-300 mt-2 font-bold z-10 relative">{lang === 'es' ? 'Sincronizando telemetría...' : 'Syncing telemetry...'}</p>
@@ -4361,13 +4422,13 @@
 
                     {/* MODAL DE RESULTADOS DE CARRERA ESPECTACULAR */}
                     {showResults && raceResultsData && (
-                        <div className="absolute inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in p-4">
-                            <div className="bg-[#0B0F19] border border-gray-800 rounded-xl w-[850px] max-w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
+                        <div className="absolute inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center animate-in p-4">
+                            <div className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-3xl w-[850px] max-w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
                                 
                                 {/* Header Minimalista */}
-                                <div className="px-6 py-4 flex items-center justify-between border-b border-gray-800/60 bg-gray-900/30 shrink-0">
+                                <div className="px-6 py-4 flex items-center justify-between border-b border-white/10 bg-white/5 shrink-0">
                                     <div className="flex items-center gap-3">
-                                        <Trophy size={20} className="text-yellow-500" />
+                                        <Trophy size={20} className="text-yellow-400" />
                                         <h2 className="text-xl font-black text-white tracking-widest uppercase">
                                             {lang === 'es' ? 'VICTORIA PARA ' : 'VICTORY FOR '}
                                             <span className="text-yellow-400 ml-1">
@@ -4375,7 +4436,7 @@
                                             </span>
                                         </h2>
                                     </div>
-                                    <button onClick={() => setShowResults(false)} className="text-gray-500 hover:text-white transition-colors">
+                                    <button onClick={() => setShowResults(false)} className="text-white/50 hover:text-white transition-colors">
                                         <XIcon size={20}/>
                                     </button>
                                 </div>
@@ -4407,8 +4468,8 @@
                                             return (
                                                 <>
                                                     {/* Card Jugador 1 */}
-                                                    <div className={`p-4 rounded-lg border ${raceResultsData.winner === 0 ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-gray-800 bg-gray-900/30'}`}>
-                                                        <div className="flex justify-between items-center border-b border-gray-800/50 pb-2 mb-3">
+                                                    <div className={`p-4 rounded-2xl border ${raceResultsData.winner === 0 ? 'border-yellow-500/50 bg-yellow-500/10' : 'border-white/10 bg-white/5'}`}>
+                                                        <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-3">
                                                             <h3 className={`text-sm font-black uppercase tracking-widest ${raceResultsData.winner === 0 ? 'text-yellow-400' : 'text-blue-400'}`}>
                                                                 P1 ({lang === 'en' ? 'YOU' : 'TÚ'})
                                                             </h3>
@@ -4417,17 +4478,17 @@
                                                             </span>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-3 text-xs">
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.totalTime}</span><span className="text-white font-mono font-bold">{formatResult(p1.totalTime)}</span></div>
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.bestLap}</span><span className="text-[#39ff14] font-mono font-bold">{p1Best !== Infinity ? p1Best.toFixed(3) : '--.---'}</span></div>
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.avgLap}</span><span className="text-gray-300 font-mono">{p1Avg > 0 ? p1Avg.toFixed(3) : '--.---'}</span></div>
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.topSpeed}</span><span className="text-cyan-400 font-mono">{p1.topSpeed.toFixed(0)} km/h</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.totalTime}</span><span className="text-white font-mono font-bold">{formatResult(p1.totalTime)}</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.bestLap}</span><span className="text-[#39ff14] font-mono font-bold">{p1Best !== Infinity ? p1Best.toFixed(3) : '--.---'}</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.avgLap}</span><span className="text-white/70 font-mono">{p1Avg > 0 ? p1Avg.toFixed(3) : '--.---'}</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.topSpeed}</span><span className="text-cyan-400 font-mono">{p1.topSpeed.toFixed(0)} km/h</span></div>
                                                         </div>
                                                     </div>
 
                                                     {/* Card Jugador 2 */}
-                                                    <div className={`p-4 rounded-lg border ${raceResultsData.winner === 1 ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-gray-800 bg-gray-900/30'}`}>
-                                                        <div className="flex justify-between items-center border-b border-gray-800/50 pb-2 mb-3">
-                                                            <h3 className={`text-sm font-black uppercase tracking-widest ${raceResultsData.winner === 1 ? 'text-yellow-400' : 'text-gray-400'}`}>
+                                                    <div className={`p-4 rounded-2xl border ${raceResultsData.winner === 1 ? 'border-yellow-500/50 bg-yellow-500/10' : 'border-white/10 bg-white/5'}`}>
+                                                        <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-3">
+                                                            <h3 className={`text-sm font-black uppercase tracking-widest ${raceResultsData.winner === 1 ? 'text-yellow-400' : 'text-white/70'}`}>
                                                                 P2 ({multiplayerSession?.rivalName || (aiDifficulty > 0 ? 'IA' : t.rival)})
                                                             </h3>
                                                             <span className={`text-[10px] font-bold font-mono ${p2Gap === 0 ? 'text-yellow-500' : 'text-red-400'}`}>
@@ -4435,10 +4496,10 @@
                                                             </span>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-3 text-xs">
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.totalTime}</span><span className="text-white font-mono font-bold">{formatResult(p2.totalTime)}</span></div>
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.bestLap}</span><span className="text-[#39ff14] font-mono font-bold opacity-80">{p2Best !== Infinity ? p2Best.toFixed(3) : '--.---'}</span></div>
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.avgLap}</span><span className="text-gray-400 font-mono">{p2Avg > 0 ? p2Avg.toFixed(3) : '--.---'}</span></div>
-                                                            <div><span className="text-gray-500 text-[9px] font-bold block uppercase tracking-wider">{t.topSpeed}</span><span className="text-cyan-500 font-mono">{p2.topSpeed.toFixed(0)} km/h</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.totalTime}</span><span className="text-white font-mono font-bold">{formatResult(p2.totalTime)}</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.bestLap}</span><span className="text-[#39ff14] font-mono font-bold opacity-80">{p2Best !== Infinity ? p2Best.toFixed(3) : '--.---'}</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.avgLap}</span><span className="text-white/60 font-mono">{p2Avg > 0 ? p2Avg.toFixed(3) : '--.---'}</span></div>
+                                                            <div><span className="text-white/40 text-[9px] font-bold block uppercase tracking-wider">{t.topSpeed}</span><span className="text-cyan-400 font-mono">{p2.topSpeed.toFixed(0)} km/h</span></div>
                                                         </div>
                                                     </div>
                                                 </>
@@ -4450,14 +4511,14 @@
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 mb-6 shrink-0">
                                         
                                         {/* Pace Chart */}
-                                        <div className="bg-[#0f172a]/80 border border-gray-800/60 rounded-lg p-4 flex flex-col">
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col">
                                             <div className="flex justify-between items-center mb-3">
-                                                <h4 className="text-gray-400 text-[9px] uppercase tracking-[0.2em] font-black flex items-center gap-1.5"><Activity size={12} className="text-blue-400"/> PACE</h4>
-                                                <div className="flex gap-3 text-[8px] font-bold uppercase tracking-widest"><span className="text-blue-400">■ P1</span><span className="text-gray-500">■ P2</span></div>
+                                                <h4 className="text-white/50 text-[9px] uppercase tracking-[0.2em] font-black flex items-center gap-1.5"><Activity size={12} className="text-blue-400"/> PACE</h4>
+                                                <div className="flex gap-3 text-[8px] font-bold uppercase tracking-widest"><span className="text-blue-400">■ P1</span><span className="text-white/50">■ P2</span></div>
                                             </div>
-                                            <div className="h-28 flex items-end gap-1.5 border-b border-l border-gray-800 pl-1 pb-0.5 relative">
-                                                <div className="absolute top-0 left-0 w-full border-t border-gray-800/50"></div>
-                                                <div className="absolute top-1/2 left-0 w-full border-t border-gray-800/50 border-dashed"></div>
+                                            <div className="h-28 flex items-end gap-1.5 border-b border-l border-white/10 pl-1 pb-0.5 relative">
+                                                <div className="absolute top-0 left-0 w-full border-t border-white/5"></div>
+                                                <div className="absolute top-1/2 left-0 w-full border-t border-white/5 border-dashed"></div>
                                                 {(() => {
                                                     const p1Laps = raceResultsData.player1.laps;
                                                     const p2Laps = raceResultsData.player2.laps;
@@ -4475,8 +4536,8 @@
                                                         bars.push(
                                                             <div key={i} className="flex-1 flex justify-center gap-[1px] h-full items-end group relative">
                                                                 {h1 > 0 && <div style={{height: `${h1}%`}} className={`w-1/2 rounded-t-[1px] transition-colors opacity-90 ${t1 === minTime ? 'bg-purple-500' : 'bg-blue-500'}`}></div>}
-                                                                {h2 > 0 && <div style={{height: `${h2}%`}} className={`w-1/2 rounded-t-[1px] transition-colors opacity-90 ${t2 === minTime ? 'bg-purple-500' : 'bg-gray-600'}`}></div>}
-                                                                <div className="absolute -bottom-4 text-[7px] font-mono text-gray-600">V{i+1}</div>
+                                                                {h2 > 0 && <div style={{height: `${h2}%`}} className={`w-1/2 rounded-t-[1px] transition-colors opacity-90 ${t2 === minTime ? 'bg-purple-500' : 'bg-white/40'}`}></div>}
+                                                                <div className="absolute -bottom-4 text-[7px] font-mono text-white/30">V{i+1}</div>
                                                             </div>
                                                         );
                                                     }
@@ -4486,13 +4547,13 @@
                                         </div>
 
                                         {/* Delta Chart */}
-                                        <div className="bg-[#0f172a]/80 border border-gray-800/60 rounded-lg p-4 flex flex-col">
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col">
                                             <div className="flex justify-between items-center mb-3">
-                                                <h4 className="text-gray-400 text-[9px] uppercase tracking-[0.2em] font-black flex items-center gap-1.5"><Activity size={12} className="text-purple-400"/> DELTA (P1)</h4>
+                                                <h4 className="text-white/50 text-[9px] uppercase tracking-[0.2em] font-black flex items-center gap-1.5"><Activity size={12} className="text-purple-400"/> DELTA (P1)</h4>
                                                 <div className="flex gap-3 text-[8px] font-bold uppercase tracking-widest"><span className="text-[#39ff14]">↓ FAST</span><span className="text-red-500">↑ SLOW</span></div>
                                             </div>
-                                            <div className="h-28 flex items-center gap-1.5 border-l border-gray-800 pl-1 relative">
-                                                <div className="absolute top-1/2 left-0 w-full border-t border-gray-600 z-0"></div>
+                                            <div className="h-28 flex items-center gap-1.5 border-l border-white/10 pl-1 relative">
+                                                <div className="absolute top-1/2 left-0 w-full border-t border-white/10 z-0"></div>
                                                 {(() => {
                                                     const p1Laps = raceResultsData.player1.laps;
                                                     const p2Laps = raceResultsData.player2.laps;
@@ -4525,13 +4586,13 @@
                                     
                                     {/* Detailed Laps Table Minimalist */}
                                     <div className="px-6 pb-6 relative z-10">
-                                        <table className="w-full text-left border-collapse bg-[#0f172a]/50 border border-gray-800 rounded-lg overflow-hidden">
-                                            <thead className="bg-gray-900/60 border-b border-gray-800">
+                                        <table className="w-full text-left border-collapse bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                                            <thead className="bg-white/10 border-b border-white/10">
                                                 <tr>
-                                                    <th className="py-2 px-4 text-gray-500 font-bold text-[9px] tracking-widest uppercase w-16">LAP</th>
-                                                    <th className="py-2 px-4 text-blue-400 font-bold text-[10px] tracking-widest uppercase text-center border-l border-gray-800/50">P1 TIME</th>
-                                                    <th className="py-2 px-4 text-white font-bold text-[10px] tracking-widest uppercase text-center border-x border-gray-800/50 bg-black/20">DELTA</th>
-                                                    <th className="py-2 px-4 text-gray-400 font-bold text-[10px] tracking-widest uppercase text-center border-r border-gray-800/50">P2 TIME</th>
+                                                    <th className="py-2 px-4 text-white/50 font-bold text-[9px] tracking-widest uppercase w-16">LAP</th>
+                                                    <th className="py-2 px-4 text-blue-400 font-bold text-[10px] tracking-widest uppercase text-center border-l border-white/10">P1 TIME</th>
+                                                    <th className="py-2 px-4 text-white font-bold text-[10px] tracking-widest uppercase text-center border-x border-white/10 bg-black/20">DELTA</th>
+                                                    <th className="py-2 px-4 text-white/50 font-bold text-[10px] tracking-widest uppercase text-center border-r border-white/10">P2 TIME</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -4553,30 +4614,30 @@
                                                         
                                                         const delta = (t1 && t2) ? (t1 - t2) : null;
                                                         let deltaUI = '--.---';
-                                                        let deltaColor = 'text-gray-600';
+                                                        let deltaColor = 'text-white/40';
                                                         if (delta !== null) {
                                                             if (delta < -0.001) {
                                                                 deltaUI = delta.toFixed(3);
                                                                 deltaColor = 'text-[#39ff14]'; 
                                                             } else if (delta > 0.001) {
                                                                 deltaUI = '+' + delta.toFixed(3);
-                                                                deltaColor = 'text-red-500'; 
+                                                                deltaColor = 'text-red-400'; 
                                                             } else {
                                                                 deltaUI = '0.000';
-                                                                deltaColor = 'text-gray-400';
+                                                                deltaColor = 'text-white/50';
                                                             }
                                                         }
 
                                                         rows.push(
-                                                            <tr key={i} className="border-b border-gray-800/30 hover:bg-white/5 transition-colors">
-                                                                <td className="py-1.5 px-4 text-gray-500 font-mono text-[11px]">V{i + 1}</td>
-                                                                <td className={`py-1.5 px-4 font-mono text-[13px] text-center border-l border-gray-800/50 ${isAbsoluteBest1 ? 'text-purple-400 font-black' : 'text-blue-300'}`}>
+                                                            <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                                <td className="py-1.5 px-4 text-white/50 font-mono text-[11px]">V{i + 1}</td>
+                                                                <td className={`py-1.5 px-4 font-mono text-[13px] text-center border-l border-white/10 ${isAbsoluteBest1 ? 'text-purple-400 font-black' : 'text-blue-300'}`}>
                                                                     {t1 ? t1.toFixed(3) : '--.---'}
                                                                 </td>
-                                                                <td className={`py-1.5 px-4 font-mono text-[13px] text-center font-black border-x border-gray-800/50 bg-black/20 ${deltaColor}`}>
+                                                                <td className={`py-1.5 px-4 font-mono text-[13px] text-center font-black border-x border-white/10 bg-black/20 ${deltaColor}`}>
                                                                     {deltaUI}
                                                                 </td>
-                                                                <td className={`py-1.5 px-4 font-mono text-[13px] text-center border-r border-gray-800/50 ${isAbsoluteBest2 ? 'text-purple-400 font-black' : 'text-gray-400'}`}>
+                                                                <td className={`py-1.5 px-4 font-mono text-[13px] text-center border-r border-white/10 ${isAbsoluteBest2 ? 'text-purple-400 font-black' : 'text-white/60'}`}>
                                                                     {t2 ? t2.toFixed(3) : '--.---'}
                                                                 </td>
                                                             </tr>
@@ -4590,14 +4651,14 @@
                                 </div>
                                 
                                 {/* Bottom Action Bar Minimalista */}
-                                <div className="bg-[#080B12] px-6 py-4 border-t border-gray-800 flex justify-end gap-3 shrink-0">
-                                    <button onClick={handleExportCSV} className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-700 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors">
+                                <div className="bg-white/5 px-6 py-4 border-t border-white/10 flex justify-end gap-3 shrink-0">
+                                    <button onClick={handleExportCSV} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors">
                                         <FileText size={14}/> CSV
                                     </button>
-                                    <button onClick={() => { setShowResults(false); handleRestartRace(); }} className="px-5 py-2 bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-black border border-yellow-500/50 hover:border-yellow-500 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all">
+                                    <button onClick={() => { setShowResults(false); handleRestartRace(); }} className="px-5 py-2 bg-white/10 hover:bg-white text-white hover:text-black border border-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all">
                                         <Repeat size={14}/> {lang === 'es' ? 'REPETIR' : 'REMATCH'}
                                     </button>
-                                    <button onClick={() => { setShowResults(false); onClose(); }} className="px-5 py-2 bg-gray-800 hover:bg-red-600/20 text-white hover:text-red-400 border border-gray-700 hover:border-red-500/50 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors">
+                                    <button onClick={() => { setShowResults(false); onClose(); }} className="px-5 py-2 bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 border border-white/10 hover:border-red-500/50 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-colors">
                                         {t.exit}
                                     </button>
                                 </div>
@@ -4608,7 +4669,7 @@
                     {/* MODAL CONFIGURACIÓN DE CARRERA (PRE-RACE) */}
                     {isPreRace && sceneReady && (
                         <div className="absolute inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center animate-in">
-                            <div className="bg-[#0f172a]/95 border border-[#39ff14]/50 rounded-3xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(57,255,20,0.3)] w-[90vw] max-w-2xl relative overflow-hidden">
+                            <div className="bg-black/60 backdrop-blur-2xl border border-[#39ff14]/30 rounded-3xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(57,255,20,0.2)] w-[90vw] max-w-2xl relative overflow-hidden">
                                 <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(#39ff14 1px, transparent 1px), linear-gradient(90deg, #39ff14 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
                                 
                                 <h2 className="text-4xl md:text-5xl font-digital font-black text-white tracking-widest mb-2 drop-shadow-[0_0_15px_#39ff14] relative z-10 text-center">
@@ -4620,18 +4681,18 @@
                                 
                                 <div className="flex flex-col md:flex-row gap-6 w-full relative z-10">
                                     {/* Tarjeta Vueltas */}
-                                    <div className="flex-1 bg-black/60 p-6 rounded-2xl border border-gray-700 flex flex-col items-center shadow-inner">
-                                        <label className="text-gray-400 font-black uppercase tracking-[0.15em] text-sm mb-4 block text-center flex items-center gap-2">
-                                            <Flag size={18} className="text-[#39ff14]" /> {lang === 'es' ? 'VUELTAS OBJETIVO' : 'TARGET LAPS'}
+                                    <div className="flex-1 bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col items-center shadow-inner">
+                                        <label className="text-white/50 font-black uppercase tracking-[0.15em] text-sm mb-4 block text-center flex items-center gap-2">
+                                            <Flag size={18} className="text-white/80" /> {lang === 'es' ? 'VUELTAS OBJETIVO' : 'TARGET LAPS'}
                                         </label>
                                         <div className="flex items-center justify-center gap-6">
-                                            <button onClick={() => setTargetLaps(Math.max(1, targetLaps - 1))} className="w-14 h-14 flex items-center justify-center bg-gray-800 hover:bg-[#39ff14] hover:text-black rounded-full font-black text-3xl transition-colors border border-gray-600 shadow-lg active:scale-90">-</button>
-                                            <span className="font-digital text-6xl text-white w-24 text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">{targetLaps}</span>
-                                            <button onClick={() => setTargetLaps(targetLaps + 1)} className="w-14 h-14 flex items-center justify-center bg-gray-800 hover:bg-[#39ff14] hover:text-black rounded-full font-black text-3xl transition-colors border border-gray-600 shadow-lg active:scale-90">+</button>
+                                            <button onClick={() => setTargetLaps(Math.max(1, targetLaps - 1))} className="w-14 h-14 flex items-center justify-center bg-white/10 hover:bg-white hover:text-black rounded-full font-black text-3xl transition-colors border border-white/20 active:scale-90">-</button>
+                                            <span className="font-digital text-6xl text-white w-24 text-center">{targetLaps}</span>
+                                            <button onClick={() => setTargetLaps(targetLaps + 1)} className="w-14 h-14 flex items-center justify-center bg-white/10 hover:bg-white hover:text-black rounded-full font-black text-3xl transition-colors border border-white/20 active:scale-90">+</button>
                                         </div>
                                         <div className="flex gap-2 mt-6">
                                             {[5, 10, 20, 50].map(val => (
-                                                <button key={val} onClick={() => setTargetLaps(val)} className={`px-4 py-2 rounded-lg font-black text-xs transition-all border ${targetLaps === val ? 'bg-[#39ff14] text-black border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 border-gray-700'}`}>
+                                                <button key={val} onClick={() => setTargetLaps(val)} className={`px-4 py-2 rounded-xl font-black text-xs transition-all border ${targetLaps === val ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'bg-white/5 text-white/50 hover:text-white hover:bg-white/10 border-white/10'}`}>
                                                     {val}
                                                 </button>
                                             ))}
@@ -4640,21 +4701,21 @@
 
                                     {/* Tarjeta IA */}
                                     {!multiplayerSession && (
-                                        <div className="flex-1 bg-black/60 p-6 rounded-2xl border border-gray-700 flex flex-col items-center shadow-inner">
-                                            <label className="text-gray-400 font-black uppercase tracking-[0.15em] text-sm mb-4 block text-center flex items-center gap-2">
-                                                <Zap size={18} className={aiDifficulty > 0 ? "text-yellow-400 animate-pulse" : "text-gray-500"} /> 
+                                        <div className="flex-1 bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col items-center shadow-inner">
+                                            <label className="text-white/50 font-black uppercase tracking-[0.15em] text-sm mb-4 block text-center flex items-center gap-2">
+                                                <Zap size={18} className={aiDifficulty > 0 ? "text-yellow-400 animate-pulse" : "text-white/30"} /> 
                                                 {lang === 'es' ? 'NIVEL DE RIVAL (IA)' : 'RIVAL LEVEL (AI)'}
                                             </label>
                                             
                                             <div className="w-full flex flex-wrap items-center justify-center gap-1.5 mt-2">
-                                                <button onClick={() => setAiDifficulty(0)} className={`w-[30%] py-3 text-xs font-black rounded-lg transition-all ${aiDifficulty === 0 ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-gray-800 border border-gray-700 text-gray-500 hover:bg-gray-700'}`}>OFF</button>
+                                                <button onClick={() => setAiDifficulty(0)} className={`w-[30%] py-3 text-xs font-black rounded-xl transition-all ${aiDifficulty === 0 ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>OFF</button>
                                                 {[1,2,3,4,5].map(level => (
-                                                    <button key={level} onClick={() => setAiDifficulty(level)} className={`flex-1 min-w-[25%] py-3 text-xs font-black rounded-lg transition-all ${aiDifficulty === level ? (level === 5 ? 'bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-[#39ff14] text-black shadow-[0_0_15px_rgba(57,255,20,0.5)]') : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700'}`}>
+                                                    <button key={level} onClick={() => setAiDifficulty(level)} className={`flex-1 min-w-[25%] py-3 text-xs font-black rounded-xl transition-all ${aiDifficulty === level ? (level === 5 ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' : 'bg-white/20 text-white border border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.2)]') : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}>
                                                         {level}
                                                     </button>
                                                 ))}
                                             </div>
-                                            <p className="text-[10px] text-gray-400 text-center mt-4 font-bold h-8">
+                                            <p className="text-[10px] text-white/40 text-center mt-4 font-bold h-8">
                                                 {aiDifficulty === 0 ? (lang === 'es' ? 'IA desactivada. Corres solo.' : 'AI disabled. You race alone.') : 
                                                  aiDifficulty === 5 ? (lang === 'es' ? 'Nivel EXTREMO. ¡Cuidado en las curvas!' : 'EXTREME Level. Careful on corners!') : 
                                                  (lang === 'es' ? 'La IA ajustará su velocidad automáticamente.' : 'AI will adjust its speed automatically.')}
@@ -4664,7 +4725,7 @@
                                 </div>
 
                                 <div className="mt-8 flex gap-4 relative z-10 w-full">
-                                    <button onClick={() => { setIsPreRace(false); onClose(); }} className="flex-1 py-5 bg-gray-800 hover:bg-red-600 text-gray-300 hover:text-white border border-gray-600 hover:border-red-500 font-black uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 text-lg flex justify-center items-center gap-3">
+                                    <button onClick={() => { setIsPreRace(false); onClose(); }} className="flex-1 py-5 bg-white/5 hover:bg-red-500/20 text-white/60 hover:text-red-400 border border-white/10 hover:border-red-500/50 font-black uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95 text-lg flex justify-center items-center gap-3">
                                         <XIcon size={24} /> {lang === 'es' ? 'CANCELAR' : 'CANCEL'}
                                     </button>
                                     
@@ -4677,11 +4738,11 @@
                                                     peerConn.send({ type: 'START_RACE_SYNC', targetLaps });
                                                 }
                                             }} 
-                                            className="flex-[2] py-5 bg-gradient-to-b from-[#39ff14] to-green-600 hover:from-[#00f0ff] hover:to-blue-600 text-black font-black uppercase tracking-[0.2em] rounded-xl shadow-[0_0_30px_rgba(57,255,20,0.5)] hover:shadow-[0_0_50px_rgba(57,255,20,0.8)] transition-all active:scale-95 text-xl flex justify-center items-center gap-3">
+                                            className="flex-[2] py-5 bg-white hover:bg-gray-200 text-black font-black uppercase tracking-[0.2em] rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all active:scale-95 text-xl flex justify-center items-center gap-3">
                                             <Play size={28} className="fill-current" /> {lang === 'es' ? 'IR A LA PARRILLA' : 'GO TO GRID'}
                                         </button>
                                     ) : (
-                                        <div className="flex-[2] py-5 bg-gray-800 text-yellow-400 border border-yellow-500/50 font-black uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-3 opacity-80 text-lg shadow-inner">
+                                        <div className="flex-[2] py-5 bg-white/10 text-yellow-400 border border-yellow-500/30 font-black uppercase tracking-[0.1em] rounded-2xl flex justify-center items-center gap-3 opacity-80 text-lg shadow-inner">
                                             <div className="w-6 h-6 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
                                             {lang === 'es' ? 'ESPERANDO AL ANFITRIÓN...' : 'WAITING FOR HOST...'}
                                         </div>
@@ -5591,54 +5652,62 @@
                         <Garage3DBackground carUrl={customCarAssets[editingCarId]?.glb} carRotation={customCarAssets[editingCarId]?.rotation} carOffset={customCarAssets[editingCarId]?.offset} qualityMode={qualityMode} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none z-10"></div>
                         
-                        <div className="absolute top-6 right-6 z-50 flex gap-4 items-start">
-                    <div className="flex gap-2">
-                        <button onClick={toggleQuality} className={`px-3 md:px-4 h-10 flex items-center justify-center font-digital text-[10px] tracking-widest transform -skew-x-6 border-b-4 transition-all ${['LOW','MIN','PS2'].includes(qualityMode) ? 'bg-gradient-to-b from-orange-500/30 to-black/90 border-orange-500 text-orange-400 shadow-[0_5px_15px_rgba(249,115,22,0.4)]' : (qualityMode === 'ULTRA' ? 'bg-gradient-to-b from-purple-500/30 to-black/90 border-purple-500 text-purple-400 shadow-[0_5px_15px_rgba(168,85,247,0.4)]' : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-white hover:border-gray-500')} rounded`} title={t.qualityTooltip}>
-                            <span className="transform skew-x-6 flex items-center gap-2">
-                                <Zap size={16}/>
-                                <span className="font-black">{qualityMode === 'ULTRA' ? 'ULTRA (PS3)' : qualityMode === 'PS2' ? 'RETRO (PS2)' : qualityMode}</span>
+                        <div className="absolute top-6 right-6 z-50 flex gap-4 items-center">
+                    <div className="flex gap-1.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-lg">
+                        <button onClick={toggleQuality} className={`px-3 h-8 flex items-center justify-center font-bold text-[9px] tracking-widest transition-all rounded-xl ${['LOW','MIN','PS2'].includes(qualityMode) ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : (qualityMode === 'ULTRA' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-transparent')}`} title={t.qualityTooltip}>
+                            <span className="flex items-center gap-1.5">
+                                <Zap size={14}/>
+                                <span className="hidden md:inline">{qualityMode === 'ULTRA' ? 'ULTRA (PS3)' : qualityMode === 'PS2' ? 'RETRO (PS2)' : qualityMode}</span>
                             </span>
                         </button>
-                        <button onClick={toggleMusic} className={`px-3 md:px-4 h-10 flex items-center justify-center font-digital text-[10px] tracking-widest transform -skew-x-6 border-b-4 transition-all ${musicEnabled ? 'bg-gradient-to-b from-[#00f0ff]/30 to-black/90 border-[#00f0ff] text-[#00f0ff] shadow-[0_5px_15px_rgba(0,240,255,0.4)]' : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'} rounded`} title={t.btnMusic}>
-                            <span className="transform skew-x-6 flex items-center gap-2">
-                                {musicEnabled ? <Volume2 size={16}/> : <VolumeX size={16}/>}
-                                <span className="font-black">{t.btnMusic}</span>
+                        
+                        <div className="w-[1px] bg-white/10 my-1 mx-1"></div>
+
+                        <button onClick={toggleMusic} className={`px-3 h-8 flex items-center justify-center font-bold text-[9px] tracking-widest transition-all rounded-xl ${musicEnabled ? 'bg-white/10 text-white border border-white/20' : 'text-white/50 hover:bg-white/5 hover:text-white border border-transparent'}`} title={t.btnMusic}>
+                            <span className="flex items-center gap-1.5">
+                                {musicEnabled ? <Volume2 size={14}/> : <VolumeX size={14}/>}
+                                <span className="hidden md:inline">{t.btnMusic}</span>
                             </span>
                         </button>
-                        <button onClick={toggleAudio} className={`px-3 md:px-4 h-10 flex items-center justify-center font-digital text-[10px] tracking-widest transform -skew-x-6 border-b-4 transition-all ${audioEnabled ? 'bg-gradient-to-b from-[#39ff14]/30 to-black/90 border-[#39ff14] text-[#39ff14] shadow-[0_5px_15px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'} rounded`} title={t.btnVoice}>
-                            <span className="transform skew-x-6 flex items-center gap-2">
-                                {audioEnabled ? <Volume2 size={16}/> : <VolumeX size={16}/>}
-                                <span className="font-black">{t.btnVoice}</span>
+                        
+                        <button onClick={toggleAudio} className={`px-3 h-8 flex items-center justify-center font-bold text-[9px] tracking-widest transition-all rounded-xl ${audioEnabled ? 'bg-white/10 text-white border border-white/20' : 'text-white/50 hover:bg-white/5 hover:text-white border border-transparent'}`} title={t.btnVoice}>
+                            <span className="flex items-center gap-1.5">
+                                {audioEnabled ? <Volume2 size={14}/> : <VolumeX size={14}/>}
+                                <span className="hidden md:inline">{t.btnVoice}</span>
                             </span>
                         </button>
-                        <button onClick={toggleGarageFullscreen} className="px-3 md:px-4 h-10 flex items-center justify-center font-digital text-[10px] tracking-widest transform -skew-x-6 border-b-4 transition-all bg-gray-900 border-gray-700 text-gray-500 hover:text-white hover:border-gray-500 rounded" title={t.btnFullscreen}>
-                            <span className="transform skew-x-6 flex items-center gap-2">
+
+                        <div className="w-[1px] bg-white/10 my-1 mx-1"></div>
+
+                        <button onClick={toggleGarageFullscreen} className="px-3 h-8 flex items-center justify-center font-bold text-[9px] tracking-widest transition-all rounded-xl text-white/50 hover:bg-white/5 hover:text-white border border-transparent" title={t.btnFullscreen}>
+                            <span className="flex items-center gap-1.5">
                                 {isGarageFullscreen ? <Minimize size={14}/> : <Maximize size={14}/>}
-                                <span className="font-black">{t.screen}</span>
+                                <span className="hidden md:inline">{t.screen}</span>
                             </span>
                         </button>
-                        <button onClick={() => setLang('es')} className={`w-10 h-10 flex items-center justify-center font-digital text-[10px] tracking-widest transform -skew-x-6 border-b-4 transition-all ${lang === 'es' ? 'bg-gradient-to-b from-[#00f0ff]/30 to-black/90 border-[#00f0ff] text-[#00f0ff] shadow-[0_5px_15px_rgba(0,240,255,0.4)]' : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'} rounded`} title="Español"><span className="transform skew-x-6 font-black">ES</span></button>
-                        <button onClick={() => setLang('en')} className={`w-10 h-10 flex items-center justify-center font-digital text-[10px] tracking-widest transform -skew-x-6 border-b-4 transition-all ${lang === 'en' ? 'bg-gradient-to-b from-[#00f0ff]/30 to-black/90 border-[#00f0ff] text-[#00f0ff] shadow-[0_5px_15px_rgba(0,240,255,0.4)]' : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'} rounded`} title="English"><span className="transform skew-x-6 font-black">EN</span></button>
+
+                        <div className="w-[1px] bg-white/10 my-1 mx-1 hidden md:block"></div>
+
+                        <div className="hidden md:flex bg-black/20 rounded-xl p-0.5 border border-white/5">
+                            <button onClick={() => setLang('es')} className={`w-8 h-7 flex items-center justify-center font-bold text-[9px] transition-all rounded-lg ${lang === 'es' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white'}`} title="Español">ES</button>
+                            <button onClick={() => setLang('en')} className={`w-8 h-7 flex items-center justify-center font-bold text-[9px] transition-all rounded-lg ${lang === 'en' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white'}`} title="English">EN</button>
+                        </div>
                     </div>
 
                     {user && !user.isAnonymous ? (
-                        <div className="bg-[#0a0a0a] border-t-2 border-b-2 border-x-0 border-[#39ff14] rounded-tl-xl rounded-br-[2rem] px-5 py-2.5 shadow-[0_0_30px_rgba(57,255,20,0.5),inset_0_0_15px_rgba(57,255,20,0.3)] transform -skew-x-6 flex items-center gap-4 relative overflow-hidden group">
-                            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(#39ff14 1px, transparent 1px), linear-gradient(90deg, #39ff14 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
-                            <div className="flex flex-col items-end transform skew-x-6 z-10">
-                                <span className="text-[7px] text-gray-500 uppercase tracking-widest leading-none font-bold mb-0.5">PILOTO</span>
-                                <span className="font-digital text-sm font-black text-white drop-shadow-[0_0_8px_#39ff14] tracking-widest">{user.displayName || (user.email ? user.email.split('@')[0] : 'Piloto')}</span>
+                        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-4 h-[44px] shadow-lg flex items-center gap-3">
+                            <div className="flex flex-col items-end">
+                                <span className="text-[7px] text-white/40 uppercase tracking-widest leading-none font-bold mb-0.5">PILOTO</span>
+                                <span className="text-xs font-black text-white/90 tracking-wider truncate max-w-[100px] leading-none">{user.displayName || (user.email ? user.email.split('@')[0] : 'Piloto')}</span>
                             </div>
-                            <button onClick={handleSignOut} title={t.auth.logoutBtn} className="w-8 h-8 flex items-center justify-center transform skew-x-6 rounded bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition shadow-[0_0_10px_rgba(239,68,68,0.4)] z-10">
-                                <XIcon size={14} />
+                            <button onClick={handleSignOut} title={t.auth.logoutBtn} className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 text-white/50 hover:text-red-400 transition-all">
+                                <XIcon size={12} />
                             </button>
                         </div>
                     ) : (
-                        <button onClick={() => setShowAuthModal(true)} className="bg-[#0a0a0a] border-t-2 border-b-2 border-x-0 border-[#00f0ff] rounded-tl-xl rounded-br-[2rem] px-6 py-3 shadow-[0_0_30px_rgba(0,240,255,0.5),inset_0_0_15px_rgba(0,240,255,0.3)] transform -skew-x-6 hover:-translate-x-1 transition-all group flex items-center justify-center cursor-pointer relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(#00f0ff 1px, transparent 1px), linear-gradient(90deg, #00f0ff 1px, transparent 1px)', backgroundSize: '10px 10px'}}></div>
-                            <div className="flex items-center gap-3 transform skew-x-6 z-10">
-                                <User size={18} className="text-[#00f0ff] group-hover:scale-110 transition-transform drop-shadow-[0_0_8px_#00f0ff]"/> 
-                                <span className="font-digital font-black text-white text-xs tracking-[0.2em] group-hover:text-[#00f0ff] transition-colors drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">{t.auth.loginBtn}</span>
-                            </div>
+                        <button onClick={() => setShowAuthModal(true)} className="bg-black/40 backdrop-blur-xl border border-white/10 hover:bg-white/10 rounded-2xl px-5 h-[44px] shadow-lg transition-all flex items-center gap-2 group">
+                            <User size={14} className="text-white/70 group-hover:text-white transition-colors"/> 
+                            <span className="font-bold text-white/90 text-[10px] tracking-[0.2em]">{t.auth.loginBtn}</span>
                         </button>
                     )}
                 </div>
@@ -5693,141 +5762,115 @@
 
                 <div className="absolute left-0 top-10 bottom-10 w-[21rem] xl:w-[24rem] z-20 flex flex-col gap-6 animate-in slide-in-left pointer-events-none">
                     
-                    <div className="pointer-events-auto relative ml-10 w-max">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#00f0ff]/10 blur-[60px] rounded-full pointer-events-none z-0"></div>
+                    <div className="pointer-events-auto relative ml-10 mt-4 w-max">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-blue-500/10 blur-[50px] rounded-full pointer-events-none z-0"></div>
                         
-                        <h1 className="relative z-10 font-digital font-black uppercase tracking-widest leading-[1.05] text-left block">
-                            <div className="text-glow-orange text-5xl md:text-6xl whitespace-nowrap">
-                                3D SLOT
+                        <h1 className="relative z-10 font-sans flex flex-col text-left">
+                            <div className="flex items-center gap-4 mb-[-8px]">
+                                <span className="text-3xl md:text-4xl font-light text-white/70 tracking-[0.6em]">3D</span>
+                                <div className="h-[1px] w-12 bg-gradient-to-r from-white/40 to-transparent"></div>
                             </div>
-                            <div className="text-7xl md:text-8xl text-glow-cyan tracking-normal mt-[-5px]">
-                                GAME
+                            <div className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-[0.2em] drop-shadow-xl">
+                                SLOT
+                            </div>
+                            <div className="text-[10px] text-[#00f0ff] font-bold tracking-[1.2em] uppercase mt-2 ml-1">
+                                Game
                             </div>
                         </h1>
                         
-                        <div className="relative z-10 flex items-center gap-3 mt-4 w-full">
-                            <div className="h-[2px] flex-1 bg-[#00f0ff] shadow-[0_0_10px_#00f0ff]"></div>
-                            <p className="text-gray-300 font-mono text-[10px] tracking-[0.4em] font-bold uppercase shrink-0">BY ALBERT CLOSA</p>
-                            <div className="h-[2px] flex-1 bg-[#00f0ff] shadow-[0_0_10px_#00f0ff]"></div>
+                        <div className="relative z-10 flex items-center gap-3 mt-6 w-full opacity-60">
+                            <div className="h-[1px] w-6 bg-white/30"></div>
+                            <p className="text-white/70 font-sans text-[8px] tracking-[0.4em] font-medium uppercase shrink-0">BY ALBERT CLOSA</p>
+                            <div className="h-[1px] flex-1 bg-gradient-to-r from-white/30 to-transparent"></div>
                         </div>
                     </div>
 
-                    <div className="bg-[#0a0a0a]/90 border-t-2 border-b-2 border-x-0 border-[#39ff14] rounded-tr-[3rem] rounded-br-xl p-1 shadow-[0_0_40px_rgba(57,255,20,0.5),inset_0_0_20px_rgba(57,255,20,0.3)] flex-1 pointer-events-auto flex flex-col transform -skew-x-6 relative overflow-hidden mt-2 -ml-16 w-[calc(100%+4rem)]">
-                        
-                        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(#39ff14 1px, transparent 1px), linear-gradient(90deg, #39ff14 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
-
-                        <div className="transform skew-x-6 flex flex-col h-full p-4 pl-16 relative z-10 overflow-y-auto hide-scrollbar">
-                            <div className="flex justify-between items-center border-b border-[#39ff14]/30 pb-2 mb-3">
-                                <h2 className="text-2xl font-black uppercase tracking-widest neon-text-green flex items-center gap-3 drop-shadow-lg">
-                                    <Car size={26} className="text-[#39ff14] drop-shadow-[0_0_15px_#39ff14]"/> {lang === 'es' ? 'GARAJE' : 'GARAGE'}
+                    <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl flex-1 pointer-events-auto flex flex-col relative overflow-hidden mt-4 ml-6 w-[90%]">
+                        <div className="flex flex-col h-full relative z-10 overflow-y-auto hide-scrollbar">
+                            
+                            {/* CABECERA MINIMALISTA */}
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-white/90 flex items-center gap-2">
+                                    <Car size={16} className="text-white/70" /> {lang === 'es' ? 'GARAJE' : 'GARAGE'}
                                 </h2>
-                                <div className="flex gap-1 transform -skew-x-12 bg-gray-900 p-1 rounded-lg border border-gray-700 shadow-inner">
-                                    <button onClick={() => setEditingCarId(1)} className={`px-4 py-1 rounded font-black text-[10px] tracking-widest transition-all ${editingCarId === 1 ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-500 hover:text-white'}`}>P1 (TÚ)</button>
-                                    <button onClick={() => setEditingCarId(2)} className={`px-4 py-1 rounded font-black text-[10px] tracking-widest transition-all ${editingCarId === 2 ? 'bg-blue-500 text-white shadow-[0_0_10px_#3b82f6]' : 'text-gray-500 hover:text-white'}`}>P2 (IA)</button>
+                                <div className="flex gap-2 bg-white/5 p-1 rounded-full border border-white/10">
+                                    <button onClick={() => setEditingCarId(1)} className={`px-4 py-1 rounded-full text-[9px] font-bold tracking-widest transition-all ${editingCarId === 1 ? 'bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white/50 hover:text-white'}`}>P1</button>
+                                    <button onClick={() => setEditingCarId(2)} className={`px-4 py-1 rounded-full text-[9px] font-bold tracking-widest transition-all ${editingCarId === 2 ? 'bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white/50 hover:text-white'}`}>P2</button>
                                 </div>
                             </div>
                             
-                            <div className="flex-1 flex flex-col justify-between gap-3">
+                            <div className="flex-1 flex flex-col justify-between gap-6">
                                 
-                                <div className="mt-1 mb-2">
-                                    <div className="flex justify-between items-end mb-1">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                            ESPECIFICACIONES
-                                        </span>
-                                        {currentSetupInfo ? (
-                                            <span className="text-[8px] font-bold text-[#39ff14] border border-[#39ff14] px-1 rounded bg-[#39ff14]/10">DATA JSON</span>
-                                        ) : (
-                                            <span className="text-[8px] font-bold text-gray-500 border border-gray-600 px-1 rounded bg-gray-800">STOCK SETUP</span>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between w-full gap-2">
-                                        <div className="flex flex-col flex-1 overflow-hidden">
-                                            <h3 className="font-black text-3xl md:text-3xl italic text-white tracking-tighter drop-shadow-[0_2px_10px_rgba(255,255,255,0.5)] uppercase truncate">
-                                                {customCarAssets[editingCarId]?.glbName ? customCarAssets[editingCarId].glbName.replace('.glb','').replace('.gltf','') : (lang === 'es' ? 'CHASIS HOLO' : 'HOLO CHASSIS')}
+                                <div className="flex flex-col">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-mono text-white/50 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full" style={{backgroundColor: currentSetupInfo?.color || '#555555'}}></div>
+                                                {currentSetupInfo?.name || (lang === 'es' ? `PILOTO ${editingCarId}` : `DRIVER ${editingCarId}`)}
+                                            </span>
+                                            <h3 className="font-light text-2xl text-white tracking-wide uppercase truncate max-w-[150px]">
+                                                {customCarAssets[editingCarId]?.glbName ? customCarAssets[editingCarId].glbName.replace('.glb','').replace('.gltf','') : 'CHASIS HOLO'}
                                             </h3>
-                                            <span className="text-[8px] text-[#39ff14] uppercase tracking-widest font-bold mt-1">
-                                                {lang === 'es' ? 'AUTO-AJUSTE PISTA ACTIVADO' : 'TRACK AUTO-ALIGN ACTIVE'}
-                                            </span>
                                         </div>
-                                        
-                                        <div className="flex gap-1 shrink-0">
-                                            <button onClick={() => {
-                                                setCustomCarAssets(prev => {
-                                                    const currentRot = prev[editingCarId].rotation || [0,0,0];
-                                                    return { ...prev, [editingCarId]: { ...prev[editingCarId], rotation: [currentRot[0], (currentRot[1] + 90) % 360, currentRot[2]] } };
-                                                });
-                                            }} className="px-3 py-2 bg-[#39ff14]/10 hover:bg-[#39ff14] text-[#39ff14] hover:text-black border-2 border-[#39ff14] rounded-xl flex flex-col items-center justify-center transition-all text-[9px] font-black uppercase tracking-widest shrink-0 shadow-[0_0_15px_rgba(57,255,20,0.3)] hover:shadow-[0_0_25px_rgba(57,255,20,0.6)] active:scale-95 group">
-                                                <RotateCw size={18} className="mb-1 group-hover:rotate-180 transition-transform duration-500" />
-                                                {lang === 'es' ? 'ROTAR' : 'ROTATE'}
-                                            </button>
-                                        </div>
+                                        <button onClick={() => {
+                                            setCustomCarAssets(prev => {
+                                                const currentRot = prev[editingCarId].rotation || [0,0,0];
+                                                return { ...prev, [editingCarId]: { ...prev[editingCarId], rotation: [currentRot[0], (currentRot[1] + 90) % 360, currentRot[2]] } };
+                                            });
+                                        }} className="px-3 py-1.5 rounded-lg border border-white/20 hover:bg-white hover:text-black flex items-center justify-center gap-2 transition-all text-white group" title={lang === 'es' ? 'ROTAR' : 'ROTATE'}>
+                                            <RotateCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                                            <span className="text-[9px] font-bold tracking-widest uppercase">{lang === 'es' ? 'GIRAR' : 'ROT'}</span>
+                                        </button>
                                     </div>
-                                    
-                                    <div className="mt-3 flex flex-col gap-2 w-full mb-2">
-                                        <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded border border-gray-700 shadow-inner w-max">
-                                            <div className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" style={{backgroundColor: currentSetupInfo?.color || '#555555', color: currentSetupInfo?.color || '#555555'}}></div>
-                                            <span className="text-[10px] font-black text-white uppercase tracking-widest pr-1">
-                                                {currentSetupInfo?.name || (lang === 'es' ? `PILOTO ${editingCarId} (SIN DATOS)` : `DRIVER ${editingCarId} (NO DATA)`)}
-                                            </span>
+
+                                    {/* CUADRÍCULA DE ESPECIFICACIONES LIMPIA */}
+                                    <div className="grid grid-cols-2 gap-y-6 gap-x-4 border-t border-white/10 pt-6">
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">{t.motor || 'MOTOR'}</span>
+                                            <span className="text-sm text-white font-medium">{currentSetupInfo?.motorName || '---'}</span>
+                                            <span className="text-[10px] text-white/60 font-mono mt-1">{currentSetupInfo?.motorRPM || '---'} RPM</span>
                                         </div>
-                                        
-                                        <div className="bg-black/50 border border-gray-700 rounded-lg p-4 grid grid-cols-2 gap-x-4 gap-y-4 shadow-inner w-full">
-                                            <div className="flex flex-col">
-                                                <span className="text-[14px] text-gray-500 uppercase font-black tracking-wider">{t.motor || 'MOTOR'}</span>
-                                                <span className="text-[20px] text-[#00f0ff] font-mono font-bold leading-tight">{currentSetupInfo?.motorName || '---'}</span>
-                                                <span className="text-[16px] text-gray-400 font-mono mt-1">
-                                                    {currentSetupInfo?.motorRPM || '---'} RPM<br/>{currentSetupInfo?.motorTorque || '---'} g·cm
-                                                </span>
-                                            </div>
-                                            
-                                            <div className="flex flex-col">
-                                                <span className="text-[14px] text-gray-500 uppercase font-black tracking-wider">{t.tires || 'NEUMÁTICOS'}</span>
-                                                <span className="text-[20px] text-[#39ff14] font-mono font-bold leading-tight">{currentSetupInfo?.tireName || '---'}</span>
-                                                <span className="text-[16px] text-gray-400 font-mono mt-1">GRIP: {currentSetupInfo?.tireGrip || '---'}</span>
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <span className="text-[14px] text-gray-500 uppercase font-black tracking-wider">{t.ratio || 'RELACIÓN'}</span>
-                                                <span className="text-[20px] text-white font-mono font-bold leading-tight">
-                                                    {currentSetupInfo?.pinionTeeth || '--'} / {currentSetupInfo?.gearTeeth || '--'}
-                                                </span>
-                                                <span className="text-[16px] text-gray-400 font-mono mt-1">RATIO: {currentSetupInfo?.gearRatio || '---'}</span>
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <span className="text-[14px] text-gray-500 uppercase font-black tracking-wider">{t.weight || 'PESO'}</span>
-                                                <span className="text-[20px] text-orange-400 font-mono font-bold leading-tight">{currentSetupInfo?.weight || '--'}g</span>
-                                                <span className="text-[16px] text-gray-400 font-mono mt-1">CHASIS COMPLETO</span>
-                                            </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">{t.tires || 'NEUMÁTICOS'}</span>
+                                            <span className="text-sm text-white font-medium">{currentSetupInfo?.tireName || '---'}</span>
+                                            <span className="text-[10px] text-white/60 font-mono mt-1">GRIP {currentSetupInfo?.tireGrip || '---'}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">{t.ratio || 'RELACIÓN'}</span>
+                                            <span className="text-sm text-white font-medium">{currentSetupInfo?.pinionTeeth || '--'} / {currentSetupInfo?.gearTeeth || '--'}</span>
+                                            <span className="text-[10px] text-white/60 font-mono mt-1">RATIO {currentSetupInfo?.gearRatio || '---'}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">{t.weight || 'PESO'}</span>
+                                            <span className="text-sm text-white font-medium">{currentSetupInfo?.weight || '--'}g</span>
+                                            <span className="text-[10px] text-white/60 font-mono mt-1">TOTAL</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-black/60 border border-gray-700 rounded-xl p-3 flex flex-col gap-2 shadow-[inset_0_10px_30px_rgba(0,0,0,0.8)] relative">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[9px] text-[#39ff14] font-black uppercase tracking-widest flex items-center gap-1">
-                                            <Cloud size={12}/> {lang === 'es' ? 'CATÁLOGO CLOUD' : 'CLOUD CATALOG'}
+                                {/* NAVEGADOR DE NUBE MINIMALISTA */}
+                                <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[9px] text-white/70 uppercase tracking-widest flex items-center gap-2">
+                                            <Cloud size={14}/> {lang === 'es' ? 'CATÁLOGO NUBE' : 'CLOUD CATALOG'}
                                         </span>
-                                        {isFetchingList && <div className="w-3 h-3 border-2 border-[#39ff14] border-t-transparent rounded-full animate-spin"></div>}
+                                        {isFetchingList && <div className="w-3 h-3 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></div>}
                                     </div>
-
-                                    <div className="flex justify-between items-center gap-3">
-                                        <button onClick={prevCar} disabled={cloudCars.length === 0} className="w-12 h-12 bg-gradient-to-b from-gray-700 to-gray-800 border-b-4 border-gray-900 hover:from-[#39ff14] hover:to-green-600 hover:border-green-800 hover:text-black rounded-lg transition-all active:translate-y-1 active:border-b-0 flex items-center justify-center group disabled:opacity-30 disabled:cursor-not-allowed shadow-lg">
-                                            <ArrowLeft size={20} className="text-white group-hover:text-black group-hover:-translate-x-1 transition-all" />
+                                    
+                                    <div className="flex justify-between items-center gap-2 mt-1">
+                                        <button onClick={prevCar} disabled={cloudCars.length === 0} className="flex-1 py-1.5 rounded-lg border border-white/20 hover:bg-white hover:text-black flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-white">
+                                            <ArrowLeft size={14} /> <span className="text-[9px] font-bold tracking-widest uppercase">{lang === 'es' ? 'ANT' : 'PREV'}</span>
                                         </button>
-                                        
-                                        <div className="flex-1 flex flex-col items-center justify-center bg-gray-900/80 rounded-lg py-1.5 border border-gray-700/50 shadow-inner">
-                                            <span className="font-digital text-2xl text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] leading-none">
+                                        <div className="flex items-baseline justify-center gap-1 w-16">
+                                            <span className="text-lg font-light text-white">
                                                 {cloudCars.length > 0 && currentCarIndex >= 0 ? (currentCarIndex + 1).toString().padStart(2, '0') : '--'}
                                             </span>
-                                            <span className="text-[9px] text-gray-500 font-black tracking-widest mt-1 border-t border-gray-700 pt-1 w-3/4 text-center">
+                                            <span className="text-[9px] text-white/40 font-mono">
                                                 / {cloudCars.length > 0 ? cloudCars.length.toString().padStart(2, '0') : '--'}
                                             </span>
                                         </div>
-
-                                        <button onClick={nextCar} disabled={cloudCars.length === 0} className="w-12 h-12 bg-gradient-to-b from-gray-700 to-gray-800 border-b-4 border-gray-900 hover:from-[#39ff14] hover:to-green-600 hover:border-green-800 hover:text-black rounded-lg transition-all active:translate-y-1 active:border-b-0 flex items-center justify-center group disabled:opacity-30 disabled:cursor-not-allowed shadow-lg">
-                                            <ArrowRight size={20} className="text-white group-hover:text-black group-hover:translate-x-1 transition-all" />
+                                        <button onClick={nextCar} disabled={cloudCars.length === 0} className="flex-1 py-1.5 rounded-lg border border-white/20 hover:bg-white hover:text-black flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-white">
+                                            <span className="text-[9px] font-bold tracking-widest uppercase">{lang === 'es' ? 'SIG' : 'NEXT'}</span> <ArrowRight size={14} />
                                         </button>
                                     </div>
                                 </div>
@@ -5838,46 +5881,43 @@
 
                 <div className="absolute right-0 top-32 bottom-10 w-[21rem] xl:w-[24rem] z-20 flex flex-col gap-6 animate-in slide-in-right pointer-events-none">
                     
-                    <div className="bg-[#0a0a0a]/90 border-t-2 border-b-2 border-x-0 border-blue-500 rounded-tl-[3rem] rounded-bl-xl p-1 shadow-[0_0_40px_rgba(59,130,246,0.5),inset_0_0_20px_rgba(59,130,246,0.3)] pointer-events-auto flex flex-col transform skew-x-6 relative overflow-hidden -mr-16 w-[calc(100%+4rem)]">
-                        
-                        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(#3b82f6 1px, transparent 1px), linear-gradient(90deg, #3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
-
-                        <div className="transform -skew-x-6 flex flex-col p-5 pr-16 relative z-10">
-                            <div className="flex justify-between items-center border-b border-blue-500/30 pb-3 mb-4">
-                                <h2 className="text-2xl font-black uppercase tracking-widest neon-text-blue flex items-center gap-3 drop-shadow-lg">
-                                    <Gamepad2 size={30} className="text-blue-400 drop-shadow-[0_0_15px_#3b82f6]"/> {t.multiTitle}
+                    <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl pointer-events-auto flex flex-col relative overflow-hidden mr-6 w-[90%] ml-auto">
+                        <div className="flex flex-col h-full relative z-10">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-white/90 flex items-center gap-2">
+                                    <Gamepad2 size={16} className="text-white/70" /> {t.multiTitle}
                                 </h2>
-                                <span className="bg-blue-500 text-black text-[9px] font-black px-2 py-1 rounded transform -skew-x-12 tracking-widest shadow-[0_0_10px_#3b82f6]">
+                                <span className="bg-white/10 text-white/90 text-[9px] font-bold px-2 py-1 rounded tracking-widest border border-white/10">
                                     VS
                                 </span>
                             </div>
 
                             {!(peerConn && peerConn.open) && !isSearching && (
-                                <div className="flex flex-col gap-5 mt-2">
-                                    <div className="bg-black/60 rounded-xl border border-blue-500/30 p-3 min-h-[120px] flex flex-col max-h-[220px] overflow-y-auto hide-scrollbar shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative">
-                                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-blue-500/30">
-                                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                                <div className="flex flex-col gap-5">
+                                    <div className="bg-black/20 rounded-xl border border-white/10 p-3 min-h-[120px] flex flex-col max-h-[220px] overflow-y-auto hide-scrollbar relative">
+                                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/5">
+                                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
                                                 {t.publicRooms}
                                             </span>
-                                            <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded text-[8px] font-bold animate-pulse border border-blue-500/50">LIVE</span>
+                                            <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded text-[8px] font-bold animate-pulse border border-blue-500/30">LIVE</span>
                                         </div>
                                         
                                         {publicRooms.length === 0 ? (
-                                            <div className="flex-1 flex flex-col items-center justify-center opacity-50 py-4">
-                                                <Cloud size={24} className="mb-2 text-gray-500"/>
-                                                <span className="text-[10px] text-center uppercase tracking-wider font-bold text-gray-400">
+                                            <div className="flex-1 flex flex-col items-center justify-center opacity-40 py-4">
+                                                <Cloud size={24} className="mb-2 text-white/50"/>
+                                                <span className="text-[9px] text-center uppercase tracking-widest font-bold text-white/50">
                                                     {t.noRooms}
                                                 </span>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-2">
                                                 {publicRooms.map(room => (
-                                                    <div key={room.id} className="flex justify-between items-center bg-gray-900/80 border border-gray-700 p-2.5 rounded-lg hover:border-blue-500 transition-colors shadow-md mb-2">
+                                                    <div key={room.id} className="flex justify-between items-center bg-white/5 border border-white/10 p-2.5 rounded-lg hover:bg-white/10 transition-colors mb-2">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">HOST</span>
-                                                            <span className="text-xs font-black text-white">{room.hostName}</span>
+                                                            <span className="text-[8px] text-white/40 font-bold uppercase tracking-widest">HOST</span>
+                                                            <span className="text-xs font-bold text-white/90">{room.hostName}</span>
                                                         </div>
-                                                        <button onClick={() => joinPublicRoom(room)} className="bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-black border border-emerald-500 px-4 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] active:scale-95">
+                                                        <button onClick={() => joinPublicRoom(room)} className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2 rounded text-[9px] font-bold uppercase tracking-widest transition-all">
                                                             {t.joinRoom}
                                                         </button>
                                                     </div>
@@ -5886,83 +5926,75 @@
                                         )}
                                     </div>
                                     
-                                    <button onClick={startPublicHost} className="relative w-full bg-blue-900/20 hover:bg-blue-600 text-blue-400 hover:text-white border-2 border-blue-500 hover:border-blue-400 font-black py-4 rounded-xl text-[14px] uppercase tracking-[0.2em] transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] active:scale-95 flex justify-center items-center gap-3 overflow-hidden group">
-                                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none group-hover:opacity-40"></div>
-                                        <Plus size={22} className="group-hover:rotate-90 transition-transform duration-300 z-10"/> <span className="z-10">{t.createRoomPublic}</span>
+                                    <button onClick={startPublicHost} className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold py-4 rounded-xl text-[12px] uppercase tracking-[0.2em] transition-all flex justify-center items-center gap-3">
+                                        <Plus size={18} className="text-white/70"/> <span>{t.createRoomPublic}</span>
                                     </button>
                                 </div>
                             )}
 
                             {isSearching && !(peerConn && peerConn.open) && (
-                                <div className="text-center w-full bg-black/60 p-8 rounded-2xl border-2 border-blue-500/50 shadow-[inset_0_0_30px_rgba(59,130,246,0.2)] animate-in flex flex-col items-center gap-4 relative overflow-hidden mt-2">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-                                    
-                                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                    <h3 className="text-sm font-black text-blue-400 tracking-widest uppercase animate-pulse drop-shadow-[0_0_8px_#3b82f6]">{t.waiting}</h3>
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-wider max-w-[80%] font-bold">
+                                <div className="text-center w-full bg-black/20 p-8 rounded-2xl border border-white/10 animate-in flex flex-col items-center gap-4 relative overflow-hidden mt-2">
+                                    <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                    <h3 className="text-sm font-bold text-white/90 tracking-[0.2em] uppercase animate-pulse">{t.waiting}</h3>
+                                    <p className="text-[10px] text-white/50 uppercase tracking-widest max-w-[80%] font-medium">
                                         {lang === 'es' ? 'Sala visible en la comunidad. Esperando a que otro piloto se una...' : 'Room is public. Waiting for a racer to join...'}
                                     </p>
                                     
-                                    <button onClick={cancelSearch} className="mt-2 px-6 py-2 bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white border-2 border-red-500 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] active:scale-95">
+                                    <button onClick={cancelSearch} className="mt-2 px-6 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all">
                                         {t.cancel}
                                     </button>
                                 </div>
                             )}
                             
                             {peerConn && peerConn.open && (
-                                <div className="relative w-full bg-green-900/20 border-2 border-green-500 p-4 rounded-xl text-center text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.4)] animate-in slide-in-bottom mt-4 overflow-hidden">
-                                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none"></div>
-                                    <span className="font-black uppercase tracking-widest text-sm drop-shadow-md flex items-center justify-center gap-2 relative z-10"><Bluetooth size={18} className="animate-pulse"/> CONECTADO CON {session?.rivalName || 'RIVAL'}</span>
+                                <div className="w-full bg-green-500/10 border border-green-500/30 p-4 rounded-xl text-center text-green-400 animate-in slide-in-bottom mt-4">
+                                    <span className="font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                                        <Bluetooth size={16} className="animate-pulse text-green-500"/> 
+                                        CONECTADO CON {session?.rivalName || 'RIVAL'}
+                                    </span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-[#0a0a0a]/90 border-t-2 border-b-2 border-x-0 border-emerald-500 rounded-tl-[3rem] rounded-bl-xl p-1 shadow-[0_0_40px_rgba(16,185,129,0.5),inset_0_0_20px_rgba(16,185,129,0.3)] pointer-events-auto flex flex-col transform skew-x-6 flex-1 relative overflow-hidden -mr-16 w-[calc(100%+4rem)]">
-                        
-                        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
-
-                        <div className="transform -skew-x-6 flex flex-col h-full p-5 pr-16 relative z-10 overflow-y-auto hide-scrollbar">
-                            <div className="flex justify-between items-center border-b border-emerald-500/30 pb-3 mb-2 shrink-0">
-                                <h2 className="text-2xl font-black uppercase tracking-widest neon-text-emerald flex items-center gap-3 drop-shadow-lg">
-                                    <Flag size={30} className="text-emerald-400 drop-shadow-[0_0_15px_#10b981]"/> {t.localMode}
+                    <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl pointer-events-auto flex flex-col flex-1 relative overflow-hidden mr-6 w-[90%] ml-auto">
+                        <div className="flex flex-col h-full relative z-10 overflow-y-auto hide-scrollbar">
+                            <div className="flex justify-between items-center mb-6 shrink-0">
+                                <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-white/90 flex items-center gap-2">
+                                    <Flag size={16} className="text-white/70" /> {t.localMode}
                                 </h2>
-                                <span className="bg-emerald-500 text-black text-[9px] font-black px-2 py-1 rounded transform -skew-x-12 tracking-widest shadow-[0_0_10px_#10b981]">
+                                <span className="bg-white/10 text-white/90 text-[9px] font-bold px-2 py-1 rounded tracking-widest border border-white/10">
                                     SOLO
                                 </span>
                             </div>
 
-                            <div className="flex flex-col gap-4 flex-1 mt-2">
+                            <div className="flex flex-col gap-4 flex-1">
                                 {hasSavedCircuit && (
-                                     <button onClick={loadLastCircuit} className="relative w-full bg-green-900/20 hover:bg-green-600 text-green-400 hover:text-white border-2 border-green-500 hover:border-green-400 font-black py-4 rounded-xl text-[12px] uppercase tracking-[0.15em] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] active:scale-95 flex items-center justify-center gap-3 group shrink-0 overflow-hidden">
-                                         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none group-hover:opacity-40"></div>
-                                         <Play size={20} className="group-hover:scale-110 transition-transform fill-current z-10"/> <span className="z-10">{lang === 'es' ? 'REANUDAR ÚLTIMO CIRCUITO' : 'RESUME LAST TRACK'}</span>
+                                     <button onClick={loadLastCircuit} className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shrink-0">
+                                         <Play size={16} className="text-white/70 fill-current"/> <span>{lang === 'es' ? 'REANUDAR ÚLTIMO CIRCUITO' : 'RESUME LAST TRACK'}</span>
                                      </button>
                                 )}
 
-                                <button onClick={() => setShowCommunityModal(true)} className="relative w-full bg-purple-900/20 hover:bg-purple-600 text-purple-400 hover:text-white border-2 border-purple-500 hover:border-purple-400 font-black py-4 rounded-xl text-[12px] uppercase tracking-[0.15em] transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] active:scale-95 flex items-center justify-center gap-3 group shrink-0 overflow-hidden">
-                                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none group-hover:opacity-40"></div>
-                                    <Users size={20} className="group-hover:scale-110 transition-transform z-10"/> <span className="z-10">{t.tools?.community || 'COMUNIDAD SLOT'}</span>
+                                <button onClick={() => setShowCommunityModal(true)} className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shrink-0">
+                                    <Users size={16} className="text-white/70"/> <span>{t.tools?.community || 'COMUNIDAD SLOT'}</span>
                                 </button>
 
-                                <div className="flex gap-3 min-h-[90px] shrink-0 mt-auto pb-2">
-                                    <label className="flex-1 cursor-pointer group relative bg-gray-900/50 border-2 border-dashed border-emerald-500/50 hover:border-[#39ff14] hover:bg-emerald-900/30 rounded-xl transition-all shadow-inner flex flex-col items-center justify-center gap-2 overflow-hidden">
-                                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+')] opacity-20 pointer-events-none group-hover:opacity-50"></div>
-                                        <CloudUpload className="w-8 h-8 text-emerald-500 group-hover:text-[#39ff14] group-hover:scale-110 transition-all drop-shadow-[0_0_8px_rgba(57,255,20,0.5)] z-10" />
-                                        <span className="text-gray-400 group-hover:text-white font-black uppercase tracking-widest text-[9px] text-center px-2 transition-colors z-10">{t.btnJson}</span>
+                                <div className="flex gap-3 min-h-[90px] shrink-0 mt-auto">
+                                    <label className="flex-1 cursor-pointer group relative bg-black/20 border border-dashed border-white/20 hover:border-white/40 hover:bg-white/5 rounded-xl transition-all flex flex-col items-center justify-center gap-2">
+                                        <CloudUpload className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
+                                        <span className="text-white/50 group-hover:text-white/90 font-bold uppercase tracking-widest text-[8px] text-center px-2 transition-colors">{t.btnJson}</span>
                                         <input type="file" accept=".json" onChange={loadCircuit} className="hidden" />
                                     </label>
 
-                                    <button onClick={handleGoTo2D} className="flex-1 relative bg-cyan-900/20 hover:bg-cyan-600 text-cyan-400 hover:text-white border-2 border-cyan-500 hover:border-cyan-400 font-black py-3 rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] active:scale-95 flex flex-col items-center justify-center gap-2 group overflow-hidden">
-                                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9InRyYW5zcGFyZW50Ii8+PGxpbmUgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjQiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] opacity-20 pointer-events-none group-hover:opacity-40"></div>
-                                        <PenTool size={20} className="group-hover:scale-110 transition-transform z-10"/> <span className="z-10">{t.btn2d}</span>
+                                    <button onClick={handleGoTo2D} className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold py-3 rounded-xl text-[9px] uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2 group">
+                                        <PenTool size={16} className="text-white/50 group-hover:text-white transition-colors"/> <span>{t.btn2d}</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="text-[9px] text-gray-600 font-mono tracking-widest text-right pr-2 transform skew-x-6">SLOT STUDIO V.4.0</div>
+                    <div className="text-[9px] text-white/30 font-mono tracking-widest text-right pr-8">SLOT STUDIO V.4.0</div>
                 </div>
 
                 {/* MODAL COMUNIDAD */}
