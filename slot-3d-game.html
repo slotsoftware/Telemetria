@@ -1798,6 +1798,8 @@
                     dirLightRef.current = dl;
                     
                     const trackGroup = new THREE.Group(); trackGroupRef.current = trackGroup;
+                    scene.add(trackGroup); // ¡ESTA ES LA LÍNEA QUE FALTABA! Añade la pista y coches a la escena
+                    
                     const stdHalf = trackWidth / 2, pitCenterDist = (laneSpacing / 2) + laneSpacing, pitOuterEdge = pitCenterDist + (trackWidth / 2 + 1) / 2; 
                     
                     const asphaltVerts = [], asphaltIndices = [], asphaltUVs = []; let aspVertCount = 0; 
@@ -2648,82 +2650,9 @@
                         
                         setBoardSettings(prev => ({ ...prev, width: baseW, depth: baseD, x: 0, z: 0, material: 'grass' }));
                         const maxDim = Math.max(size.x, size.z); spherical.radius = maxDim * 1.5; spherical.phi = Math.PI / 6; 
+                    } // <-- FIX: Aquí faltaba la llave de cierre del if (!b.isEmpty())
 
-                        // --- 3. EDIFICIOS COMO PIEZAS DE LEGO (Diseño Modular y Decals) ---
-                        // Usamos un Canvas invisible para dibujar las "pegatinas" de las ventanas iluminadas
-                        const canvasCity = document.createElement('canvas');
-                        canvasCity.width = 128; canvasCity.height = 128;
-                        const ctxC = canvasCity.getContext('2d');
-                        ctxC.fillStyle = '#1a1a2e'; ctxC.fillRect(0,0,128,128); // Color del muro del edificio
-                        ctxC.fillStyle = '#eab308'; // Color de luz de las ventanas (amarillo/naranja)
-                        
-                        for(let wx=8; wx<128; wx+=20) {
-                            for(let wy=8; wy<128; wy+=25) {
-                                // Encendemos ventanas al azar (Ilusión óptica de que hay gente dentro)
-                                if(Math.random() > 0.4) ctxC.fillRect(wx, wy, 10, 15); 
-                            }
-                        }
-                        const buildingTex = new THREE.CanvasTexture(canvasCity);
-                        buildingTex.wrapS = THREE.RepeatWrapping; buildingTex.wrapT = THREE.RepeatWrapping;
-                        buildingTex.repeat.set(3, 8); // Repetimos la pegatina para que parezcan pisos altos
-                        
-                        // Clonación Mágica: Hasta 200 edificios dibujados de golpe (Instancing)
-                        const buildingCount = 200;
-                        const buildGeo = new THREE.BoxGeometry(1, 1, 1);
-                        const buildMat = new THREE.MeshLambertMaterial({ map: buildingTex, color: 0x888888 });
-                        const cityMesh = new THREE.InstancedMesh(buildGeo, buildMat, buildingCount);
-                        
-                        const dummyB = new THREE.Object3D();
-                        let bCount = 0;
-                        for(let i = 0; i < buildingCount * 4 && bCount < buildingCount; i++) {
-                            const bx = (Math.random() - 0.5) * baseW * 0.9;
-                            const bz = (Math.random() - 0.5) * baseD * 0.9;
-                            
-                            // Aseguramos que la ciudad se construya lejos de nuestra pista (fondo escénico)
-                            if (Math.abs(bx) < maxDim * 1.5 && Math.abs(bz) < maxDim * 1.5) continue;
-                            
-                            const by = getTerrainHeight(bx, bz, 0) - 0.5;
-                            
-                            // Construimos la ciudad en las zonas llanas (valles o costa)
-                            if (by > -3.0 && by < 15.0) { 
-                                const bw = 15 + Math.random() * 25; // Ancho aleatorio
-                                const bd = 15 + Math.random() * 25; // Profundidad aleatoria
-                                const bh = 40 + Math.random() * 120; // Rascacielos altos
-                                
-                                dummyB.position.set(bx, by + bh/2, bz);
-                                dummyB.scale.set(bw, bh, bd);
-                                dummyB.updateMatrix();
-                                cityMesh.setMatrixAt(bCount, dummyB.matrix);
-                                bCount++;
-                            }
-                        }
-                        cityMesh.count = bCount;
-                        scene.add(cityMesh);
-
-                        // --- 6. ANIMALES (Bandadas de Pájaros Geométricos) ---
-                        // Unos simples triángulos oscuros volando a gran altura engañan al cerebro perfectamente
-                        const birdGeo = new THREE.ConeGeometry(0.5, 2, 3); 
-                        birdGeo.rotateX(Math.PI / 2); // Para que el pico mire hacia adelante
-                        const birdMat = new THREE.MeshBasicMaterial({color: 0x050505});
-                        const numBirds = 35;
-                        const imBirds = new THREE.InstancedMesh(birdGeo, birdMat, numBirds);
-                        const birdData = [];
-                        for(let i=0; i<numBirds; i++) {
-                            birdData.push({
-                                cx: (Math.random() - 0.5) * baseW * 0.6,
-                                cz: (Math.random() - 0.5) * baseD * 0.6,
-                                cy: 40 + Math.random() * 50,
-                                radius: 30 + Math.random() * 40,
-                                speed: 0.6 + Math.random() * 0.8,
-                                offset: Math.random() * Math.PI * 2
-                            });
-                        }
-                        scene.add(imBirds);
-                        scene.userData.birds = { mesh: imBirds, data: birdData };
-                    } 
-                    scene.add(trackGroup);
-
-                    const getPositionAtDistance = (pa, d, outVec = new THREE.Vector3()) => {
+                    const getPositionAtDistance_Heavy = (pa, d, outVec = new THREE.Vector3()) => {
                         let i = 0, min = 0, max = vertexDistances.length - 1;
                         while (min <= max) {
                             let mid = Math.floor((min + max) / 2);
@@ -2744,7 +2673,7 @@
                                 outVec.copy(p1);
                                 return outVec;
                             }
-                            return null; // Forzamos el fallback en getCarPos si no hay datos para interpolar
+                            return null; 
                         }
 
                         // Catmull-Rom Spline
@@ -2761,7 +2690,7 @@
                         return outVec;
                     };
 
-                    const getRallyPositionByDist = (dist, outVec = new THREE.Vector3()) => {
+                    const getRallyPositionByDist_Heavy = (dist, outVec = new THREE.Vector3()) => {
                         const path = rallyPathRef.current; const dists = rallyDistancesRef.current;
                         if (!path || path.length < 2 || dists.length < 2) return outVec.set(0,0,0);
                         const totalLen = dists[dists.length - 1];
@@ -2790,6 +2719,76 @@
 
                         return outVec;
                     };
+
+                    const LUT_RES = 0.5; // Alta resolución (1 punto cada medio centímetro)
+                    const buildTrackLUT = (pa, distances, heavyFunc) => {
+                        if ((!pa || pa.length === 0) && !heavyFunc) return null;
+                        const maxD = distances[distances.length - 1];
+                        if (maxD <= 0) return null;
+                        
+                        const lut = new Float32Array(Math.ceil(maxD / LUT_RES) * 3 + 3);
+                        const temp = new THREE.Vector3();
+                        
+                        for (let d = 0; d <= maxD; d += LUT_RES) {
+                            const idx = Math.floor(d / LUT_RES) * 3;
+                            if (heavyFunc) heavyFunc(d, temp);
+                            else getPositionAtDistance_Heavy(pa, d, temp);
+                            lut[idx] = temp.x; lut[idx+1] = temp.y; lut[idx+2] = temp.z;
+                        }
+                        return { data: lut, maxD };
+                    };
+
+                    // Computar y almacenar LUTs en RAM antes de arrancar
+                    const lutLane1 = buildTrackLUT(rails.lane1, vertexDistances);
+                    const lutLane2 = buildTrackLUT(rails.lane2, vertexDistances);
+                    const lutPit = buildTrackLUT(rails.pit, vertexDistances);
+                    let lutRally = null;
+                    if (hasRotonda && rallyPathRef.current.length > 0 && rallyDistancesRef.current.length > 0) {
+                        lutRally = buildTrackLUT(null, rallyDistancesRef.current, (d, out) => getRallyPositionByDist_Heavy(d, out));
+                    }
+
+                    const getPositionFromLUT = (lutObj, d, outVec) => {
+                        if (!lutObj) return outVec.set(0,0,0);
+                        let safeD = d;
+                        while (safeD < 0) safeD += lutObj.maxD;
+                        safeD = safeD % lutObj.maxD;
+                        
+                        const exactIdx = safeD / LUT_RES;
+                        const i0 = Math.floor(exactIdx);
+                        const i1 = Math.min(i0 + 1, (lutObj.data.length / 3) - 1);
+                        const ratio = exactIdx - i0;
+                        
+                        const i0x3 = i0 * 3;
+                        const i1x3 = i1 * 3;
+                        
+                        outVec.x = lutObj.data[i0x3] + (lutObj.data[i1x3] - lutObj.data[i0x3]) * ratio;
+                        outVec.y = lutObj.data[i0x3+1] + (lutObj.data[i1x3+1] - lutObj.data[i0x3+1]) * ratio;
+                        outVec.z = lutObj.data[i0x3+2] + (lutObj.data[i1x3+2] - lutObj.data[i0x3+2]) * ratio;
+                        
+                        return outVec;
+                    };
+
+                    trackGroup.updateMatrixWorld(true);
+                    trackGroup.traverse(child => { 
+                        if (child.isMesh || child.isGroup) child.matrixAutoUpdate = false; 
+                    });
+                    
+                    // Reactivar matrices dinámicas SOLO para los coches
+                    carMeshesRef.current.forEach(c => { 
+                        c.traverse(child => child.matrixAutoUpdate = true); 
+                    });
+                    
+                    if (boardMeshRef.current) { 
+                        boardMeshRef.current.updateMatrixWorld(true); 
+                        boardMeshRef.current.matrixAutoUpdate = false; 
+                    }
+                    
+                    scene.traverse(child => { 
+                        if (child.isInstancedMesh) { 
+                            child.updateMatrixWorld(true); 
+                            child.matrixAutoUpdate = false; 
+                        } 
+                    });
 
                     let lastNetTime = 0;
                     let displaySpeedHUD = 0;
@@ -2865,19 +2864,20 @@
                             const cas = carAssetsRef.current[ci + 1];
                             const setup = cas?.setup;
 
-                            let maxSpeed = 240;
-                            let accelRate = 150;
-                            let brakeRate = 220;
+                            // ¡VELOCIDADES Y FÍSICAS DUPLICADAS PARA SENSACIÓN EXTREMA!
+                            let maxSpeed = 450;
+                            let accelRate = 350;
+                            let brakeRate = 450;
 
                             if (setup) {
                                 // Ajuste dinámico de físicas basado en parámetros reales de slot
                                 const speedFactor = (setup.motorRPM / 20000) * (2.5 / setup.gearRatio);
-                                maxSpeed = 240 * speedFactor;
+                                maxSpeed = 450 * speedFactor;
 
                                 const accelFactor = (setup.motorTorque / 300) * (80 / setup.weight) * (setup.gearRatio / 2.5);
-                                accelRate = 150 * accelFactor;
+                                accelRate = 350 * accelFactor;
 
-                                brakeRate = 220 * (setup.tireGrip / 80) * (80 / setup.weight);
+                                brakeRate = 450 * (setup.tireGrip / 80) * (80 / setup.weight);
                             }
 
                             const isLocalAI = (!multiplayerSession && aiDifficultyRef.current > 0 && ci === rivalIdx);
@@ -2905,15 +2905,16 @@
                                         const diffFactors = [0, 0.75, 0.90, 1.05, 1.20, 1.35]; 
                                         
                                         // Aumentamos la visión de frenada porque ahora va muchísimo más rápido
-                                        const lookAheadDist = car.speed > 120 ? 50 : (car.speed > 60 ? 25 : 15);
+                                        const lookAheadDist = car.speed > 200 ? 60 : (car.speed > 100 ? 30 : 15);
                                         const currentP = getPieceFast(car.distance);
                                         let nextDist = (car.distance + lookAheadDist) % currentTrackLen;
                                         const nextP = getPieceFast(nextDist);
 
                                         const gripFactor = (setup?.tireGrip || 80) / 80.0;
                                         const evalPiece = (p) => {
-                                            if (p && p.type === 'curve') return Math.sqrt(Math.abs(p.radius || 20)) * gripFactor * 20.0;
-                                            if (p && (p.type === 'rotonda' || p.subtype === 'rotonda')) return Math.sqrt(15) * gripFactor * 20.0;
+                                            // Aumento masivo del multiplicador de agarre base para soportar la nueva velocidad
+                                            if (p && p.type === 'curve') return Math.sqrt(Math.abs(p.radius || 20)) * gripFactor * 35.0;
+                                            if (p && (p.type === 'rotonda' || p.subtype === 'rotonda')) return Math.sqrt(15) * gripFactor * 35.0;
                                             return maxSpeed;
                                         };
 
@@ -3153,25 +3154,22 @@
                                         }
                                     }
                                     
-                                    let railToFollow = rails.lane1;
-                                    let baseLane = rails.lane1;
+                                    let lutToFollow = lutLane1;
                                     
                                     if (car.currentLane === 1) { 
-                                        railToFollow = rails.lane2; 
-                                        baseLane = rails.lane2; 
+                                        lutToFollow = lutLane2; 
                                     } else if (car.currentLane === 2) { 
-                                        railToFollow = rails.pit;
+                                        lutToFollow = lutPit;
                                         // Determinamos a qué carril principal se unirá al salir del pitlane
                                         const exitChange = rails.changes.find(c => c.isPitExit);
                                         if (exitChange && exitChange.outLane === 1) {
-                                            baseLane = rails.lane2;
+                                            if (!lutPit) lutToFollow = lutLane2;
                                         } else {
-                                            baseLane = rails.lane1;
+                                            if (!lutPit) lutToFollow = lutLane1;
                                         }
                                     }
                                     
-                                    let pos = getPositionAtDistance(railToFollow, distQuery % currentTrackLen, outVec);
-                                    if (!pos) pos = getPositionAtDistance(baseLane, distQuery % currentTrackLen, outVec);
+                                    let pos = getPositionFromLUT(lutToFollow, distQuery % currentTrackLen, outVec);
                                     
                                     // Fallback de seguridad extremo
                                     if (!pos && rails.lane1[0]) pos = outVec.copy(rails.lane1[0]);
@@ -3183,8 +3181,8 @@
                                 const lookAhead = 8.0; 
                                 
                                 if (hasRotonda && rallyPathRef.current.length > 0 && rallyDistancesRef.current.length > 0) {
-                                    p1 = getRallyPositionByDist(car.distance, _rallyPos);
-                                    p2 = getRallyPositionByDist((car.distance + lookAhead) % currentTrackLen, _rallyTangent);
+                                    p1 = getPositionFromLUT(lutRally, car.distance, _rallyPos);
+                                    p2 = getPositionFromLUT(lutRally, (car.distance + lookAhead) % currentTrackLen, _rallyTangent);
                                 } else {
                                     p1 = getCarPos(car.distance, _posL1); 
                                     p2 = getCarPos((car.distance + lookAhead) % currentTrackLen, _posFL1);
@@ -3205,9 +3203,10 @@
                                         if (!otherCar.crashed && otherCar.worldPos && (otherCar.worldPos.x !== 0 || otherCar.worldPos.z !== 0)) {
                                             // FIX MEMORIA: Reutilizamos variables en lugar de instanciar 'new THREE.Vector3' en el loop
                                             _toOther.subVectors(otherCar.worldPos, car.worldPos);
-                                            const dist3D = _toOther.length();
+                                            const distSq = _toOther.lengthSq(); // OPTIMIZACIÓN: Ahorramos calcular la raíz cuadrada innecesariamente
                                             
-                                            if (dist3D < 16.0) {
+                                            if (distSq < 256.0) { // 16.0 * 16.0
+                                                const dist3D = Math.sqrt(distSq);
                                                 _forward.copy(_dir).normalize();
                                                 _right.set(_forward.z, 0, -_forward.x).normalize();
                                                 const longDist = _toOther.dot(_forward);
@@ -3263,8 +3262,8 @@
                                             const r = Math.abs(currentPiece.radius || 20);
                                             const gripFactor = (setup?.tireGrip || 80) / 80.0;
                                             
-                                            // Límite de velocidad en curva calculado por radio y agarre
-                                            const maxV = Math.sqrt(r) * gripFactor * 20.0; 
+                                            // Límite de velocidad en curva calculado por radio y agarre (¡Aumentado a 35.0!)
+                                            const maxV = Math.sqrt(r) * gripFactor * 35.0; 
                                             
                                             if (car.speed > maxV + 15) { 
                                                 car.crashed = true;
@@ -3314,7 +3313,7 @@
                                 _worldP1.copy(p1).add(trackGroup.position);
                                 _worldP2.copy(p2).add(trackGroup.position);
 
-                                // FIX STUTTER: Cámaras endurecidas. PILOT/REAR son ahora rígidas, las demás tienen Lerps agresivos.
+                                // FIX VELOCIDAD: Cámaras endurecidas y más agresivas (Lerps más altos).
                                 if (cameraModeRef.current === 'PILOT') {
                                     _dirW.subVectors(_worldP2, _worldP1).normalize();
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, 1.5);
@@ -3326,15 +3325,15 @@
                                     _dirW.subVectors(_worldP2, _worldP1).normalize();
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, -35);
                                     _targetPos.y += 20;
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-15 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-20 * dt)); 
+                                    camera.position.lerp(_targetPos, 1 - Math.exp(-25 * dt)); 
+                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-35 * dt)); 
                                     camera.lookAt(cameraTarget); 
                                 } else if (cameraModeRef.current === 'FRONT') {
                                     _dirW.subVectors(_worldP2, _worldP1).normalize();
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, 35);
                                     _targetPos.y += 12;
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-15 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-20 * dt)); 
+                                    camera.position.lerp(_targetPos, 1 - Math.exp(-25 * dt)); 
+                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-35 * dt)); 
                                     camera.lookAt(cameraTarget); 
                                 } else if (cameraModeRef.current === 'REAR') {
                                     _dirW.subVectors(_worldP2, _worldP1).normalize();
@@ -3345,9 +3344,27 @@
                                     camera.lookAt(_lookTarget);
                                 } else if (cameraModeRef.current === 'BIRD') {
                                     _targetPos.set(_worldP1.x, 180, _worldP1.z + 1);
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-10 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-15 * dt)); 
+                                    camera.position.lerp(_targetPos, 1 - Math.exp(-15 * dt)); 
+                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-25 * dt)); 
                                     camera.lookAt(cameraTarget); 
+                                } else if (cameraModeRef.current === 'DRONE') {
+                                    // CÁMARA DRON RACING: Seguimiento súper agresivo y ágil
+                                    _dirW.subVectors(_worldP2, _worldP1).normalize();
+                                    
+                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, -15);
+                                    _targetPos.y += 30; // Dron volando más bajo
+                                    
+                                    // Lerp duplicado para reaccionar rapidísimo
+                                    camera.position.lerp(_targetPos, 1 - Math.exp(-10 * dt)); 
+                                    
+                                    _lookTarget.copy(_worldP1).addScaledVector(_dirW, 20);
+                                    cameraTarget.lerp(_lookTarget, 1 - Math.exp(-16 * dt)); 
+                                    
+                                    camera.lookAt(cameraTarget);
+                                    
+                                    const droneSway = Math.sin(nowTime * 4) * 0.3; // Temblor más agresivo
+                                    camera.position.x += Math.cos(nowTime * 2) * 0.1;
+                                    camera.position.z += droneSway;
                                 } else {
                                     cameraTarget.lerp(_zeroVec, 1 - Math.exp(-10 * dt)); 
                                     _camPos.setFromSpherical(spherical);
@@ -3449,9 +3466,9 @@
                         displaySpeedHUD += ((myCarForHUD.speed * 1.5) - displaySpeedHUD) * 15.0 * dt;
                         if (telemetryRefs.speed.current) telemetryRefs.speed.current.textContent = Math.floor(displaySpeedHUD).toString().padStart(3, '0');
                         
-                        // Ajuste visual de la barra de RPM para que tenga sentido con la maxSpeed del setup
+                        // Ajuste visual de la barra de RPM para que tenga sentido con la NUEVA maxSpeed (450)
                         const currentSetup = carAssetsRef.current[1]?.setup;
-                        const maxDisplaySpeed = currentSetup ? (240 * (currentSetup.motorRPM / 20000) * (2.5 / currentSetup.gearRatio)) : 240;
+                        const maxDisplaySpeed = currentSetup ? (450 * (currentSetup.motorRPM / 20000) * (2.5 / currentSetup.gearRatio)) : 450;
                         if (telemetryRefs.rpmBar.current) telemetryRefs.rpmBar.current.style.width = `${Math.min(100, (myCarForHUD.speed / maxDisplaySpeed) * 100)}%`;
                         
                         // Actualización visual HUD Gasolina (Adaptado al nuevo diseño Sim-Racing o Analógico)
@@ -3886,6 +3903,7 @@
                     // SOMBRAS REALES PARA BOSQUES: Las instancias (árboles masivos) ahora proyectan su forma real
                     im.castShadow = true; 
                     im.receiveShadow = true;
+                    im.matrixAutoUpdate = false; // OPTIMIZACIÓN EXTREMA: Congelar matrices del bosque al spawnear
                     container.add(im);
                     return { im, localMatrix: m.localMatrix };
                 });
@@ -3982,42 +4000,26 @@
                 <div className="absolute inset-0 z-50 bg-[#3b5f7d] text-white font-sans overflow-hidden animate-in"> 
                     <div ref={containerRef} className="absolute inset-0 w-full h-full" /> 
                     
-                    {/* SEMÁFORO ESTILO F1 (Top Center) */}
+                    {/* SEMÁFORO ESTILO MINIMALISTA */}
                     {countdown !== null && (
-                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-start pt-[15vh] pointer-events-none bg-black/40 backdrop-blur-sm transition-all duration-500">
-                            <div className="bg-black/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl flex gap-6 relative overflow-hidden">
-                                <div className="absolute inset-0 opacity-20" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'}}></div>
-                                
+                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none transition-all duration-500 bg-black/20 backdrop-blur-sm">
+                            <div className={`flex gap-6 md:gap-10 p-8 md:px-14 md:py-10 bg-black/50 backdrop-blur-lg border border-white/10 rounded-3xl shadow-2xl transition-all duration-300 ${countdown === 0 ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}>
                                 {[1, 2, 3, 4, 5].map(num => {
                                     let active = false;
-                                    let isGreen = countdown === 0;
-                                    
-                                    // Encender rojas consecutivamente (countdown: 5 -> 1 luz, 1 -> 5 luces)
                                     if (countdown > 0 && (6 - countdown) >= num) active = true;
-                                    // Encender todas verdes al final
-                                    if (countdown === 0) active = true;
 
                                     return (
-                                        <div key={num} className="relative z-10 flex flex-col items-center gap-2">
-                                            {/* Chasis de la luz */}
-                                            <div className={`w-24 h-24 rounded-full border-4 transition-all duration-100 relative overflow-hidden
-                                                ${!active ? 'bg-[#1a0505] border-black/80 shadow-[inset_0_10px_20px_rgba(0,0,0,0.9)]' : 
-                                                  isGreen ? 'bg-[#39ff14] border-white shadow-[0_0_80px_#39ff14,inset_0_0_30px_white] scale-110' : 
-                                                  'bg-red-600 border-white shadow-[0_0_80px_#ef4444,inset_0_0_30px_white] scale-110'
-                                                }
-                                            `}>
-                                                {/* Efecto de cristal/reflexión */}
-                                                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-6 bg-white/40 rounded-full blur-[2px] z-20"></div>
-                                                {/* Textura interior del LED */}
-                                                <div className="absolute inset-0 opacity-30" style={{backgroundImage: 'radial-gradient(circle at center, transparent 30%, black 100%), repeating-radial-gradient(circle at center, transparent, transparent 4px, rgba(0,0,0,0.4) 4px, rgba(0,0,0,0.4) 5px)'}}></div>
-                                            </div>
-                                        </div>
+                                        <div key={num} className={`w-12 h-12 md:w-20 md:h-20 rounded-full transition-all duration-200 
+                                            ${!active ? 'bg-white/5 border-2 border-white/10 shadow-inner' : 
+                                              'bg-red-500 shadow-[0_0_60px_rgba(239,68,68,0.9)] scale-110 border-2 border-red-300'
+                                            }`}
+                                        />
                                     );
                                 })}
                             </div>
                             
                             {countdown === 0 && (
-                                <div className="mt-16 font-digital text-[180px] leading-none text-[#39ff14] font-black italic drop-shadow-[0_0_120px_#39ff14] animate-[pulse_0.2s_ease-in-out_infinite] transform scale-125 tracking-[0.1em]">
+                                <div className="absolute font-sans text-[130px] md:text-[200px] leading-none text-white font-black tracking-[0.1em] drop-shadow-[0_0_60px_rgba(255,255,255,0.8)] animate-in zoom-in duration-300">
                                     GO!
                                 </div>
                             )}
@@ -4204,6 +4206,9 @@
                             </button>
                             <button onClick={() => setCameraMode('CHASE')} title={t.camChase} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'CHASE' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Video size={12}/> CHASE
+                            </button>
+                            <button onClick={() => setCameraMode('DRONE')} title="VISTA DRON" className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'DRONE' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
+                                <Move3d size={12}/> DRONE
                             </button>
                             <button onClick={() => setCameraMode('PILOT')} title={t.camPilot} className={`px-3 py-2 font-black text-[10px] tracking-widest uppercase transition-all rounded-xl flex items-center gap-2 ${cameraMode === 'PILOT' ? 'bg-white/20 text-[#00f0ff] shadow-inner' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 <Crosshair size={12}/> PILOT
