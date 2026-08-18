@@ -4003,16 +4003,20 @@
                     {/* SEMÁFORO ESTILO MINIMALISTA */}
                     {countdown !== null && (
                         <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none transition-all duration-500 bg-black/20 backdrop-blur-sm">
-                            <div className={`flex gap-6 md:gap-10 p-8 md:px-14 md:py-10 bg-black/50 backdrop-blur-lg border border-white/10 rounded-3xl shadow-2xl transition-all duration-300 ${countdown === 0 ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}>
+                            <div className="flex gap-6 md:gap-10 p-8 md:px-14 md:py-10 bg-black/50 backdrop-blur-lg border border-white/10 rounded-3xl shadow-2xl transition-all duration-300">
                                 {[1, 2, 3, 4, 5].map(num => {
-                                    let active = false;
-                                    if (countdown > 0 && (6 - countdown) >= num) active = true;
+                                    let isRed = false;
+                                    let isGreen = false;
+                                    
+                                    if (countdown > 0 && (6 - countdown) >= num) isRed = true;
+                                    if (countdown === 0) isGreen = true;
 
                                     return (
-                                        <div key={num} className={`w-12 h-12 md:w-20 md:h-20 rounded-full transition-all duration-200 
-                                            ${!active ? 'bg-white/5 border-2 border-white/10 shadow-inner' : 
-                                              'bg-red-500 shadow-[0_0_60px_rgba(239,68,68,0.9)] scale-110 border-2 border-red-300'
-                                            }`}
+                                        <div key={num} className={`w-12 h-12 md:w-20 md:h-20 rounded-full transition-all duration-200 border-2
+                                            ${!isRed && !isGreen ? 'bg-white/5 border-white/10 shadow-inner' : ''}
+                                            ${isRed ? 'bg-red-500 shadow-[0_0_60px_rgba(239,68,68,0.9)] scale-110 border-red-300' : ''}
+                                            ${isGreen ? 'bg-[#39ff14] shadow-[0_0_60px_rgba(57,255,20,0.9)] scale-110 border-green-300' : ''}
+                                            `}
                                         />
                                     );
                                 })}
