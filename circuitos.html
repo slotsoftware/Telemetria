@@ -226,20 +226,7 @@
               { id: 'adv_80', label: 'Cierre 80', type: 'straight', length: 8.0, cat: 'Rectas' }, 
               { id: 'adv_connect', label: 'Bluetooth', type: 'straight', length: 36.0, subtype: 'connection', cat: 'Digital' }, 
               { id: 'adv_x', label: 'Cambio Recta', type: 'straight', length: 36.0, subtype: 'digital_x', cat: 'Digital' }, 
-              { id: 'adv_desvio_out', label: 'Desvío Salida', type: 'straight', length: 36.0, subtype: 'y_merge_out', cat: 'Digital' },
-              { id: 'adv_chicane_mid', label: 'Recta S (1C)', type: 'straight', length: 36.0, subtype: 'single_lane_s', cat: 'Digital' },
-              { id: 'adv_desvio_in', label: 'Desvío Entrada', type: 'straight', length: 36.0, subtype: 'y_merge_in', cat: 'Digital' },
-              { id: 'adv_macro_chicane', label: 'Gran Chicane Advance', type: 'straight', length: 108.0, subtype: 'digital_full_chicane', cat: 'Digital', isMacro: true, pieces: [
-                  { id: 'adv_desvio_out', label: 'Desvío Salida', type: 'straight', length: 36.0, subtype: 'y_merge_out', direction: 'left', cat: 'Digital' },
-                  { id: 'adv_chicane_mid', label: 'Recta S (1C)', type: 'straight', length: 36.0, subtype: 'single_lane_s', direction: 'left', cat: 'Digital' },
-                  { id: 'adv_desvio_in', label: 'Desvío Entrada', type: 'straight', length: 36.0, subtype: 'y_merge_in', direction: 'right', cat: 'Digital' }
-              ]},
-              { id: 'adv_sl_360_1', label: 'Recta 1C (360)', type: 'straight', length: 36.0, subtype: 'single_lane_1', cat: 'Digital' },
-              { id: 'adv_sl_180_1', label: 'Media 1C (180)', type: 'straight', length: 18.0, subtype: 'single_lane_1', cat: 'Digital' },
-              { id: 'adv_cr1_in', label: 'Curva 1C (R1 Int)', type: 'curve', radius: 15.0, angle: 45, subtype: 'single_lane_1', cat: 'Digital' },
-              { id: 'adv_cr1_out', label: 'Curva 1C (R1 Ext)', type: 'curve', radius: 15.0, angle: 45, subtype: 'single_lane_2', cat: 'Digital' },
-              { id: 'adv_cr2_in', label: 'Curva 1C (R2 Int)', type: 'curve', radius: 30.6, angle: 45, subtype: 'single_lane_1', cat: 'Digital' },
-              { id: 'adv_cr2_out', label: 'Curva 1C (R2 Ext)', type: 'curve', radius: 30.6, angle: 45, subtype: 'single_lane_2', cat: 'Digital' },
+              { id: 'adv_macro_chicane', label: 'Gran Chicane Advance', type: 'straight', length: 108.0, subtype: 'full_chicane', cat: 'Cruces' },
               { id: 'adv_pit_in', label: 'Entrada Pit', type: 'pit_entry', length: 36.0, cat: 'Boxes' }, 
               { id: 'adv_pit_fuel', label: 'Recta Fuel', type: 'straight', length: 36.0, subtype: 'pit_parallel', cat: 'Boxes' }, 
               { id: 'adv_pit_box_x', label: 'Boxes + Cambio X', type: 'straight', length: 36.0, subtype: 'pit_parallel_double_x', cat: 'Boxes' }, 
@@ -928,12 +915,20 @@
             
             const brand = TRACK_DEFINITIONS[p.brandKey || 'NINCO'] || TRACK_DEFINITIONS['NINCO'];
             const laneOff = brand.laneSpacing / 2;
-            const isSingleLane = p.subtype === 'single_lane_1' || p.subtype === 'single_lane_2';
+            const isSingleLane = p.subtype && p.subtype.includes('single_lane');
 
             let dx = 0, dy = 0, da = 0;
             let effectiveRadius = p.radius || 20;
 
-            if (p.type === 'straight' || (p.type && p.type.includes('pit')) || (p.type && p.type.includes('branch'))) { 
+            if (p.type === 'curve') {
+                if (p.subtype === 'single_lane_1') {
+                    effectiveRadius = p.direction === 'left' ? Math.abs(p.radius) - laneOff : Math.abs(p.radius) + laneOff;
+                } else if (p.subtype === 'single_lane_2') {
+                    effectiveRadius = p.direction === 'left' ? Math.abs(p.radius) + laneOff : Math.abs(p.radius) - laneOff;
+                }
+            }
+
+            if (p.type === 'straight' || (p.type && p.type.includes('pit'))) { 
                 dx = p.length; 
                 if (p.shiftY) dy = p.shiftY;
             } else if (p.type === 'curve') {
@@ -964,7 +959,7 @@
 
             let midX = (p.x + exitX) / 2;
             let midY = (p.y + exitY) / 2;
-            let hitRadius = (p.type === 'straight' || (p.type && p.type.includes('pit')) || (p.type && p.type.includes('branch'))) ? p.length / 2 : Math.abs(effectiveRadius);
+            let hitRadius = p.type === 'straight' ? p.length / 2 : Math.abs(effectiveRadius);
 
             if (p.type === 'rotonda' || p.subtype === 'rotonda') {
                 const straightLen = 1.0;
@@ -978,66 +973,12 @@
             let inNodes = [];
             let outNodes = [];
 
-            if (p.subtype === 'y_merge_in') {
-                const isLeft = p.direction !== 'right';
-                const singleY = isLeft ? -laneOff : laneOff;
-                inNodes.push({ x: p.x - singleY * Math.sin(rot), y: p.y + singleY * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX + laneOff * Math.sin(exitAngle), y: exitY - laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-                outNodes.push({ x: exitX - laneOff * Math.sin(exitAngle), y: exitY + laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.subtype === 'y_merge_out') {
-                const isLeft = p.direction !== 'right';
-                const singleY = isLeft ? -laneOff : laneOff;
-                inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                inNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX - singleY * Math.sin(exitAngle), y: exitY + singleY * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.type === 'branch_entry' || p.type === 'branch_exit' || p.type === 'pit_entry' || p.type === 'pit_exit') {
-                const pitY = laneOff + brand.laneSpacing;
-                
-                if (p.type === 'branch_entry' || p.type === 'pit_entry') {
-                    inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                    outNodes.push({ x: exitX + laneOff * Math.sin(exitAngle), y: exitY - laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-                    
-                    inNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                    outNodes.push({ x: exitX - pitY * Math.sin(exitAngle), y: exitY + pitY * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-                } else {
-                    inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                    outNodes.push({ x: exitX + laneOff * Math.sin(exitAngle), y: exitY - laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-                    
-                    inNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                    outNodes.push({ x: exitX - laneOff * Math.sin(exitAngle), y: exitY + laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-                    
-                    inNodes.push({ x: p.x - pitY * Math.sin(rot), y: p.y + pitY * Math.cos(rot), angle: rot, role: 'rail' });
-                }
-            } else if (p.subtype === 'digital_chicane_entry') {
-                const c1 = brand.width * 0.2;
-                inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                inNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX - c1 * Math.sin(exitAngle), y: exitY + c1 * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.subtype === 'digital_chicane_middle') {
-                const c1 = brand.width * 0.2;
-                inNodes.push({ x: p.x - c1 * Math.sin(rot), y: p.y + c1 * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX + c1 * Math.sin(exitAngle), y: exitY - c1 * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.subtype === 'digital_chicane_exit') {
-                const c1 = brand.width * 0.2;
-                inNodes.push({ x: p.x + c1 * Math.sin(rot), y: p.y - c1 * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX + laneOff * Math.sin(exitAngle), y: exitY - laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-                outNodes.push({ x: exitX - laneOff * Math.sin(exitAngle), y: exitY + laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.subtype === 'single_lane_s') {
-                const isLeft = p.direction !== 'right';
-                const startY = isLeft ? -laneOff : laneOff;
-                const endY = isLeft ? laneOff : -laneOff;
-                inNodes.push({ x: p.x - startY * Math.sin(rot), y: p.y + startY * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX - endY * Math.sin(exitAngle), y: exitY + endY * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.subtype === 'single_lane_1') {
-                inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX + laneOff * Math.sin(exitAngle), y: exitY - laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.subtype === 'single_lane_2') {
-                inNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: exitX - laneOff * Math.sin(exitAngle), y: exitY + laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
-            } else if (p.type === 'rotonda' || p.subtype === 'rotonda') {
-                inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
-                outNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: exitAngle, role: 'rail' });
+            if (isSingleLane || p.type === 'rotonda' || p.subtype === 'rotonda') {
+                inNodes.push({ x: p.x, y: p.y, angle: rot, role: 'center' });
+                outNodes.push({ x: exitX, y: exitY, angle: exitAngle, role: 'center' });
             } else {
+                inNodes.push({ x: p.x, y: p.y, angle: rot, role: 'center' });
+                outNodes.push({ x: exitX, y: exitY, angle: exitAngle, role: 'center' });
                 inNodes.push({ x: p.x + laneOff * Math.sin(rot), y: p.y - laneOff * Math.cos(rot), angle: rot, role: 'rail' });
                 outNodes.push({ x: exitX + laneOff * Math.sin(exitAngle), y: exitY - laneOff * Math.cos(exitAngle), angle: exitAngle, role: 'rail' });
                 inNodes.push({ x: p.x - laneOff * Math.sin(rot), y: p.y + laneOff * Math.cos(rot), angle: rot, role: 'rail' });
@@ -1087,7 +1028,7 @@
 
                 let dx = 0, dy = 0, dAngle = 0;
                 if (p.type === 'rotonda' || p.subtype === 'rotonda') { dAngle = Math.PI; }
-                else if (p.type === 'straight' || (p.type && p.type.includes('pit')) || (p.type && p.type.includes('branch'))) { 
+                else if (p.type === 'straight' || (p.type && p.type.includes('pit'))) { 
                     dx = p.length; 
                     if (p.shiftY) dy = p.shiftY;
                 }
@@ -1099,6 +1040,8 @@
                 }
                 else if (p.type === 'curve') {
                     let effectiveRadius = Math.abs(p.radius);
+                    if (p.subtype === 'single_lane_1') effectiveRadius = p.direction === 'left' ? effectiveRadius - laneOff : effectiveRadius + laneOff;
+                    else if (p.subtype === 'single_lane_2') effectiveRadius = p.direction === 'left' ? effectiveRadius + laneOff : effectiveRadius - laneOff;
                     
                     const r = effectiveRadius;
                     const aRad = (p.angle * Math.PI) / 180;
@@ -1209,12 +1152,29 @@
                     return; 
                 }
 
-                if ((p.subtype === 'full_chicane' || p.subtype === 'digital_full_chicane') && expandMacros) {
+                if (p.subtype === 'full_chicane' && expandMacros) {
                     const partLength = p.length / 3;
                     
-                    const p1 = { ...p, uid: p.uid + "_1", id: "adv_desvio_in", label: "Desvío Entrada", subtype: 'y_merge_in', length: partLength, width: brandDef.width, laneSpacing: brandDef.laneSpacing, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_l8xv0` };
-                    const p2 = { ...p, uid: p.uid + "_2", id: "adv_chicane_mid", label: "Recta S (1C)", subtype: 'single_lane_1', length: partLength, width: brandDef.width, laneSpacing: brandDef.laneSpacing, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_l8xv0` };
-                    const p3 = { ...p, uid: p.uid + "_3", id: "adv_desvio_out", label: "Desvío Salida", subtype: 'y_merge_out', length: partLength, width: brandDef.width, laneSpacing: brandDef.laneSpacing, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_l8xv0` };
+                    let prefix = 'n_';
+                    if (currentBrandKey === 'SCX_CLASSIC') prefix = 'c_';
+                    else if (currentBrandKey === 'SCX_ANALOG') prefix = 's_';
+                    else if (currentBrandKey === 'SCX_ADVANCE') prefix = 'adv_';
+                    else if (currentBrandKey === 'SCALEXTRIC_UK') prefix = 'suk_';
+                    else if (currentBrandKey === 'CARRERA') prefix = 'car_';
+
+                    const isSCX = currentBrandKey.startsWith('SCX');
+
+                    let inId = isSCX ? `${prefix}pt74_in` : `${prefix}chicane_in`;
+                    let midId = isSCX ? `${prefix}pt74_mid` : `${prefix}chicane_mid`;
+                    let outId = isSCX ? `${prefix}pt74_out` : `${prefix}chicane_out`;
+                    
+                    const subIn = isSCX ? 'chicane3_entry' : 'chicane_entry';
+                    const subMid = isSCX ? 'chicane3_middle' : 'chicane_middle';
+                    const subOut = isSCX ? 'chicane3_exit' : 'chicane_exit';
+
+                    const p1 = { ...p, uid: p.uid + "_1", id: inId, label: isSCX ? "Chicane In (PT74)" : "Chicane In", subtype: subIn, length: partLength, width: brandDef.width, laneSpacing: brandDef.laneSpacing, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_l8xv0` };
+                    const p2 = { ...p, uid: p.uid + "_2", id: midId, label: isSCX ? "Chicane Med (PT74)" : "Chicane Med", subtype: subMid, length: partLength, width: brandDef.width, laneSpacing: brandDef.laneSpacing, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_l8xv0` };
+                    const p3 = { ...p, uid: p.uid + "_3", id: outId, label: isSCX ? "Chicane Out (PT74)" : "Chicane Out", subtype: subOut, length: partLength, width: brandDef.width, laneSpacing: brandDef.laneSpacing, brandKey: currentBrandKey, groupId: `macro_${Math.floor(p.uid)}_l8xv0` };
                     
                     p2.x = p1.x + partLength * Math.cos(p.rot || 0);
                     p2.y = p1.y + partLength * Math.sin(p.rot || 0);
@@ -1374,6 +1334,7 @@
                                 nextPiece.subtype = 'chicane3_exit'; 
                                 if (nextPiece.id === 'c_pt74_in') nextPiece.id = 'c_pt74_out';
                                 else if (nextPiece.id === 's_pt74_in') nextPiece.id = 's_pt74_out';
+                                else if (nextPiece.id === 'adv_pt74_in') nextPiece.id = 'adv_pt74_out';
                             }
                             else if (nextPiece.subtype === 'chicane3_exit') { 
                                 nextPiece.subtype = 'chicane3_entry'; 
@@ -1381,15 +1342,12 @@
                                 else if (nextPiece.id === 's_pt74_out') nextPiece.id = 's_pt74_in';
                                 else if (nextPiece.id === 'adv_pt74_out') nextPiece.id = 'adv_pt74_in';
                             }
-                            else if (nextPiece.subtype === 'digital_chicane_entry') { nextPiece.subtype = 'digital_chicane_exit'; if (nextPiece.id === 'adv_chicane_in') nextPiece.id = 'adv_chicane_out'; }
-                            else if (nextPiece.subtype === 'digital_chicane_exit') { nextPiece.subtype = 'digital_chicane_entry'; if (nextPiece.id === 'adv_chicane_out') nextPiece.id = 'adv_chicane_in'; }
                             else if (nextPiece.subtype === 'jump_up') { nextPiece.subtype = 'jump_down'; if (nextPiece.id === 'suk_pack2_1') nextPiece.id = 'suk_pack2_2'; }
                             else if (nextPiece.subtype === 'jump_down') { nextPiece.subtype = 'jump_up'; if (nextPiece.id === 'suk_pack2_2') nextPiece.id = 'suk_pack2_1'; }
-                            if (nextPiece.subtype === 'single_lane_2') { nextPiece.subtype = 'single_lane_1'; }
+                            else if (nextPiece.subtype === 'single_lane_1') { nextPiece.subtype = 'single_lane_2'; }
+                            else if (nextPiece.subtype === 'single_lane_2') { nextPiece.subtype = 'single_lane_1'; }
                             
                             if (nextPiece.type === 'pit_entry') nextPiece.type = 'pit_exit'; else if (nextPiece.type === 'pit_exit') nextPiece.type = 'pit_entry';
-                            if (nextPiece.type === 'branch_entry') nextPiece.type = 'branch_exit'; else if (nextPiece.type === 'branch_exit') nextPiece.type = 'branch_entry';
-                            if (nextPiece.subtype === 'y_merge_in') nextPiece.subtype = 'y_merge_out'; else if (nextPiece.subtype === 'y_merge_out') nextPiece.subtype = 'y_merge_in';
                             
                             if (nextPiece.subtype === 'adapter_ninco_scx') nextPiece.subtype = 'adapter_scx_ninco'; else if (nextPiece.subtype === 'adapter_scx_ninco') nextPiece.subtype = 'adapter_ninco_scx';
                             else if (nextPiece.subtype === 'adapter_ninco_suk') nextPiece.subtype = 'adapter_suk_ninco'; else if (nextPiece.subtype === 'adapter_suk_ninco') nextPiece.subtype = 'adapter_ninco_suk';
@@ -1439,18 +1397,8 @@
                         currentLaneMap = { 1: currentLaneMap[2], 2: currentLaneMap[1] };
                     }
 
-                    // --- GARANTÍA DE BUS DIGITAL COMPARTIDO (HASTA 8 COCHES) ---
-                    // Etiquetamos explícitamente las piezas de un carril para el Motor 3D
-                    const isShared = p.subtype === 'single_lane_1' || 
-                                     p.subtype === 'single_lane_2' || 
-                                     p.subtype === 'single_lane_s' || 
-                                     p.subtype === 'y_merge_in' || 
-                                     p.subtype === 'y_merge_out';
-                                     
-                    if (isShared) {
-                        p.isSharedBus = true; // El motor 3D leerá esto y forzará a los 8 coches a ir en fila india
-                        p.lane = 0; // Forzamos lógicamente el carril central
-                    } else if (p.lane === undefined) {
+                    // Forzamos lane 0 para evitar el bug de los 8 carriles paralelos en el 3D
+                    if (p.lane === undefined || p.subtype === 'single_lane_1' || p.subtype === 'single_lane_2') {
                         p.lane = 0;
                     }
 
@@ -1495,21 +1443,21 @@
                 const isSingle = isSingle1 || isSingle2;
                 const laneOff = (brand.laneSpacing / 2) * s;
                 
-                if (p.type.includes('pit') || p.type.includes('branch') || p.type === 'rotonda' || p.subtype === 'rotonda' || (p.subtype && (p.subtype.startsWith('chicane3_') || p.subtype === 'full_chicane' || p.subtype.startsWith('y_merge_') || p.subtype === 'single_lane_s'))) return; 
+                if (p.type.includes('pit') || p.type === 'rotonda' || p.subtype === 'rotonda' || (p.subtype && (p.subtype.startsWith('chicane3_') || p.subtype === 'full_chicane'))) return; 
                 ctx.beginPath();
                 
                 let effectiveTrueR = trueR;
                 let trackWidthHalf = hw;
 
                 if (isSingle) {
+                    if (isSingle1) effectiveTrueR = isLeft ? trueR - laneOff : trueR + laneOff;
+                    if (isSingle2) effectiveTrueR = isLeft ? trueR + laneOff : trueR - laneOff;
                     trackWidthHalf = hw / 2;
                 }
 
                 if (p.type === 'straight') {
-                    let yCenter = 0;
-                    if (isSingle) yCenter = isSingle1 ? -trackWidthHalf : trackWidthHalf;
                     const shift = p.shiftY ? (p.shiftY * s) : 0;
-                    const y = isRightSide ? yCenter + trackWidthHalf + bWidth/2 : yCenter - trackWidthHalf - bWidth/2;
+                    const y = isRightSide ? trackWidthHalf + bWidth/2 : -trackWidthHalf - bWidth/2;
                     ctx.moveTo(0, y);
                     if (shift !== 0) {
                         ctx.bezierCurveTo(l*0.5, y, l*0.5, y + shift, l, y + shift);
@@ -1518,16 +1466,8 @@
                     }
                 } else if (p.type === 'curve') {
                     let rBorder;
-                    if (isSingle) {
-                        const currentLaneOff = isSingle1 ? -laneOff : laneOff;
-                        const rPlasticInner = isLeft ? effectiveTrueR + currentLaneOff - trackWidthHalf : effectiveTrueR - currentLaneOff - trackWidthHalf;
-                        const rPlasticOuter = isLeft ? effectiveTrueR + currentLaneOff + trackWidthHalf : effectiveTrueR - currentLaneOff + trackWidthHalf;
-                        rBorder = isRightSide ? rPlasticOuter + bWidth/2 : rPlasticInner - bWidth/2;
-                        if (!isLeft) rBorder = isRightSide ? rPlasticInner - bWidth/2 : rPlasticOuter + bWidth/2;
-                    } else {
-                        if (isLeft) { rBorder = isRightSide ? effectiveTrueR + trackWidthHalf + bWidth/2 : effectiveTrueR - trackWidthHalf - bWidth/2; } 
-                        else { rBorder = isRightSide ? effectiveTrueR - trackWidthHalf - bWidth/2 : effectiveTrueR + trackWidthHalf + bWidth/2; }
-                    }
+                    if (isLeft) { rBorder = isRightSide ? effectiveTrueR + trackWidthHalf + bWidth/2 : effectiveTrueR - trackWidthHalf - bWidth/2; } 
+                    else { rBorder = isRightSide ? effectiveTrueR - trackWidthHalf - bWidth/2 : effectiveTrueR + trackWidthHalf + bWidth/2; }
                     if (rBorder <= 0) return;
                     ctx.arc(0, isLeft ? -effectiveTrueR : effectiveTrueR, rBorder, startA, startA + sweep, isLeft);
                 } else if (p.type === 'compound_curve_change') {
@@ -1605,7 +1545,7 @@
                     if (renderBorderL && !p.hideLeftWall) DrawEngine2D.drawBorder(ctx, p, l, trueR, startA, sweep, hw, bWidth, false, s, brand);
                     if (renderBorderR && !p.hideRightWall) DrawEngine2D.drawBorder(ctx, p, l, trueR, startA, sweep, hw, bWidth, true, s, brand);
 
-                    if (p.customImage && imageCache.current.get(p.uid)) { const img = imageCache.current.get(p.uid); if (p.type === 'straight' || p.type.includes('pit') || p.type.includes('branch')) ctx.drawImage(img, 0, -hw, l, w); else { const r = p.radius * s; ctx.translate(0, p.direction==='left'?-r:-r); ctx.drawImage(img, 0, p.direction==='left'?0:-r, r, r); } } 
+                    if (p.customImage && imageCache.current.get(p.uid)) { const img = imageCache.current.get(p.uid); if (p.type === 'straight' || p.type.includes('pit')) ctx.drawImage(img, 0, -hw, l, w); else { const r = p.radius * s; ctx.translate(0, p.direction==='left'?-r:-r); ctx.drawImage(img, 0, p.direction==='left'?0:-r, r, r); } } 
                     else {
                        ctx.lineCap = 'butt'; ctx.lineJoin = 'round';
                        const drawCarreraCenterLineStraight = () => { if (brand.name === 'CARRERA') { ctx.save(); ctx.strokeStyle='#ffffff'; ctx.globalAlpha=0.6; ctx.lineWidth=2*(s/5); ctx.setLineDash([18*(s/5), 18*(s/5)]); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(l,0); ctx.stroke(); ctx.restore(); } };
@@ -1658,103 +1598,9 @@
                                 ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3;
                                 ctx.beginPath(); ctx.moveTo(0, railStartL); ctx.bezierCurveTo(l*0.4, railStartL, l*0.6, railEndL, l, railEndL); ctx.stroke();
                                 ctx.beginPath(); ctx.moveTo(0, railStartR); ctx.bezierCurveTo(l*0.4, railStartR, l*0.6, railEndR, l, railEndR); ctx.stroke();
-                            } else if (p.subtype && p.subtype.startsWith('digital_chicane_')) {
-                                const narrowHW = hw * 0.55;
-                                const c1 = hw * 0.2;
                                 
-                                let yStartLeft, yStartRight, yEndLeft, yEndRight;
-                                let slotStarts = [], slotEnds = [];
-                                let isSplit = false;
-
-                                if (p.subtype === 'digital_chicane_entry') {
-                                    yStartLeft = -hw; yStartRight = hw;
-                                    yEndLeft = c1 - narrowHW; yEndRight = c1 + narrowHW;
-                                    slotStarts = [-laneOff, laneOff];
-                                    slotEnds = [c1, c1];
-                                } else if (p.subtype === 'digital_chicane_middle') {
-                                    yStartLeft = c1 - narrowHW; yStartRight = c1 + narrowHW;
-                                    yEndLeft = -c1 - narrowHW; yEndRight = -c1 + narrowHW;
-                                    slotStarts = [c1];
-                                    slotEnds = [-c1];
-                                } else if (p.subtype === 'digital_chicane_exit') {
-                                    yStartLeft = -c1 - narrowHW; yStartRight = -c1 + narrowHW;
-                                    yEndLeft = -hw; yEndRight = hw;
-                                    slotStarts = [-c1, -c1];
-                                    slotEnds = [-laneOff, laneOff];
-                                    isSplit = true;
-                                }
-
-                                ctx.fillStyle = brand.trackColor;
-                                ctx.beginPath();
-                                ctx.moveTo(0, yStartLeft);
-                                ctx.bezierCurveTo(l*0.4, yStartLeft, l*0.6, yEndLeft, l, yEndLeft);
-                                ctx.lineTo(l, yEndRight);
-                                ctx.bezierCurveTo(l*0.6, yEndRight, l*0.4, yStartRight, 0, yStartRight);
-                                ctx.closePath();
-                                ctx.fill();
-                                
-                                ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
-                                ctx.beginPath(); ctx.moveTo(0, yStartLeft); ctx.bezierCurveTo(l*0.4, yStartLeft, l*0.6, yEndLeft, l, yEndLeft); ctx.stroke();
-                                ctx.beginPath(); ctx.moveTo(0, yStartRight); ctx.bezierCurveTo(l*0.4, yStartRight, l*0.6, yEndRight, l, yEndRight); ctx.stroke();
-                                
-                                for (let i=0; i<slotStarts.length; i++) {
-                                    ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3;
-                                    ctx.beginPath(); ctx.moveTo(0, slotStarts[i]); ctx.bezierCurveTo(l*0.4, slotStarts[i], l*0.6, slotEnds[i], l, slotEnds[i]); ctx.stroke();
-                                    ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1;
-                                    ctx.beginPath(); ctx.moveTo(0, slotStarts[i]); ctx.bezierCurveTo(l*0.4, slotStarts[i], l*0.6, slotEnds[i], l, slotEnds[i]); ctx.stroke();
-                                }
-
-                                if (isSplit) {
-                                     DrawEngine2D.drawDigitalWedge(ctx, l, slotStarts[0], 1, s);
-                                }
-                            } else if (p.subtype === 'y_merge_in' || p.subtype === 'y_merge_out') {
-                                const isIn = p.subtype === 'y_merge_in';
-                                const isLeft = p.direction !== 'right';
-                                const singleY = isLeft ? -laneOff : laneOff;
-                                
-                                let yTopIn, yBotIn, yTopOut, yBotOut;
-                                let r1In, r2In, r1Out, r2Out;
-
-                                if (isIn) {
-                                    yTopIn = isLeft ? -hw : 0;
-                                    yBotIn = isLeft ? 0 : hw;
-                                    yTopOut = -hw;
-                                    yBotOut = hw;
-                                    r1In = singleY; r2In = singleY;
-                                    r1Out = -laneOff; r2Out = laneOff;
-                                } else {
-                                    yTopIn = -hw;
-                                    yBotIn = hw;
-                                    yTopOut = isLeft ? -hw : 0;
-                                    yBotOut = isLeft ? 0 : hw;
-                                    r1In = -laneOff; r2In = laneOff;
-                                    r1Out = singleY; r2Out = singleY;
-                                }
-
-                                ctx.fillStyle = brand.trackColor;
-                                ctx.beginPath();
-                                ctx.moveTo(0, yTopIn);
-                                if (isLeft && isIn) ctx.lineTo(l, yTopOut); else if (isLeft && !isIn) ctx.lineTo(l, yTopOut); else ctx.bezierCurveTo(l*0.4, yTopIn, l*0.6, yTopOut, l, yTopOut);
-                                ctx.lineTo(l, yBotOut);
-                                if (!isLeft && isIn) ctx.lineTo(0, yBotIn); else if (!isLeft && !isIn) ctx.lineTo(0, yBotIn); else ctx.bezierCurveTo(l*0.6, yBotOut, l*0.4, yBotIn, 0, yBotIn);
-                                ctx.closePath();
-                                ctx.fill();
-                                
-                                ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
-                                ctx.beginPath(); ctx.moveTo(0, yTopIn); if (isLeft) ctx.lineTo(l, yTopOut); else ctx.bezierCurveTo(l*0.4, yTopIn, l*0.6, yTopOut, l, yTopOut); ctx.stroke();
-                                ctx.beginPath(); ctx.moveTo(0, yBotIn); if (!isLeft) ctx.lineTo(l, yBotOut); else ctx.bezierCurveTo(l*0.4, yBotIn, l*0.6, yBotOut, l, yBotOut); ctx.stroke();
-                                
-                                ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3;
-                                ctx.beginPath(); ctx.moveTo(0, r1In); if (isLeft) ctx.lineTo(l, r1Out); else ctx.bezierCurveTo(l*0.4, r1In, l*0.6, r1Out, l, r1Out); ctx.stroke();
-                                ctx.beginPath(); ctx.moveTo(0, r2In); if (!isLeft) ctx.lineTo(l, r2Out); else ctx.bezierCurveTo(l*0.4, r2In, l*0.6, r2Out, l, r2Out); ctx.stroke();
-                                
-                                ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; 
-                                ctx.beginPath(); ctx.moveTo(0, r1In); if (isLeft) ctx.lineTo(l, r1Out); else ctx.bezierCurveTo(l*0.4, r1In, l*0.6, r1Out, l, r1Out); ctx.stroke();
-                                ctx.beginPath(); ctx.moveTo(0, r2In); if (!isLeft) ctx.lineTo(l, r2Out); else ctx.bezierCurveTo(l*0.4, r2In, l*0.6, r2Out, l, r2Out); ctx.stroke();
-                                
-                                if (isIn) {
-                                    DrawEngine2D.drawDigitalWedge(ctx, l, singleY, isLeft ? 1 : -1, s);
-                                }
+                                ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, railStartL); ctx.bezierCurveTo(l*0.4, railStartL, l*0.6, railEndL, l, railEndL); ctx.stroke();
+                                ctx.beginPath(); ctx.moveTo(0, railStartR); ctx.bezierCurveTo(l*0.4, railStartR, l*0.6, railEndR, l, railEndR); ctx.stroke();
                             } else if (p.subtype === 'full_chicane') {
                                 // MACRO SÓLIDA GRAN CHICANE PT74: RECORRIDO DIAGONAL EXACTO
                                 const sl = l / 3;
@@ -1810,91 +1656,12 @@
                                 ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1;
                                 ctx.beginPath(); drawChicanePath(ctx, rl0, rl1, rl2, rl3); ctx.stroke();
                                 ctx.beginPath(); drawChicanePath(ctx, rr0, rr1, rr2, rr3); ctx.stroke();
-                            } else if (p.subtype === 'digital_full_chicane') {
-                                const sl = l / 3;
-                                const c1 = hw * 0.2;
-                                const narrowHW = hw * 0.55;
-
-                                const drawPlasticPath = (ctx, startY, mid1Y, mid2Y, endY) => {
-                                    ctx.moveTo(0, startY);
-                                    ctx.bezierCurveTo(sl*0.4, startY, sl*0.6, mid1Y, sl, mid1Y);
-                                    ctx.bezierCurveTo(sl + sl*0.4, mid1Y, sl + sl*0.6, mid2Y, 2*sl, mid2Y);
-                                    ctx.bezierCurveTo(2*sl + sl*0.4, mid2Y, 2*sl + sl*0.6, endY, l, endY);
-                                };
-
-                                ctx.fillStyle = brand.trackColor;
-                                ctx.beginPath();
-                                drawPlasticPath(ctx, -hw, c1 - narrowHW, -c1 - narrowHW, -hw);
-                                ctx.lineTo(l, hw);
-                                ctx.bezierCurveTo(2*sl + sl*0.6, hw, 2*sl + sl*0.4, -c1 + narrowHW, 2*sl, -c1 + narrowHW);
-                                ctx.bezierCurveTo(sl + sl*0.6, -c1 + narrowHW, sl + sl*0.4, c1 + narrowHW, sl, c1 + narrowHW);
-                                ctx.bezierCurveTo(sl*0.6, c1 + narrowHW, sl*0.4, hw, 0, hw);
-                                ctx.closePath();
-                                ctx.fill();
-
-                                ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
-                                ctx.beginPath(); drawPlasticPath(ctx, -hw, c1 - narrowHW, -c1 - narrowHW, -hw); ctx.stroke();
-                                ctx.beginPath(); ctx.moveTo(l, hw); ctx.bezierCurveTo(2*sl + sl*0.6, hw, 2*sl + sl*0.4, -c1 + narrowHW, 2*sl, -c1 + narrowHW); ctx.bezierCurveTo(sl + sl*0.6, -c1 + narrowHW, sl + sl*0.4, c1 + narrowHW, sl, c1 + narrowHW); ctx.bezierCurveTo(sl*0.6, c1 + narrowHW, sl*0.4, hw, 0, hw); ctx.stroke();
-
-                                const drawSlotPath1 = (ctx) => {
-                                    ctx.moveTo(0, -laneOff);
-                                    ctx.bezierCurveTo(sl*0.4, -laneOff, sl*0.6, c1, sl, c1);
-                                    ctx.bezierCurveTo(sl + sl*0.4, c1, sl + sl*0.6, -c1, 2*sl, -c1);
-                                    ctx.bezierCurveTo(2*sl + sl*0.4, -c1, 2*sl + sl*0.6, -laneOff, l, -laneOff);
-                                };
-                                const drawSlotPath2 = (ctx) => {
-                                    ctx.moveTo(0, laneOff);
-                                    ctx.bezierCurveTo(sl*0.4, laneOff, sl*0.6, c1, sl, c1);
-                                    ctx.bezierCurveTo(sl + sl*0.4, c1, sl + sl*0.6, -c1, 2*sl, -c1);
-                                    ctx.bezierCurveTo(2*sl + sl*0.4, -c1, 2*sl + sl*0.6, laneOff, l, laneOff);
-                                };
-
-                                ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3;
-                                ctx.beginPath(); drawSlotPath1(ctx); ctx.stroke();
-                                ctx.beginPath(); drawSlotPath2(ctx); ctx.stroke();
-
-                                ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1;
-                                ctx.beginPath(); drawSlotPath1(ctx); ctx.stroke();
-                                ctx.beginPath(); drawSlotPath2(ctx); ctx.stroke();
-                                
-                                DrawEngine2D.drawDigitalWedge(ctx, l, -c1, 1, s);
-                            } else if (p.subtype === 'single_lane_1' || p.subtype === 'single_lane_2') {
+                            } else if (p.subtype && p.subtype.includes('single_lane')) {
                                 const slWidth = hw;
                                 const laneColor = p.subtype === 'single_lane_1' ? '#ef4444' : '#3b82f6';
-                                const yTop = p.subtype === 'single_lane_1' ? -hw : 0;
-                                
-                                ctx.fillStyle = brand.trackColor; ctx.fillRect(0, yTop, l, slWidth); 
-                                ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(0, yTop, l, slWidth);
-                                
-                                const railY = p.subtype === 'single_lane_1' ? -laneOff : laneOff;
-                                ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, railY); ctx.lineTo(l, railY); ctx.stroke();
-                                ctx.strokeStyle = laneColor; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, railY); ctx.lineTo(l, railY); ctx.stroke();
-                            } else if (p.subtype === 'single_lane_s') {
-                                const isLeft = p.direction !== 'right';
-                                const startYTop = isLeft ? -hw : 0;
-                                const startYBot = isLeft ? 0 : hw;
-                                const endYTop = isLeft ? 0 : -hw;
-                                const endYBot = isLeft ? hw : 0;
-                                const startRailY = isLeft ? -laneOff : laneOff;
-                                const endRailY = isLeft ? laneOff : -laneOff;
-                                
-                                ctx.fillStyle = brand.trackColor; 
-                                ctx.beginPath();
-                                ctx.moveTo(0, startYTop);
-                                ctx.bezierCurveTo(l*0.4, startYTop, l*0.6, endYTop, l, endYTop);
-                                ctx.lineTo(l, endYBot);
-                                ctx.bezierCurveTo(l*0.6, endYBot, l*0.4, startYBot, 0, startYBot);
-                                ctx.closePath();
-                                ctx.fill();
-                                
-                                ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
-                                ctx.beginPath(); ctx.moveTo(0, startYTop); ctx.bezierCurveTo(l*0.4, startYTop, l*0.6, endYTop, l, endYTop); ctx.stroke();
-                                ctx.beginPath(); ctx.moveTo(0, startYBot); ctx.bezierCurveTo(l*0.4, startYBot, l*0.6, endYBot, l, endYBot); ctx.stroke();
-                                
-                                ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3;
-                                ctx.beginPath(); ctx.moveTo(0, startRailY); ctx.bezierCurveTo(l*0.4, startRailY, l*0.6, endRailY, l, endRailY); ctx.stroke();
-                                ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1;
-                                ctx.beginPath(); ctx.moveTo(0, startRailY); ctx.bezierCurveTo(l*0.4, startRailY, l*0.6, endRailY, l, endRailY); ctx.stroke();
+                                ctx.fillStyle = brand.trackColor; ctx.fillRect(0, -slWidth/2, l, slWidth); ctx.strokeStyle = '#222'; ctx.strokeRect(0, -slWidth/2, l, slWidth);
+                                ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(l, 0); ctx.stroke();
+                                ctx.strokeStyle = laneColor; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(l, 0); ctx.stroke();
                             } else if (p.subtype === 'jump_up' || p.subtype === 'jump_down') {
                                 ctx.fillStyle = brand.trackColor; ctx.fillRect(0, -hw, l, w); ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(0, -hw, l, w); drawCarreraCenterLineStraight(); DrawEngine2D.drawRails(ctx, l, laneOff, brand);
                                 ctx.fillStyle = '#facc15'; ctx.beginPath();
@@ -2033,50 +1800,9 @@
                                 ctx.fillStyle = brand.trackColor; ctx.fillRect(0, -hw, l, w); ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(0, -hw, l, w); drawCarreraCenterLineStraight(); if (p.subtype === 'analog_connect') { DrawEngine2D.drawRails(ctx, l, laneOff, brand); const boxW = l * 0.3; const boxH = w * 0.3; const boxX = (l - boxW) / 2; const boxY = hw; ctx.fillStyle = brand.connectionBoxColor || '#ef4444'; ctx.fillRect(boxX, boxY, boxW, boxH); ctx.strokeStyle = '#222'; ctx.strokeRect(boxX, boxY, boxW, boxH); ctx.fillStyle = '#ffffff'; ctx.font = `bold ${8 * (s/5)}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(brand.name, l/2, boxY + boxH/2); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.setLineDash([10, 10]); ctx.beginPath(); ctx.moveTo(l/2, -hw); ctx.lineTo(l/2, hw); ctx.stroke(); ctx.setLineDash([]); } else if (p.subtype === 'connection') { DrawEngine2D.drawRails(ctx, l, laneOff, brand); const boxW = l * 0.25; const boxH = w * 0.4; const boxX = (l - boxW) / 2; const boxY = hw; ctx.fillStyle = '#111'; ctx.fillRect(boxX, boxY, boxW, boxH); ctx.strokeStyle = '#333'; ctx.strokeRect(boxX, boxY, boxW, boxH); ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(l/2, boxY + boxH/2, boxH*0.3, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; const cx = l/2, cy = boxY + boxH/2, r = boxH*0.15; ctx.beginPath(); ctx.moveTo(cx-r/2, cy-r); ctx.lineTo(cx+r/2, cy); ctx.lineTo(cx-r/2, cy+r); ctx.moveTo(cx+r/2, cy-r); ctx.lineTo(cx-r/2, cy+r); ctx.moveTo(cx, cy-r*1.2); ctx.lineTo(cx, cy+r*1.2); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.font = `bold ${6 * (s/5)}px Arial`; ctx.textAlign = 'center'; ctx.fillText("CONEXIÓN", l/2, boxY + boxH * 0.85); } else { DrawEngine2D.drawRails(ctx, l, laneOff, brand); }
                             }
                        } else if (p.type === 'pit_entry') {
-                            const pitY = laneOff + laneSpacing; ctx.fillStyle = brand.trackColor; ctx.beginPath(); ctx.moveTo(0, -hw); ctx.lineTo(l, -hw); ctx.lineTo(l, hw); ctx.lineTo(l, pitY + (w/2 * 0.6)); ctx.bezierCurveTo(l*0.5, pitY, l*0.3, hw, 0, hw); ctx.fill(); ctx.strokeStyle = '#222'; ctx.stroke(); drawCarreraCenterLineStraight(); DrawEngine2D.drawHazardZone(ctx, (c) => { c.beginPath(); c.moveTo(l, hw); c.lineTo(l, pitY + (w/2 * 0.6)); c.bezierCurveTo(l*0.5, pitY, l*0.3, hw, 0, hw); c.closePath(); }, s); DrawEngine2D.drawRails(ctx, l, laneOff, brand); ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, laneOff); ctx.bezierCurveTo(l*0.3, laneOff, l*0.6, pitY, l, pitY); ctx.stroke(); ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, laneOff); ctx.bezierCurveTo(l*0.3, laneOff, l*0.6, pitY, l, pitY); ctx.stroke(); DrawEngine2D.drawDigitalWedge(ctx, l, laneOff, 1, s);
+                            const pitY = laneOff + laneSpacing; ctx.fillStyle = brand.trackColor; ctx.beginPath(); ctx.moveTo(0, -hw); ctx.lineTo(l, -hw); ctx.lineTo(l, hw); ctx.lineTo(l, pitY + (w/2 * 0.6)); ctx.bezierCurveTo(l*0.5, pitY, l*0.3, hw, 0, hw); ctx.fill(); ctx.strokeStyle = '#222'; ctx.stroke(); drawCarreraCenterLineStraight(); DrawEngine2D.drawHazardZone(ctx, (c) => { c.beginPath(); c.moveTo(l, hw); c.lineTo(l, pitY + (w/2 * 0.6)); c.bezierCurveTo(l*0.5, pitY, l*0.3, hw, 0, hw); c.closePath(); }, s); DrawEngine2D.drawRails(ctx, l, laneOff, brand); ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, laneOff); ctx.bezierCurveTo(l*0.3, laneOff, l*0.6, pitY, l, pitY); ctx.stroke(); ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, laneOff); ctx.bezierCurveTo(l*0.3, laneOff, l*0.6, pitY, l, pitY); ctx.stroke(); ctx.fillStyle = '#333'; ctx.beginPath(); ctx.moveTo(l*0.2, laneOff); ctx.lineTo(l*0.25, laneOff+5); ctx.lineTo(l*0.25, laneOff-5); ctx.fill();
                        } else if (p.type === 'pit_exit') {
                             const pitY = laneOff + laneSpacing; const pitBottom = pitY + (w/2 * 0.6); ctx.fillStyle = brand.trackColor; ctx.beginPath(); ctx.moveTo(0, -hw); ctx.lineTo(l, -hw); ctx.lineTo(l, hw); ctx.bezierCurveTo(l*0.7, hw, l*0.5, pitY, 0, pitBottom); ctx.lineTo(0, -hw); ctx.fill(); ctx.strokeStyle = '#222'; ctx.stroke(); drawCarreraCenterLineStraight(); DrawEngine2D.drawHazardZone(ctx, (c) => { c.beginPath(); c.moveTo(0, hw); c.lineTo(l, hw); c.bezierCurveTo(l*0.7, hw, l*0.5, pitY, 0, pitBottom); c.closePath(); }, s); DrawEngine2D.drawRails(ctx, l, laneOff, brand); ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, pitY); ctx.bezierCurveTo(l*0.4, pitY, l*0.7, laneOff, l, laneOff); ctx.stroke(); ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, pitY); ctx.bezierCurveTo(l*0.4, pitY, l*0.7, laneOff, l, laneOff); ctx.stroke();
-                       } else if (p.type === 'branch_entry') {
-                            const pitY = laneOff + laneSpacing; 
-                            ctx.fillStyle = brand.trackColor; 
-                            ctx.beginPath(); 
-                            ctx.moveTo(0, -hw); 
-                            ctx.lineTo(l, -hw); 
-                            ctx.lineTo(l, 0); 
-                            ctx.bezierCurveTo(l*0.7, 0, l*0.5, pitY - hw/2, l, pitY - hw/2); 
-                            ctx.lineTo(l, pitY + hw/2); 
-                            ctx.bezierCurveTo(l*0.6, pitY + hw/2, l*0.3, hw, 0, hw); 
-                            ctx.closePath(); 
-                            ctx.fill(); 
-                            ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke(); 
-                            drawCarreraCenterLineStraight(); 
-                            ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; 
-                            ctx.beginPath(); ctx.moveTo(0, -laneOff); ctx.lineTo(l, -laneOff); ctx.stroke(); 
-                            ctx.beginPath(); ctx.moveTo(0, laneOff); ctx.bezierCurveTo(l*0.4, laneOff, l*0.6, pitY, l, pitY); ctx.stroke(); 
-                            ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; 
-                            ctx.beginPath(); ctx.moveTo(0, -laneOff); ctx.lineTo(l, -laneOff); ctx.stroke(); 
-                            ctx.beginPath(); ctx.moveTo(0, laneOff); ctx.bezierCurveTo(l*0.4, laneOff, l*0.6, pitY, l, pitY); ctx.stroke(); 
-                            DrawEngine2D.drawDigitalWedge(ctx, l, laneOff, 1, s);
-                       } else if (p.type === 'branch_exit') {
-                            const pitY = laneOff + laneSpacing; 
-                            ctx.fillStyle = brand.trackColor; 
-                            ctx.beginPath(); 
-                            ctx.moveTo(0, -hw); 
-                            ctx.lineTo(l, -hw); 
-                            ctx.lineTo(l, hw); 
-                            ctx.bezierCurveTo(l*0.7, hw, l*0.4, pitY + hw/2, 0, pitY + hw/2); 
-                            ctx.lineTo(0, pitY - hw/2); 
-                            ctx.bezierCurveTo(l*0.6, pitY - hw/2, l*0.4, 0, 0, 0); 
-                            ctx.closePath(); 
-                            ctx.fill(); 
-                            ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke(); 
-                            drawCarreraCenterLineStraight(); 
-                            ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; 
-                            ctx.beginPath(); ctx.moveTo(0, -laneOff); ctx.lineTo(l, -laneOff); ctx.stroke(); 
-                            ctx.beginPath(); ctx.moveTo(0, pitY); ctx.bezierCurveTo(l*0.4, pitY, l*0.6, laneOff, l, laneOff); ctx.stroke(); 
-                            ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; 
-                            ctx.beginPath(); ctx.moveTo(0, -laneOff); ctx.lineTo(l, -laneOff); ctx.stroke(); 
-                            ctx.beginPath(); ctx.moveTo(0, pitY); ctx.bezierCurveTo(l*0.4, pitY, l*0.6, laneOff, l, laneOff); ctx.stroke(); 
                        } else if (p.type === 'rotonda') {
                                const r = p.radius * s; const straightLen = 1.0 * s; const loopRadius = r; const loopCenterX = r * 1.3; const singleTrackWidth = (brand.width / 2) * s; 
                                ctx.fillStyle = brand.trackColor; ctx.fillRect(0, -hw, straightLen, w); ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(0, -hw, straightLen, w);
@@ -2091,33 +1817,33 @@
                                ctx.beginPath(); ctx.moveTo(0, 0); const innerCtrl = loopCenterX * 0.35; ctx.bezierCurveTo(innerCtrl, 0, innerCtrl, -innerRadius, loopCenterX, -innerRadius); ctx.arc(loopCenterX, 0, innerRadius, -Math.PI/2, Math.PI/2, false); ctx.bezierCurveTo(innerCtrl, innerRadius, innerCtrl, 0, 0, 0); ctx.closePath(); ctx.clip();
                                ctx.fillStyle = '#64748b'; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
                                const defineLoopPath = (ctx) => { ctx.beginPath(); ctx.moveTo(0, -laneOff); const controlX = loopCenterX * 0.4; ctx.bezierCurveTo(controlX, -laneOff, controlX, -loopRadius, loopCenterX, -loopRadius); ctx.arc(loopCenterX, 0, loopRadius, -Math.PI/2, Math.PI/2, false); ctx.bezierCurveTo(controlX, loopRadius, controlX, laneOff, 0, laneOff); };
-                               ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; defineLoopPath(ctx); ctx.stroke(); ctx.restore(); 
+                               ctx.lineCap = 'butt'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#222'; ctx.lineWidth = singleTrackWidth + (2 * s); defineLoopPath(ctx); ctx.stroke();
+                               ctx.strokeStyle = brand.trackColor; ctx.lineWidth = singleTrackWidth; defineLoopPath(ctx); ctx.stroke();
+                               ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = `bold ${5 * (s/5)}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("RALLY", loopCenterX, 0); ctx.restore();
+                               ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; ctx.setLineDash([]); defineLoopPath(ctx); ctx.stroke(); ctx.strokeStyle = brand.slotColor; ctx.lineWidth = 1; defineLoopPath(ctx); ctx.stroke(); ctx.restore(); 
                        } else if (p.type === 'curve') {
                            const isSingle1 = p.subtype === 'single_lane_1';
                            const isSingle2 = p.subtype === 'single_lane_2';
                            const isSingle = isSingle1 || isSingle2;
                            
+                           let effectiveTrueR = trueR;
+                           if (isSingle1) effectiveTrueR = isLeft ? trueR - laneOff : trueR + laneOff;
+                           else if (isSingle2) effectiveTrueR = isLeft ? trueR + laneOff : trueR - laneOff;
+
                            if (isSingle) {
                                const slWidth = hw;
                                const laneColor = isSingle1 ? '#ef4444' : '#3b82f6';
-                               
-                               const currentLaneOff = isSingle1 ? -laneOff : laneOff;
-                               const rRail = isLeft ? (isSingle1 ? trueR - laneOff : trueR + laneOff) : (isSingle1 ? trueR + laneOff : trueR - laneOff);
-                               const rPlasticInner = isLeft ? (isSingle1 ? trueR - hw : trueR) : (isSingle1 ? trueR : trueR - hw);
-                               const rPlasticOuter = isLeft ? (isSingle1 ? trueR : trueR + hw) : (isSingle1 ? trueR + hw : trueR);
-                               const rPlasticCenter = (rPlasticInner + rPlasticOuter) / 2;
-
                                ctx.strokeStyle = brand.trackColor; ctx.lineWidth = slWidth; ctx.beginPath(); 
-                               ctx.arc(0, isLeft ? -trueR : trueR, Math.max(0.1, rPlasticCenter), startA, startA + sweep, isLeft); ctx.stroke();
+                               ctx.arc(0, isLeft ? -effectiveTrueR : effectiveTrueR, Math.max(0.1, effectiveTrueR), startA, startA + sweep, isLeft); ctx.stroke();
                                
                                ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
-                               ctx.beginPath(); ctx.arc(0, isLeft ? -trueR : trueR, Math.max(0.1, rPlasticInner), startA, startA + sweep, isLeft); ctx.stroke();
-                               ctx.beginPath(); ctx.arc(0, isLeft ? -trueR : trueR, Math.max(0.1, rPlasticOuter), startA, startA + sweep, isLeft); ctx.stroke();
+                               ctx.beginPath(); ctx.arc(0, isLeft ? -effectiveTrueR : effectiveTrueR, Math.max(0.1, effectiveTrueR - slWidth/2), startA, startA + sweep, isLeft); ctx.stroke();
+                               ctx.beginPath(); ctx.arc(0, isLeft ? -effectiveTrueR : effectiveTrueR, Math.max(0.1, effectiveTrueR + slWidth/2), startA, startA + sweep, isLeft); ctx.stroke();
                                
                                ctx.strokeStyle = brand.railColor; ctx.lineWidth = 3; 
-                               ctx.beginPath(); ctx.arc(0, isLeft ? -trueR : trueR, Math.max(0.1, rRail), startA, startA + sweep, isLeft); ctx.stroke();
+                               ctx.beginPath(); ctx.arc(0, isLeft ? -effectiveTrueR : effectiveTrueR, Math.max(0.1, effectiveTrueR), startA, startA + sweep, isLeft); ctx.stroke();
                                ctx.strokeStyle = laneColor; ctx.lineWidth = 1; 
-                               ctx.beginPath(); ctx.arc(0, isLeft ? -trueR : trueR, Math.max(0.1, rRail), startA, startA + sweep, isLeft); ctx.stroke();
+                               ctx.beginPath(); ctx.arc(0, isLeft ? -effectiveTrueR : effectiveTrueR, Math.max(0.1, effectiveTrueR), startA, startA + sweep, isLeft); ctx.stroke();
                            } else if (p.subtype === 'crossing_curve') {
                                const cx = 0; const cy = isLeft ? -trueR : trueR;
                                ctx.strokeStyle = brand.trackColor; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(cx, cy, Math.max(0.1, trueR), startA, startA + sweep, isLeft); ctx.stroke(); drawCarreraCenterLineCurve(cx, cy);
@@ -2246,8 +1972,8 @@
                     }
                     
                     // --- FLECHAS DE DIRECCIÓN DE CARRIL Y CAMINO ---
-                    if (!p.type.includes('pit') && !p.type.includes('branch') && p.type !== 'rotonda' && p.subtype !== 'rotonda' && p.subtype !== 'rotonda_connect') {
-                        const isSinglePiece = p.subtype === 'single_lane_1' || p.subtype === 'single_lane_2';
+                    if (!p.type.includes('pit') && p.type !== 'rotonda' && p.subtype !== 'rotonda' && p.subtype !== 'rotonda_connect') {
+                        const isSinglePiece = p.subtype && p.subtype.includes('single_lane');
                         
                         const drawDirectionArrow = (cx, cy, ang, customColor) => {
                             ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
@@ -2258,53 +1984,15 @@
 
                         const colorL1 = 'rgba(239, 68, 68, 0.8)'; // Rojo translúcido (Carril 1)
                         const colorL2 = 'rgba(59, 130, 246, 0.8)'; // Azul translúcido (Carril 2)
-                        const colorShared = 'rgba(168, 85, 247, 0.8)'; // Morado translúcido (Carril Compartido Digital)
 
                         if (p.type === 'straight') {
                             const arrowX = l / 2;
                             if (isSinglePiece) {
-                                const isDigital = ['SCX_ADVANCE', 'CARRERA', 'SCALEXTRIC_UK'].includes(p.brandKey);
-                                const arrColor = isDigital ? colorShared : (p.subtype === 'single_lane_1' ? colorL1 : colorL2);
+                                const arrColor = p.subtype === 'single_lane_1' ? colorL1 : colorL2;
                                 drawDirectionArrow(arrowX, 0, 0, arrColor);
                             } else if (p.subtype === 'crossing') {
                                 drawDirectionArrow(arrowX, 0, Math.atan2(laneOff*2, l), colorL2);
                                 drawDirectionArrow(arrowX, 0, Math.atan2(-laneOff*2, l), colorL1);
-                            } else if (p.subtype === 'y_merge_in') {
-                                const isLeft = p.direction !== 'right';
-                                const startY = isLeft ? -laneOff : laneOff;
-                                drawDirectionArrow(l * 0.2, startY, 0, colorShared);
-                                drawDirectionArrow(l * 0.8, -laneOff, 0, colorL1);
-                                drawDirectionArrow(l * 0.8, laneOff, 0, colorL2);
-                            } else if (p.subtype === 'y_merge_out') {
-                                const isLeft = p.direction !== 'right';
-                                const endY = isLeft ? -laneOff : laneOff;
-                                drawDirectionArrow(l * 0.2, -laneOff, 0, colorL1);
-                                drawDirectionArrow(l * 0.2, laneOff, 0, colorL2);
-                                drawDirectionArrow(l * 0.8, endY, 0, colorShared);
-                            } else if (p.subtype === 'digital_chicane_entry') {
-                                const c1 = hw * 0.2;
-                                drawDirectionArrow(l * 0.2, -laneOff, 0, colorL1);
-                                drawDirectionArrow(l * 0.2, laneOff, 0, colorL2);
-                                drawDirectionArrow(l * 0.8, c1, 0, colorShared);
-                            } else if (p.subtype === 'digital_chicane_middle') {
-                                drawDirectionArrow(l * 0.5, 0, 0, colorShared);
-                            } else if (p.subtype === 'digital_chicane_exit') {
-                                const c1 = hw * 0.2;
-                                drawDirectionArrow(l * 0.2, -c1, 0, colorShared);
-                                drawDirectionArrow(l * 0.8, -laneOff, 0, colorL1);
-                                drawDirectionArrow(l * 0.8, laneOff, 0, colorL2);
-                            } else if (p.subtype === 'single_lane_s') {
-                                const isLeft = p.direction !== 'right';
-                                const startY = isLeft ? -laneOff : laneOff;
-                                const endY = isLeft ? laneOff : -laneOff;
-                                const angle = Math.atan2(endY - startY, l * 0.4);
-                                drawDirectionArrow(l * 0.5, 0, angle, colorShared);
-                            } else if (p.subtype === 'digital_full_chicane') {
-                                drawDirectionArrow(l * 0.1, -laneOff, 0, colorL1);
-                                drawDirectionArrow(l * 0.1, laneOff, 0, colorL2);
-                                drawDirectionArrow(l * 0.5, 0, 0, colorShared);
-                                drawDirectionArrow(l * 0.9, -laneOff, 0, colorL1);
-                                drawDirectionArrow(l * 0.9, laneOff, 0, colorL2);
                             } else {
                                 drawDirectionArrow(arrowX, -laneOff, 0, colorL1);
                                 drawDirectionArrow(arrowX, laneOff, 0, colorL2);
@@ -2317,8 +2005,7 @@
                             const cyCenter = isLeft ? -trueR : trueR;
 
                             if (isSinglePiece) {
-                                const isDigital = ['SCX_ADVANCE', 'CARRERA', 'SCALEXTRIC_UK'].includes(p.brandKey);
-                                const arrColor = isDigital ? colorShared : (p.subtype === 'single_lane_1' ? colorL1 : colorL2);
+                                const arrColor = p.subtype === 'single_lane_1' ? colorL1 : colorL2;
                                 const er = p.subtype === 'single_lane_1' ? (isLeft ? trueR - laneOff : trueR + laneOff) : (isLeft ? trueR + laneOff : trueR - laneOff);
                                 drawDirectionArrow(dirX * er, cyCenter + dirY * er, tangent, arrColor);
                             } else {
@@ -2523,7 +2210,7 @@
                 chat: { title: 'CHAT DE PILOTOS', placeholder: 'Escribe un mensaje...', loginReq: 'Inicia sesión o verifica tu correo.', empty: 'No hay mensajes aún. ¡Sé el primero en saludar!' },
                 auth: { loginBtn: 'INICIAR SESIÓN', logoutBtn: 'CERRAR SESIÓN', titleLogin: 'ACCESO PILOTOS', titleReg: 'NUEVA LICENCIA', email: 'Correo Electrónico', pass: 'Contraseña', name: 'Alias de Piloto', submitLogin: 'ENTRAR A BOXES', submitReg: 'OBTENER LICENCIA', switchReg: '¿No tienes cuenta? Regístrate', switchLogin: '¿Ya tienes cuenta? Entra aquí', reqLogin: 'Debes iniciar sesión para publicar en la comunidad.', forgotPass: '¿Olvidaste tu contraseña?', resetMsg: 'Te hemos enviado un enlace para recuperar tu contraseña.', verifyMsg: '¡Bienvenido a Track Telemetry! Te hemos enviado un enlace. REVISA TU CARPETA DE SPAM O CORREO NO DESEADO para verificar tu cuenta.', enterEmail: 'Introduce tu correo arriba para recuperar la contraseña.', reqVerify: '⛔ ACCESO DENEGADO\n\nPara mantener una comunidad sana y libre de bots, debes verificar tu correo electrónico.\n\nPor favor, REVISA TU BANDEJA DE ENTRADA O LA CARPETA DE SPAM para activar tu cuenta antes de acceder.', verifyCheck: 'ACTUALIZAR ESTADO' },
                 alerts: { confirmNew: '¿Estás seguro de que quieres crear un circuito nuevo? Se borrará el diseño actual.', valid: 'El archivo seleccionado no es un circuito válido.', github: 'Error al descargar el circuito desde GitHub.', json: 'El archivo no parece ser un circuito válido.', read: 'Error al leer el archivo JSON.', sim: 'No se pudo iniciar la simulación. Comprueba las cookies/almacenamiento.', simMulti: 'El modo simulación 3D está optimizado para 2 carriles y solo mostrará tu trazado principal. Para visualizar circuitos de 4, 6 u 8 carriles al completo, utiliza el botón "CLUBS DE SLOT".', deco: 'No se pudo iniciar la decoración. Comprueba las cookies/almacenamiento.', pieces: '¡Añade pistas antes de generar el informe o publicar!', emptyGame: '¡Dibuja un circuito en el tablero antes de abrir el juego!', pdfLib: 'Error: Librería PDF no cargada.', pdfError: 'Error al generar el PDF. Revisa la consola.', decoMulti: 'El modo decoración actual está optimizado para 2 carriles. Solo se exportará tu trazado principal.', replaceMulti: 'Para sustituir pistas en modo Multi-Carril, elimina primero los carriles extra usando Deshacer.', welcomeEngine: '¡Bienvenido al nuevo Motor Absoluto!\n\nAhora puedes coger cualquier pieza, moverla, rotarla con el tirador azul y acercarla a otras pistas para que se peguen mágicamente.\n\nTus circuitos viejos se han migrado automáticamente a este nuevo sistema.' },
-                'Pack 3: Horquilla R1 90°': 'Pack 3: Horquilla R1 90°', 'Recta Std 34.5cm': 'Recta Std 34.5cm', 'Tercio 11.5cm': 'Tercio 11.5cm', 'Cuarto 8.6cm': 'Cuarto 8.6cm', 'Conexión Analog': 'Conexión Analog', 'Cambio X (69)': 'Cambio X (69)', 'Cambio Izq (69)': 'Cambio Izq (69)', 'Cambio Der (69)': 'Cambio Der (69)', 'Entrada Pit Carrera': 'Entrada Pit Carrera', 'Recta Pit 34.5': 'Recta Pit 34.5', 'Salida Pit Carrera': 'Salida Pit Carrera', 'R1 (60°)': 'R1 (60°)', 'R1 (30°)': 'R1 (30°)', 'R2 (30°)': 'R2 (30°)', 'R3 (30°)': 'R3 (30°)', 'R4 (15°)': 'R4 (15°)', 'Cambio Curva In': 'Cambio Curva In', 'Cambio Curva Out': 'Cambio Curva Out', 'Recta Cambio In': 'Recta Cambio In', 'Curva Cambio In': 'Curva Cambio In', 'Recta Cambio Out': 'Recta Cambio Out', 'Curva Cambio Out': 'Curva Cambio Out', 'Gran Chicane PT74': 'Gran Chicane PT74', 'Chicane In (PT74)': 'Chicane In (PT74)', 'Chicane Med (PT74)': 'Chicane Med (PT74)', 'Chicane Out (PT74)': 'Chicane Out (PT74)', 'Chicane Deslizante': 'Chicane Deslizante', 'Rotonda Inicio': 'Rotonda Inicio', 'Rotonda Final': 'Rotonda Final', 'Gran Chicane': 'Gran Chicane', 'Chicane In (360)': 'Chicane In (360)', 'Chicane Med (360)': 'Chicane Med (360)', 'Chicane Out (360)': 'Chicane Out (360)', 'Desvío Entrada': 'Desvío Entrada', 'Desvío Salida': 'Desvío Salida'
+                'Pack 3: Horquilla R1 90°': 'Pack 3: Horquilla R1 90°', 'Recta Std 34.5cm': 'Recta Std 34.5cm', 'Tercio 11.5cm': 'Tercio 11.5cm', 'Cuarto 8.6cm': 'Cuarto 8.6cm', 'Conexión Analog': 'Conexión Analog', 'Cambio X (69)': 'Cambio X (69)', 'Cambio Izq (69)': 'Cambio Izq (69)', 'Cambio Der (69)': 'Cambio Der (69)', 'Entrada Pit Carrera': 'Entrada Pit Carrera', 'Recta Pit 34.5': 'Recta Pit 34.5', 'Salida Pit Carrera': 'Salida Pit Carrera', 'R1 (60°)': 'R1 (60°)', 'R1 (30°)': 'R1 (30°)', 'R2 (30°)': 'R2 (30°)', 'R3 (30°)': 'R3 (30°)', 'R4 (15°)': 'R4 (15°)', 'Cambio Curva In': 'Cambio Curva In', 'Cambio Curva Out': 'Cambio Curva Out', 'Recta Cambio In': 'Recta Cambio In', 'Curva Cambio In': 'Curva Cambio In', 'Recta Cambio Out': 'Recta Cambio Out', 'Curva Cambio Out': 'Curva Cambio Out', 'Gran Chicane PT74': 'Gran Chicane PT74', 'Chicane In (PT74)': 'Chicane In (PT74)', 'Chicane Med (PT74)': 'Chicane Med (PT74)', 'Chicane Out (PT74)': 'Chicane Out (PT74)', 'Chicane Deslizante': 'Chicane Deslizante', 'Rotonda Inicio': 'Rotonda Inicio', 'Rotonda Final': 'Rotonda Final', 'Gran Chicane': 'Gran Chicane', 'Chicane In (360)': 'Chicane In (360)', 'Chicane Med (360)': 'Chicane Med (360)', 'Chicane Out (360)': 'Chicane Out (360)'
             },
             en: {
                 cat: { 'Rectas': 'Straights', 'Curvas': 'Curves', 'Digital': 'Digital', 'Boxes': 'Pit Box', 'RALLY': 'RALLY', 'Kits': 'Kits', 'Cruces': 'Crossings' },
@@ -2541,7 +2228,7 @@
                 chat: { title: 'RACERS CHAT', placeholder: 'Type a message...', loginReq: 'Log in or verify your email.', empty: 'No messages yet. Be the first to say hi!' },
                 auth: { loginBtn: 'LOGIN', logoutBtn: 'LOGOUT', titleLogin: 'RACER ACCESS', titleReg: 'NEW LICENSE', email: 'Email', pass: 'Password', name: 'Racer Alias', submitLogin: 'ENTER PITLANE', submitReg: 'GET LICENSE', switchReg: 'No account? Register', switchLogin: 'Already have an account? Login', reqLogin: 'You must log in to publish tracks.', forgotPass: 'Forgot your password?', resetMsg: 'We have sent you a password recovery link.', verifyMsg: 'Welcome to Track Telemetry! We sent you a link. PLEASE CHECK YOUR SPAM OR JUNK FOLDER to verify your account.', enterEmail: 'Enter your email above to recover your password.', reqVerify: '⛔ ACCESS DENIED\n\nTo maintain a healthy and bot-free community, you must verify your email.\n\nPlease CHECK YOUR INBOX OR SPAM FOLDER to activate your account before entering.', verifyCheck: 'REFRESH STATUS' },
                 alerts: { confirmNew: 'Are you sure you want to create a new circuit? Current design will be lost.', valid: 'Selected file is not a valid circuit.', github: 'Error downloading circuit from GitHub.', json: 'File does not appear to be a valid circuit.', read: 'Error reading JSON file.', sim: 'Could not start simulation. Check cookies/storage.', simMulti: 'The 3D simulation mode is optimized for 2 lanes and will only show your main track. To view full 4, 6, or 8 lane circuits, use the "SLOT CLUBS" button.', deco: 'Could not start decoration. Check cookies/storage.', pieces: 'Add tracks before generating report!', emptyGame: 'Draw a track on the board before playing!', pdfLib: 'Error: PDF library not loaded.', pdfError: 'Error generating PDF. Check console.', decoMulti: 'The decoration mode is currently optimized for 2 lanes. Only your main track will be exported.', replaceMulti: 'To replace tracks in Multi-Lane mode, remove the extra lanes first using Undo.', welcomeEngine: '¡Bienvenido al nuevo Motor Absoluto!\n\nAhora puedes coger cualquier pieza, moverla, rotarla con el tirador azul y acercarla a otras pistas para que se peguen mágicamente.\n\nTus circuitos viejos se han migrado automáticamente a este nuevo sistema.' },
-                'Pack 3: Horquilla R1 90°': 'Pack 3: Hairpin Curve R1 90°', 'Recta Std 34.5cm': 'Std Straight 34.5cm', 'Tercio 11.5cm': '1/3 Straight 11.5cm', 'Cuarto 8.6cm': '1/4 Straight 8.6cm', 'Conexión Analog': 'Analog Powerbase', 'Cambio X (69)': 'Lane Change X (69)', 'Cambio Izq (69)': 'Left Lane Change (69)', 'Cambio Der (69)': 'Right Lane Change (69)', 'Entrada Pit Carrera': 'Pit Entry', 'Recta Pit 34.5': 'Pit Straight 34.5', 'Salida Pit Carrera': 'Pit Exit', 'R1 (60°)': 'R1 (60°)', 'R1 (30°)': 'R1 (30°)', 'R2 (30°)': 'R2 (30°)', 'R3 (30°)': 'R3 (30°)', 'R4 (15°)': 'R4 (15°)', 'Cambio Curva In': 'Curve Change In', 'Cambio Curva Out': 'Curve Change Out', 'Recta Cambio In': 'Straight Change In', 'Curva Cambio In': 'Arc Change In', 'Recta Cambio Out': 'Straight Change Out', 'Curva Cambio Out': 'Arc Change Out', 'Gran Chicane PT74': 'Grand Chicane PT74', 'Chicane In (PT74)': 'Chicane In (PT74)', 'Chicane Med (PT74)': 'Chicane Med (PT74)', 'Chicane Out (PT74)': 'Chicane Out (PT74)', 'Chicane Deslizante': 'Sliding Chicane', 'Rotonda Inicio': 'Start Loop', 'Rotonda Final': 'Turnaround Loop', 'Gran Chicane': 'Grand Chicane', 'Chicane In (360)': 'Chicane In (360)', 'Chicane Med (360)': 'Chicane Mid (360)', 'Chicane Out (360)': 'Chicane Out (360)', 'Desvío Entrada': 'Branch Entry', 'Desvío Salida': 'Branch Exit'
+                'Pack 3: Horquilla R1 90°': 'Pack 3: Hairpin Curve R1 90°', 'Recta Std 34.5cm': 'Std Straight 34.5cm', 'Tercio 11.5cm': '1/3 Straight 11.5cm', 'Cuarto 8.6cm': '1/4 Straight 8.6cm', 'Conexión Analog': 'Analog Powerbase', 'Cambio X (69)': 'Lane Change X (69)', 'Cambio Izq (69)': 'Left Lane Change (69)', 'Cambio Der (69)': 'Right Lane Change (69)', 'Entrada Pit Carrera': 'Pit Entry', 'Recta Pit 34.5': 'Pit Straight 34.5', 'Salida Pit Carrera': 'Pit Exit', 'R1 (60°)': 'R1 (60°)', 'R1 (30°)': 'R1 (30°)', 'R2 (30°)': 'R2 (30°)', 'R3 (30°)': 'R3 (30°)', 'R4 (15°)': 'R4 (15°)', 'Cambio Curva In': 'Curve Change In', 'Cambio Curva Out': 'Curve Change Out', 'Recta Cambio In': 'Straight Change In', 'Curva Cambio In': 'Arc Change In', 'Recta Cambio Out': 'Straight Change Out', 'Curva Cambio Out': 'Arc Change Out', 'Gran Chicane PT74': 'Grand Chicane PT74', 'Chicane In (PT74)': 'Chicane In (PT74)', 'Chicane Med (PT74)': 'Chicane Med (PT74)', 'Chicane Out (PT74)': 'Chicane Out (PT74)', 'Chicane Deslizante': 'Sliding Chicane', 'Rotonda Inicio': 'Start Loop', 'Rotonda Final': 'Turnaround Loop', 'Gran Chicane': 'Grand Chicane', 'Chicane In (360)': 'Chicane In (360)', 'Chicane Med (360)': 'Chicane Mid (360)', 'Chicane Out (360)': 'Chicane Out (360)'
             }
         };
 
@@ -3113,7 +2800,7 @@
                   const newGroupId = 'macro_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
                   
                   p.pieces.forEach((subP, index) => {
-                      const newPiece = { ...subP, direction: subP.direction || d, uid: Date.now() + Math.random() + index, groupId: newGroupId, elevation: workingElevation, x: currentX, y: currentY, rot: currentRot, invert: false, cat: p.cat || subP.cat };
+                      const newPiece = { ...subP, direction: d, uid: Date.now() + Math.random() + index, groupId: newGroupId, elevation: workingElevation, x: currentX, y: currentY, rot: currentRot, invert: false, cat: p.cat || subP.cat };
                       newPieces.push(newPiece);
                       addedIds.push(newPiece.uid);
                       
@@ -3743,8 +3430,6 @@
                   version: "2.0", 
                   date: new Date().toISOString(), 
                   brand: activeBrand, 
-                  isDigitalProtocol: true, // Avisamos al motor 3D que soporta hasta 8 coches y cambios de carril
-                  maxCars: 8,
                   brandColors: bColors, 
                   mixedBrands: getMixedBrandsPayload(piecesToSend), 
                   pieces: compiledPieces, 
@@ -3812,7 +3497,7 @@
                   pieces.forEach(p => {
                       let segmentLen1 = 0; let segmentLen2 = 0;
                       if (p.subtype === 'rotonda') { const rotondaLen = 20 + (Math.PI * p.radius); segmentLen1 = rotondaLen; segmentLen2 = rotondaLen;
-                      } else if (p.type === 'straight' || p.type.includes('pit') || p.type.includes('branch')) { segmentLen1 = p.length; segmentLen2 = p.length;
+                      } else if (p.type === 'straight' || p.type.includes('pit')) { segmentLen1 = p.length; segmentLen2 = p.length;
                       } else if (p.type === 'curve') {
                           const r = p.radius; const s = brand.laneSpacing; const angle = Math.abs(p.angle); let r0, r1;
                           if (p.direction === 'left') { r0 = r - s/2; r1 = r + s/2; } else { r0 = r + s/2; r1 = r - s/2; }
@@ -3984,16 +3669,17 @@
                                   {previewData && (() => {
                                       const safePreviewBrand = getResolvedBrand(previewData.brand, previewData.pieces);
                                       return (
-                                          <div className="flex-1 w-full relative bg-[#0a0a0a] flex items-center justify-center border-t border-white/5 p-4">
-                                              <canvas ref={previewCanvasRef} width={800} height={400} className="max-w-full max-h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
-                                              <div className="absolute top-4 left-4 flex gap-2">
-                                                  <div className={`px-2 py-1 rounded text-[9px] font-bold border ${TRACK_DEFINITIONS[safePreviewBrand]?.uiClass || 'border-gray-600 text-gray-400'} bg-black/80 backdrop-blur-sm`}>{TRACK_DEFINITIONS[safePreviewBrand]?.name || previewData.brand || 'DESCONOCIDO'}</div>
-                                                  <div className="px-2 py-1 rounded text-[9px] text-gray-300 font-mono border border-gray-700 bg-black/80 backdrop-blur-sm shadow-md"><span className="text-cyan-400 font-bold">{previewData.pieces?.length || 0}</span> {t.modal.pieces}</div>
-                                                  <div className={`px-2 py-1 rounded text-[9px] font-bold border bg-black/80 backdrop-blur-sm shadow-md ${previewData.boardPoints?.length > 0 ? 'border-green-500/50 text-green-400' : 'border-red-500/50 text-red-400'}`}>{previewData.boardPoints?.length > 0 ? t.modal.board : t.modal.noBoard}</div>
-                                              </div>
+                                          <div className={`px-2 py-1 rounded text-[9px] font-bold border ${TRACK_DEFINITIONS[safePreviewBrand]?.uiClass || 'border-gray-600 text-gray-400'}`}>
+                                              {TRACK_DEFINITIONS[safePreviewBrand]?.name || previewData.brand || 'DESCONOCIDO'}
                                           </div>
                                       );
                                   })()}
+                              </div>
+                              <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-black/50">
+                                  {previewLoading && (<div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/80"><div className={`w-8 h-8 border-2 ${loadMode==='cloud'?'border-cyan-500':'border-[#39ff14]'} border-t-transparent rounded-full animate-spin mb-2`}></div><span className={`text-xs ${loadMode==='cloud'?'text-cyan-500':'text-[#39ff14]'} font-bold tracking-widest`}>{loadMode === 'cloud' ? t.modal.dl : t.modal.analyzing}</span></div>)}
+                                  {!previewData && !previewLoading && (<div className="flex flex-col items-center opacity-30"><Eye size={48} className="mb-2"/><span className="text-xs font-bold tracking-widest">{t.modal.noPreview}</span></div>)}
+                                  <canvas ref={previewCanvasRef} width={600} height={350} className={`w-full h-full object-contain ${!previewData ? 'hidden' : 'block'}`}/>
+                                  {previewData && (<div className="absolute bottom-4 left-4 flex gap-2"><div className="bg-black/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded text-xs font-mono text-gray-300"><span className={`${loadMode==='cloud'?'text-cyan-400':'text-[#39ff14]'} font-bold`}>{previewData.pieces?.length || 0}</span> {t.modal.pieces}</div><div className="bg-black/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded text-xs font-mono text-gray-300">{previewData.boardClosed ? <span className="text-green-400 flex items-center gap-1"><CheckCircle2 size={10}/> {t.modal.board}</span> : <span className="text-gray-500">{t.modal.noBoard}</span>}</div></div>)}
                               </div>
                               <div className="h-16 border-t border-white/10 flex items-center justify-end gap-3 px-6 bg-[#0f172a]">
                                   <button onClick={() => { setShowLoadModal(false); setPreviewData(null); }} className="px-5 py-2 text-xs font-bold text-gray-400 hover:text-white transition uppercase tracking-wider">{t.modal.cancel}</button>
@@ -4252,7 +3938,7 @@
                           
                           return (
                               <div key={p.id} className="shrink-0"> 
-                                  {p.type === 'curve' || ['y_merge_in', 'y_merge_out', 'single_lane_s'].includes(p.subtype) ? ( 
+                                  {p.type === 'curve' ? ( 
                                       <div style={pStyle} className={`flex flex-col border rounded-lg overflow-hidden w-32 transition-all duration-300 ${selectedPieceIds.length > 0 ? 'border-cyan-400/80 border-dashed text-cyan-300 bg-cyan-950/30 hover:bg-cyan-900/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : pNeonClass}`}> 
                                           <div className="bg-black/40 px-2 py-1 text-[10px] font-bold text-center border-b border-inherit">{tp(p.label)}</div> 
                                           <div className="flex divide-x divide-inherit">
