@@ -3960,7 +3960,7 @@
                     const numLanes = typeof circuitData.numLanes === 'number' ? circuitData.numLanes : detectedLanes;
                     
                     // --- GENERACIÓN DINÁMICA DE CARRILES (SOPORTA 2, 4, 6, 8... CARRILES) ---
-                    const rails = { lanes: Array.from({length: numLanes}, () => []), pit: [], changes: [] }, vertexDistances = [0]; let accumulatedDist = 0;
+                    const rails = { lanes: Array.from({length: numLanes}, () => []), visualLanes: Array.from({length: numLanes}, () => []), pit: [], changes: [] }, vertexDistances = [0]; let accumulatedDist = 0;
                     
                     scene = new THREE.Scene(); scene.background = new THREE.Color(0x60a5fa); scene.fog = new THREE.Fog(0x60a5fa, 500, 3000); 
                     
@@ -4077,14 +4077,19 @@
                     
                     let curX = 0, curZ = 0, curAngle = 0;
 
-                    const addRailPoint = (x, z, ang, lOffs, po, di, brand) => { 
+                    const addRailPoint = (x, z, ang, lOffs, po, di, brand, visArray) => { 
                         const px = Math.cos(ang + Math.PI/2), pz = Math.sin(ang + Math.PI/2); 
                         for(let i=0; i<numLanes; i++) {
                             if (lOffs && lOffs[i] !== null && lOffs[i] !== undefined) {
                                 const pt = new THREE.Vector3(x + px * lOffs[i], 0.2, z + pz * lOffs[i]);
                                 pt.brand = brand;
                                 rails.lanes[i].push(pt); 
-                            } else rails.lanes[i].push(null);
+                                if (!visArray || visArray[i] !== null) rails.visualLanes[i].push(pt);
+                                else rails.visualLanes[i].push(null);
+                            } else {
+                                rails.lanes[i].push(null);
+                                rails.visualLanes[i].push(null);
+                            }
                         }
                         if (po !== null) {
                             const pt = new THREE.Vector3(x + px * po, 0.2, z + pz * po);
@@ -4103,6 +4108,8 @@
                     let resMult = 1.0;
                     if (bridgeMode === 'Medio') resMult = 1.5; 
                     else if (bridgeMode === 'Básico') resMult = 1.2; 
+
+                    let chicaneActiveSide = null;
 
                     // CAMBIO CLAVE: Recorrer masterPieces en lugar de circuitData.pieces
                     masterPieces.forEach((p, index) => {
@@ -4208,7 +4215,13 @@
                         const startVertexIdx = rails.lanes[0].length - 1;
                         const startDist = accumulatedDist;
                         
-                        const steps = (p.type === 'curve') ? Math.max(12, Math.ceil(Math.abs(p.angle) * 1.5 * resMult)) : Math.max(10, Math.ceil((p.length / 3.0) * resMult));
+                        // Aumentamos la resolución geométrica de las entradas, salidas y cambios de carril para que la curva CatmullRom sea perfectamente suave
+                        let steps = (p.type === 'curve') ? Math.max(12, Math.ceil(Math.abs(p.angle) * 1.5 * resMult)) : Math.max(10, Math.ceil((p.length / 3.0) * resMult));
+                        const isSmoothMergePiece = (p.subtype && ['y_merge_in', 'y_merge_out', 'single_lane_s', 'single_lane_curve', 'single_lane_1', 'single_lane_2', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype)) || ['pit_entry', 'pit_exit'].includes(p.type);
+                        if (isSmoothMergePiece) {
+                            steps = Math.max(steps, Math.ceil((p.length / 1.5) * resMult));
+                        }
+                        
                         const stepLen = p.length / steps;
                         const totalSweep = (p.type==='curve') ? (p.angle * Math.PI / 180) * (p.direction==='left'?-1:1) : 0;
                         const stepAngle = totalSweep / steps;
@@ -4270,6 +4283,9 @@
                         let startHalfL = stdHalfL, startHalfR = stdHalfR;
                         let endHalfL = stdHalfL, endHalfR = stdHalfR;
 
+                        const stdOffL = -currentLaneSpacing / 2;
+                        const stdOffR = currentLaneSpacing / 2;
+
                         if (p.subtype && p.subtype.includes('adapter')) {
                             let wIn = p.widthIn || currentTrackWidth;
                             let wOut = p.widthOut || currentTrackWidth;
@@ -4320,6 +4336,71 @@
                             }
                             stdHalfL = endHalfL;
                             stdHalfR = endHalfR;
+                            currentOffsets = [...tL];
+                        }
+                        else if (p.subtype === 'y_merge_out') {
+                            chicaneActiveSide = p.direction === 'left' ? 'right' : 'left'; // INVERTIDO PARA QUE COINCIDA CON LA PIEZA REAL
+                            const tgtOff = chicaneActiveSide === 'left' ? stdOffL : stdOffR;
+                            
+                            sL = [...currentOffsets];
+                            tL = currentOffsets.map(() => tgtOff); // Converge al lado activo
+                            
+                            const narrowExtra = 2.5; // Margen de asfalto extra para el lado cerrado
+                            startHalfL = stdHalfL; 
+                            startHalfR = stdHalfR;
+                            endHalfL = chicaneActiveSide === 'left' ? stdHalfL : narrowExtra; 
+                            endHalfR = chicaneActiveSide === 'right' ? stdHalfR : narrowExtra;
+                            
+                            currentOffsets = [...tL];
+                        }
+                        else if (p.subtype === 'single_lane_s' || p.subtype === 'single_lane_curve' || (p.type === 'curve' && numLanes === 1 && (p.brand === 'SCX_ADVANCE' || p.brandKey === 'SCX_ADVANCE'))) {
+                            const startSide = chicaneActiveSide || 'left';
+                            const targetSide = startSide === 'left' ? 'right' : 'left'; // Alterna siempre forzando la 'S'
+                            
+                            const stOff = startSide === 'left' ? stdOffL : stdOffR;
+                            const tgOff = targetSide === 'left' ? stdOffL : stdOffR;
+                            
+                            sL = currentOffsets.map(() => stOff); // Ambos parten superpuestos
+                            tL = currentOffsets.map(() => tgOff); // Ambos se mueven hacia el lado opuesto
+                            
+                            const narrowExtra = 2.5; // Margen de asfalto extra para el lado cerrado
+                            startHalfL = startSide === 'left' ? stdHalfL : narrowExtra;
+                            startHalfR = startSide === 'right' ? stdHalfR : narrowExtra;
+                            
+                            endHalfL = targetSide === 'left' ? stdHalfL : narrowExtra;
+                            endHalfR = targetSide === 'right' ? stdHalfR : narrowExtra;
+                            
+                            chicaneActiveSide = targetSide;
+                            currentOffsets = [...tL];
+                        }
+                        else if (p.subtype === 'y_merge_in') {
+                            const startSide = chicaneActiveSide || (p.direction === 'left' ? 'right' : 'left'); 
+                            const stOff = startSide === 'left' ? stdOffL : stdOffR;
+                            
+                            sL = currentOffsets.map(() => stOff);
+                            
+                            let standardOffsets = [];
+                            if (hasGroups) {
+                                for (let i = 0; i < numLanes; i++) {
+                                    const pairIndex = Math.floor(i / 2);
+                                    const isRightLane = i % 2 === 1;
+                                    const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
+                                    standardOffsets.push(localOffset + (pairIndex * currentTrackWidth));
+                                }
+                            } else {
+                                for(let i=0; i<numLanes; i++) {
+                                    standardOffsets.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
+                                }
+                            }
+                            tL = [...standardOffsets]; // Vuelven a divergir
+                            
+                            const narrowExtra = 2.5; // Margen de asfalto extra para el lado cerrado
+                            startHalfL = startSide === 'left' ? stdHalfL : narrowExtra;
+                            startHalfR = startSide === 'right' ? stdHalfR : narrowExtra;
+                            endHalfL = stdHalfL; 
+                            endHalfR = stdHalfR; // Recupera todo el asfalto
+                            
+                            chicaneActiveSide = null;
                             currentOffsets = [...tL];
                         }
                         else if (isCrossing) { tL.reverse(); currentOffsets = [...tL]; } 
@@ -4373,7 +4454,10 @@
 
                         for (let i = 1; i <= steps; i++) {
                             const t = i / steps; if (p.type === 'curve') { const r = p.radius, chordLen = 2 * r * Math.sin(Math.abs(stepAngle)/2), chordDir = curAngle + stepAngle/2; curX += chordLen * Math.cos(chordDir); curZ += chordLen * Math.sin(chordDir); curAngle += stepAngle; } else { curX += stepLen * Math.cos(curAngle); curZ += stepLen * Math.sin(curAngle); }
-                            let mixT = (isCrossing || isChicaneEntry || isChicaneExit || (p.subtype && p.subtype.includes('adapter'))) ? easeSine(t) : t; 
+                            
+                            const isSmoothMerge = p.subtype && ['y_merge_in', 'y_merge_out', 'single_lane_s', 'single_lane_curve', 'single_lane_1', 'single_lane_2'].includes(p.subtype);
+                            const isSCXAdvanceSingleCurve = p.type === 'curve' && numLanes === 1 && (p.brand === 'SCX_ADVANCE' || p.brandKey === 'SCX_ADVANCE');
+                            let mixT = (isCrossing || isChicaneEntry || isChicaneExit || isSmoothMerge || isSCXAdvanceSingleCurve || (p.subtype && p.subtype.includes('adapter'))) ? easeSine(t) : t; 
                             
                             let cL = [];
                             for(let j=0; j<numLanes; j++) {
@@ -4388,9 +4472,17 @@
                             else if (isPitExit) { const sp = pitDir * pcd, ep = pitDir * (currentLaneSpacing/2), e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = poe - (poe-endHalfR)*e; else cTWL = poe - (poe-endHalfL)*e; }
                             else if (p.subtype && p.subtype.includes('pit_parallel')) { cPit = pitDir * pcd; if(pitSide==='right') cTWR = poe; else cTWL = poe; }
                             
-                            let curL_Vis = [...cL];
+                            // NUEVO: Separar la visibilidad de los carriles de su existencia física.
+                            let curL_Vis = [...cL]; // Copiamos las posiciones físicas para pasárselas al dibujante
+                            
                             if (p.subtype === 'single_lane_1') { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); cTWR = 0; }
                             if (p.subtype === 'single_lane_2') { curL_Vis = curL_Vis.map((v, idx) => idx === 1 ? v : null); cTWL = 0; }
+                            
+                            // En la "S" de un carril, ambos raíles físicos van por el mismo sitio, 
+                            // pero solo dibujamos uno (el 0) para que no parpadee el render 3D.
+                            if (p.subtype === 'single_lane_s' || p.subtype === 'single_lane_curve' || isSCXAdvanceSingleCurve) {
+                                curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); 
+                            }
 
                             let railX = curX;
                             let railZ = curZ;
@@ -4405,17 +4497,34 @@
                             } else if (p.subtype === 'chicane3_exit') {
                                 // Fase 3: Retorna al centro. Inicia paralelo en el borde y termina paralelo en el centro (0)
                                 sShapeOffset = -(currentLaneSpacing * 0.5) + (easeSine(t) * (currentLaneSpacing * 0.5));
+                            } else if (p.subtype === 'single_lane_s' || p.subtype === 'single_lane_curve') {
+                                // IA DE CHICANE PT74 DE SCX ADVANCE (Basada en tu foto)
+                                // Movimiento serpenteante DENTRO del medio ancho del carril
+                                // Math.PI en lugar de Math.PI * 2 para que haga 1 sola curva, no un zig-zag doble
+                                const waveAmplitude = currentLaneSpacing * 0.15; 
+                                const waveDirection = p.direction === 'left' ? -1 : 1;
+                                sShapeOffset = Math.sin(t * Math.PI) * waveAmplitude * waveDirection;
                             }
+
+                            let asphaltX = curX;
+                            let asphaltZ = curZ;
 
                             if (sShapeOffset !== 0) {
                                 const px = Math.cos(curAngle + Math.PI/2);
                                 const pz = Math.sin(curAngle + Math.PI/2);
                                 railX += px * sShapeOffset;
                                 railZ += pz * sShapeOffset;
+                                
+                                // Hacemos que el asfalto de la chicane ondule con el raíl para no salirnos de la pista
+                                asphaltX += px * sShapeOffset;
+                                asphaltZ += pz * sShapeOffset;
                             }
 
-                            addRailPoint(railX, railZ, curAngle, curL_Vis, cPit, stepPhysDist, pieceBrand); 
-                            addAsphaltSlice(curX, curZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
+                            // IMPORTANTE: Le pasamos 'curL_Vis' (con el raíl oculto) al dibujante para que lo ignore visualmente,
+                            // pero las coordenadas físicas 'cL' están perfectas y contiguas
+                            addRailPoint(railX, railZ, curAngle, cL, cPit, stepPhysDist, pieceBrand, curL_Vis); 
+
+                            addAsphaltSlice(asphaltX, asphaltZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
                             
                             if (['digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype) && numLanes >= 2) { 
                                 const ct = easeSine(t), o12 = sL[0] + (sL[1]-sL[0])*ct, o21 = sL[1] + (sL[0]-sL[1])*ct, px = Math.cos(curAngle+Math.PI/2), pz = Math.sin(curAngle+Math.PI/2); 
@@ -4434,7 +4543,7 @@
                         if (d12.length > 0) rails.changes.push({ points: d12, refIdx: startVertexIdx, count: steps });
                         if (d21.length > 0) rails.changes.push({ points: d21, refIdx: startVertexIdx, count: steps });
                         
-                        pieceMapRef.current.push({ index, distStart: startDist, distEnd: accumulatedDist, type: p.type, subtype: p.subtype, invert: p.invert, canChangeLane: ['digital_x','change_right','change_left','pit_entry', 'pit_parallel_double_x'].includes(p.subtype) || p.type === 'pit_entry' || p.type === 'pit_exit', isPitSection: isPitEntry || isPitExit || (p.subtype && p.subtype.includes('pit_parallel')), elevation: p.elevation || 0 });
+                        pieceMapRef.current.push({ index, distStart: startDist, distEnd: accumulatedDist, type: p.type, subtype: p.subtype, invert: p.invert, canChangeLane: ['digital_x','change_right','change_left','pit_entry', 'pit_parallel_double_x', 'y_merge_in'].includes(p.subtype) || p.type === 'pit_entry' || p.type === 'pit_exit', isPitSection: isPitEntry || isPitExit || (p.subtype && p.subtype.includes('pit_parallel')), elevation: p.elevation || 0 });
                     });
                     
                     // --- AUTO BRIDGE ELEVATION LOGIC (OPTIMIZED & SMOOTH) ---
@@ -5342,7 +5451,8 @@
                         const pathR = new THREE.CatmullRomCurve3(rightPts);
                         const pathS = new THREE.CatmullRomCurve3(slotPts);
 
-                        const segments = Math.max(2, cp.length);
+                        // Incrementamos los segmentos tubulares para asegurar que las curvas y cambios de carril se dibujen suaves
+                        const segments = Math.max(8, cp.length * 2);
                         // OPTIMIZACIÓN GEOMÉTRICA: Reducido de 4/5 a 3 caras radiales (Prisma triangular). Altera miles de vértices y visualmente no se nota.
                         const gL = new THREE.TubeGeometry(pathL, segments, w/3.5, 3, false);
                         const gR = new THREE.TubeGeometry(pathR, segments, w/3.5, 3, false);
@@ -5404,7 +5514,7 @@
                     });
                     
                     for(let j=0; j<numLanes; j++) {
-                        createMultiSegmentRailMesh(rails.lanes[j], 0.7); 
+                        createMultiSegmentRailMesh(rails.visualLanes[j], 0.7); 
                     }
                     
                     createMultiSegmentRailMesh(rails.pit, 0.6); 
@@ -6089,14 +6199,35 @@
                                     cp = pieceMapRef.current.find(p => car.distance >= p.distStart && car.distance < p.distEnd) || pieceMapRef.current[0];
                                 }
 
-                                // 1. SISTEMA ANTICOLISIÓN PREDICTIVO OPTIMIZADO
+                                // 1. SISTEMA ANTICOLISIÓN PREDICTIVO OPTIMIZADO (INCLUYE CHICANE)
                                 if (activeButtonRef.current === 'DIGITAL') {
                                     if (numCarsRef.current > 1) {
                                         let dtc = Infinity;
                                         for (let j = 0; j < physicsState.current.length; j++) {
                                             const o = physicsState.current[j];
                                             if (o.id <= numCarsRef.current && o.id !== car.id && !o.isDerailled && nowTime > o.invulnerableUntil) {
-                                                if (o.currentLane === car.currentLane || o.targetLane === car.currentLane) { 
+                                                // Chequear colisión frontal en el mismo carril
+                                                let collisionImminent = false;
+                                                
+                                                if (o.currentLane === car.currentLane || o.targetLane === car.currentLane) {
+                                                    collisionImminent = true;
+                                                }
+                                                
+                                                // REGLA CHICANE: Si alguno de los dos está en la chicane central, se consideran en el "mismo carril" para la colisión
+                                                const carInChicane = cp && ['y_merge_out', 'single_lane_s', 'single_lane_curve', 'y_merge_in'].includes(cp.subtype);
+                                                
+                                                // Necesitamos saber si el OTRO coche está en la chicane
+                                                let o_cp = pieceMapRef.current[o.lastPieceIndex >= 0 && o.lastPieceIndex < pieceMapRef.current.length ? o.lastPieceIndex : 0];
+                                                if (!o_cp || o.distance < o_cp.distStart || o.distance >= o_cp.distEnd) {
+                                                    o_cp = pieceMapRef.current.find(p => o.distance >= p.distStart && o.distance < p.distEnd) || pieceMapRef.current[0];
+                                                }
+                                                const oInChicane = o_cp && ['y_merge_out', 'single_lane_s', 'single_lane_curve', 'y_merge_in'].includes(o_cp.subtype);
+
+                                                if (carInChicane || oInChicane) {
+                                                    collisionImminent = true; // Forzamos chequeo de distancia sin importar el carril lógico
+                                                }
+
+                                                if (collisionImminent) { 
                                                     let di = o.distance - car.distance; 
                                                     if (di < -totalDist / 2) di += totalDist; else if (di > totalDist / 2) di -= totalDist;
                                                     if (di > 0 && di < dtc) dtc = di; 
@@ -6561,6 +6692,13 @@
                                         if (car.isChanging) { car.isChanging = false; car.currentLane = car.targetLane; }
                                         if (car.currentLane === LANE_PIT && !currentPiece.isPitSection) { car.currentLane = (car.targetLane === LANE_PIT) ? 1 : car.targetLane; car.targetLane = car.currentLane; }
                                         if (car.targetLane === LANE_PIT && currentPiece.isPitSection) car.currentLane = LANE_PIT; else if (car.currentLane !== LANE_PIT) car.currentLane = car.targetLane;
+                                        
+                                        // FIX CHICANE: Sincronizar el carril lógico con el físico antes del desvío de salida
+                                        if (currentPiece.subtype === 'y_merge_in') {
+                                            const physLane = currentPiece.direction === 'right' ? 0 : 1;
+                                            car.currentLane = physLane;
+                                            car.targetLane = physLane;
+                                        }
                                     }
 
                                     for(let j=0; j<numLanes; j++) {
@@ -6602,7 +6740,7 @@
 
                                     // PROTECCIÓN CONTRA ESPASMOS AL CERRAR BUCLE
                                     _tan.subVectors(_flook, _fpos);
-                                    if (_tan.lengthSq() > 100.0) {
+                                    if (_tan.lengthSq() > 100.0 || _tan.lengthSq() < 0.0001) {
                                         // El lookahead ha saltado la meta y hay gap físico en el circuito
                                         if (car.lastValidTan) _tan.copy(car.lastValidTan);
                                         else _tan.set(0,0,1);
@@ -6651,8 +6789,11 @@
                                         
                                         if (!isReversedRef.current) {
                                             const isEarlyInPiece = distInPiece < (pieceLen * 0.35); 
-                                            if (!car.isChanging && laneActiveRef.current && currentPiece.canChangeLane && carShouldMove) {
-                                                // FIX: isPlayer ahora reconoce correctamente el modo Práctica para evitar que la IA tome el control y frene el coche
+                                            // NUEVO: Añadida excepción para que la IA/Mando ignore cambios de carril fantasma en y_merge_out
+                                            const isValidChangePiece = currentPiece.canChangeLane && !['y_merge_out'].includes(currentPiece.subtype);
+                                            
+                                            if (!car.isChanging && laneActiveRef.current && isValidChangePiece && carShouldMove) {
+                                                // FIX: Lógica de cambio de carril
                                                 let nl = car.currentLane, sc = false, isPlayer = (car.id === selectedCarIdRef.current && (activeButtonRef.current === 'DIGITAL' || activeButtonRef.current === 'PRACTICE'));
                                                 if (car.currentLane !== LANE_PIT && isEarlyInPiece) {
                                                     const pitEntryPiece = pieceMapRef.current.find(p => p.type === 'pit_entry' || p.subtype === 'pit_entry');
@@ -6669,6 +6810,7 @@
                                                             if (currentPiece.subtype === 'digital_x' || currentPiece.subtype === 'pit_parallel_double_x') { nl = (car.currentLane===0?1:0); sc = true; } 
                                                             else if (currentPiece.subtype === 'change_right' && car.currentLane === 0) { nl = 1; sc = true; } 
                                                             else if (currentPiece.subtype === 'change_left' && car.currentLane === 1) { nl = 0; sc = true; } 
+                                                            else if (currentPiece.subtype === 'y_merge_in') { nl = (car.currentLane===0?1:0); sc = true; }
                                                         }
                                                     } else { 
                                                         if ((currentPiece.type === 'pit_entry' || currentPiece.subtype === 'pit_entry') && car.currentLane === targetPitLane && car.wantsToPit) { 
@@ -6680,9 +6822,15 @@
                                                                 nl = targetPitLane; sc = true;
                                                             } else if (currentPiece.subtype === 'change_left' && car.currentLane === 1 && targetPitLane === 0) {
                                                                 nl = targetPitLane; sc = true;
+                                                            } else if (currentPiece.subtype === 'y_merge_in') {
+                                                                nl = targetPitLane; sc = true;
                                                             }
-                                                        } else if (!car.wantsToPit && (currentPiece.subtype === 'digital_x' || currentPiece.subtype === 'pit_parallel_double_x') && Math.random()>0.8) {
-                                                            nl = (car.currentLane===0?1:0); sc = true;
+                                                        } else if (!car.wantsToPit) {
+                                                            if ((currentPiece.subtype === 'digital_x' || currentPiece.subtype === 'pit_parallel_double_x') && Math.random()>0.8) {
+                                                                nl = (car.currentLane===0?1:0); sc = true;
+                                                            } else if (currentPiece.subtype === 'y_merge_in' && Math.random()>0.5) {
+                                                                nl = (car.currentLane===0?1:0); sc = true;
+                                                            }
                                                         }
                                                     }
                                                 }
