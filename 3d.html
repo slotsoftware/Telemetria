@@ -3960,7 +3960,7 @@
                     const numLanes = typeof circuitData.numLanes === 'number' ? circuitData.numLanes : detectedLanes;
                     
                     // --- GENERACIÓN DINÁMICA DE CARRILES (SOPORTA 2, 4, 6, 8... CARRILES) ---
-                    const rails = { lanes: Array.from({length: numLanes}, () => []), pit: [], changes: [] }, vertexDistances = [0]; let accumulatedDist = 0;
+                    const rails = { lanes: Array.from({length: numLanes}, () => []), visualLanes: Array.from({length: numLanes}, () => []), pit: [], changes: [] }, vertexDistances = [0]; let accumulatedDist = 0;
                     
                     scene = new THREE.Scene(); scene.background = new THREE.Color(0x60a5fa); scene.fog = new THREE.Fog(0x60a5fa, 500, 3000); 
                     
@@ -4077,14 +4077,19 @@
                     
                     let curX = 0, curZ = 0, curAngle = 0;
 
-                    const addRailPoint = (x, z, ang, lOffs, po, di, brand) => { 
+                    const addRailPoint = (x, z, ang, lOffs, lOffsVis, po, di, brand) => { 
                         const px = Math.cos(ang + Math.PI/2), pz = Math.sin(ang + Math.PI/2); 
                         for(let i=0; i<numLanes; i++) {
-                            if (lOffs && lOffs[i] !== null && lOffs[i] !== undefined) {
-                                const pt = new THREE.Vector3(x + px * lOffs[i], 0.2, z + pz * lOffs[i]);
-                                pt.brand = brand;
-                                rails.lanes[i].push(pt); 
-                            } else rails.lanes[i].push(null);
+                            let physOff = (lOffs && lOffs[i] !== null && lOffs[i] !== undefined) ? lOffs[i] : 0;
+                            const pt = new THREE.Vector3(x + px * physOff, 0.2, z + pz * physOff);
+                            pt.brand = brand;
+                            rails.lanes[i].push(pt); 
+                            
+                            if (lOffsVis && lOffsVis[i] !== null && lOffsVis[i] !== undefined) {
+                                rails.visualLanes[i].push(pt);
+                            } else {
+                                rails.visualLanes[i].push(null);
+                            }
                         }
                         if (po !== null) {
                             const pt = new THREE.Vector3(x + px * po, 0.2, z + pz * po);
@@ -4093,7 +4098,7 @@
                         } else rails.pit.push(null); 
                         if (di > 0) { accumulatedDist += di; vertexDistances.push(accumulatedDist); } 
                     };
-                    addRailPoint(0,0,0, currentOffsets, null, 0, currentBrandKey); 
+                    addRailPoint(0,0,0, currentOffsets, currentOffsets, null, 0, currentBrandKey); 
                     addAsphaltSlice(0,0,0, stdHalfL, stdHalfR, 0, currentBrandKey); 
                     
                     const easeSine = (t) => (1 - Math.cos(t * Math.PI)) / 2;
@@ -4109,7 +4114,14 @@
                         if (p.subtype === 'rotonda') {
                             const steps = 40; const r = p.radius || 14.5; const loopCenterX = r * 1.3; const laneOffVal = laneSpacing / 2; const startX = curX; const startZ = curZ; const startAngle = curAngle; const straightLen = 10.0;
                             const rotVertexIndex = rails.lanes[0].length;
-                            for(let i=0; i<numLanes; i++) rails.lanes[i].push(null); rails.pit.push(null); vertexDistances.push(accumulatedDist);
+                            
+                            // FIX: Añadido visualLanes.push(null) para cortar la malla y evitar raíles cruzando la pista
+                            for(let i=0; i<numLanes; i++) { 
+                                rails.lanes[i].push(null); 
+                                rails.visualLanes[i].push(null); 
+                            } 
+                            rails.pit.push(null); 
+                            vertexDistances.push(accumulatedDist);
                             
                             const loopRailPoints = []; 
                             const loopArcLength = Math.PI * r; 
@@ -4195,7 +4207,7 @@
                             rails.changes.push({ points: loopRailPoints, refIdx: rotVertexIndex, count: loopRailPoints.length, isRotonda: true });
                             curX = startX; curZ = startZ; curAngle = startAngle + Math.PI; accumulatedDist += totalPieceLen;
                             
-                            addRailPoint(curX, curZ, curAngle, currentOffsets, null, 0, currentBrandKey); 
+                            addRailPoint(curX, curZ, curAngle, currentOffsets, currentOffsets, null, 0, currentBrandKey); 
                             vertexDistances.push(accumulatedDist); 
                             
                             // TRANSICIÓN DE SALIDA: Cierre de asfalto ancho completo para empalmar limpio con la siguiente pista
@@ -4262,6 +4274,9 @@
                         const isPitExit = p.type === 'pit_exit' || p.subtype === 'pit_exit';
                         const isChicaneEntry = p.subtype === 'chicane_entry' || p.subtype === 'chicane3_entry';
                         const isChicaneExit = p.subtype === 'chicane_exit' || p.subtype === 'chicane3_exit';
+                        const isAdvChicaneIn = p.id === 'adv_desvio_in' || (p.brandKey === 'SCX_ADVANCE' && p.subtype === 'y_merge_out');
+                        const isAdvChicaneMid = p.id === 'adv_chicane_mid' || (p.brandKey === 'SCX_ADVANCE' && p.subtype === 'single_lane_s');
+                        const isAdvChicaneOut = p.id === 'adv_desvio_out' || (p.brandKey === 'SCX_ADVANCE' && p.subtype === 'y_merge_in');
                         const pitSide = p.invert ? 'left' : 'right';
                         const pitDir = pitSide === 'right' ? 1 : -1;
                         
@@ -4269,6 +4284,20 @@
                         let tL = [...currentOffsets];
                         let startHalfL = stdHalfL, startHalfR = stdHalfR;
                         let endHalfL = stdHalfL, endHalfR = stdHalfR;
+
+                        let standardOffsets = [];
+                        if (hasGroups) {
+                            for (let i = 0; i < numLanes; i++) {
+                                const pairIndex = Math.floor(i / 2);
+                                const isRightLane = i % 2 === 1;
+                                const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
+                                standardOffsets.push(localOffset + (pairIndex * currentTrackWidth));
+                            }
+                        } else {
+                            for(let i=0; i<numLanes; i++) {
+                                standardOffsets.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
+                            }
+                        }
 
                         if (p.subtype && p.subtype.includes('adapter')) {
                             let wIn = p.widthIn || currentTrackWidth;
@@ -4325,26 +4354,27 @@
                         else if (isCrossing) { tL.reverse(); currentOffsets = [...tL]; } 
                         else if (isChicaneEntry) { tL = sL.map(off => off * 0.2); currentOffsets = [...tL]; } 
                         else if (isChicaneExit) { 
-                            let standardOffsets = [];
-                            if (hasGroups) {
-                                for (let i = 0; i < numLanes; i++) {
-                                    const pairIndex = Math.floor(i / 2);
-                                    const isRightLane = i % 2 === 1;
-                                    const localOffset = isRightLane ? (currentLaneSpacing / 2) : (-currentLaneSpacing / 2);
-                                    standardOffsets.push(localOffset + (pairIndex * currentTrackWidth));
-                                }
-                            } else {
-                                for(let i=0; i<numLanes; i++) {
-                                    standardOffsets.push((i - (numLanes - 1) / 2) * currentLaneSpacing);
-                                }
-                            }
-                            
                             // FIX: Mantener la polaridad actual para evitar que los carriles se crucen en la salida
                             tL = sL.map((val, i) => {
                                 const magnitude = Math.abs(standardOffsets[i]);
                                 return val === 0 ? 0 : Math.sign(val) * magnitude;
                             });
-                            
+                            currentOffsets = [...tL];
+                        }
+                        else if (isAdvChicaneIn) {
+                            const tgt = p.invert ? standardOffsets[numLanes - 1] : standardOffsets[0];
+                            tL = sL.map(() => tgt);
+                            currentOffsets = [...tL];
+                        }
+                        else if (isAdvChicaneMid) {
+                            const isRight = Math.abs(sL[0] - standardOffsets[0]) < 0.1;
+                            const tgt = isRight ? standardOffsets[numLanes - 1] : standardOffsets[0];
+                            tL = sL.map(() => tgt);
+                            currentOffsets = [...tL];
+                        }
+                        else if (isAdvChicaneOut) {
+                            tL = [...standardOffsets];
+                            if (p.invert) tL.reverse();
                             currentOffsets = [...tL];
                         }
                         
@@ -4373,7 +4403,7 @@
 
                         for (let i = 1; i <= steps; i++) {
                             const t = i / steps; if (p.type === 'curve') { const r = p.radius, chordLen = 2 * r * Math.sin(Math.abs(stepAngle)/2), chordDir = curAngle + stepAngle/2; curX += chordLen * Math.cos(chordDir); curZ += chordLen * Math.sin(chordDir); curAngle += stepAngle; } else { curX += stepLen * Math.cos(curAngle); curZ += stepLen * Math.sin(curAngle); }
-                            let mixT = (isCrossing || isChicaneEntry || isChicaneExit || (p.subtype && p.subtype.includes('adapter'))) ? easeSine(t) : t; 
+                            let mixT = (isCrossing || isChicaneEntry || isChicaneExit || isAdvChicaneIn || isAdvChicaneMid || isAdvChicaneOut || (p.subtype && p.subtype.includes('adapter'))) ? easeSine(t) : t; 
                             
                             let cL = [];
                             for(let j=0; j<numLanes; j++) {
@@ -4391,6 +4421,7 @@
                             let curL_Vis = [...cL];
                             if (p.subtype === 'single_lane_1') { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); cTWR = 0; }
                             if (p.subtype === 'single_lane_2') { curL_Vis = curL_Vis.map((v, idx) => idx === 1 ? v : null); cTWL = 0; }
+                            if (isAdvChicaneMid) { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); } // Dibuja solo 1 raíl en el centro de la chicane SCX Advance
 
                             let railX = curX;
                             let railZ = curZ;
@@ -4414,7 +4445,7 @@
                                 railZ += pz * sShapeOffset;
                             }
 
-                            addRailPoint(railX, railZ, curAngle, curL_Vis, cPit, stepPhysDist, pieceBrand); 
+                            addRailPoint(railX, railZ, curAngle, cL, curL_Vis, cPit, stepPhysDist, pieceBrand); 
                             addAsphaltSlice(curX, curZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
                             
                             if (['digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype) && numLanes >= 2) { 
@@ -5036,7 +5067,7 @@
                     let needsFenceL = new Array(aspVertCount).fill(false);
                     let needsFenceR = new Array(aspVertCount).fill(false);
 
-                    for (let s = 0; s < aspVertCount; s++) {
+                    for (let s = 1; s < aspVertCount - 1; s++) {
                         const dist = asphaltDists[s];
                         const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist <= p.distEnd + 0.1);
                         if (!piece) continue;
@@ -5049,31 +5080,25 @@
                         if (yR > 0.3) needsFenceR[s] = true;
 
                         // 2. CURVAS, ROTONDAS, CHICANES Y PITLANE
-                        const isCurve = piece.type === 'curve' || (piece.subtype && piece.subtype.toLowerCase().includes('curve'));
-                        
-                        if (isCurve) {
-                            // En las curvas, la valla exterior es VITAL. Calculamos la dirección real teniendo en cuenta si está invertida.
-                            let dir = piece.direction;
-                            if (!dir) dir = (piece.angle < 0) ? 'right' : 'left'; // Fallback por si no hay dirección explícita
-                            if (piece.invert) dir = (dir === 'left') ? 'right' : 'left'; // Invertir gira la curva hacia el otro lado
+                        if (piece.subtype === 'rotonda' || piece.type === 'rotonda') {
+                            needsFenceL[s] = true; // Por la topología de bucle simple, L es el borde exterior real de la rotonda.
+                        } else if (piece.type === 'curve' || (piece.subtype && piece.subtype.toLowerCase().includes('curve'))) {
+                            // IA INFALIBLE BASADA EN GEOMETRÍA (100% FÍSICA): 
+                            // Calcula la distancia real que recorre el borde izquierdo y derecho del asfalto en este segmento.
+                            // En cualquier curva, el radio EXTERIOR siempre dibuja una línea más larga.
+                            const distL = Math.hypot(asphaltVerts[(s+1)*6] - asphaltVerts[(s-1)*6], asphaltVerts[(s+1)*6+2] - asphaltVerts[(s-1)*6+2]);
+                            const distR = Math.hypot(asphaltVerts[(s+1)*6+3] - asphaltVerts[(s-1)*6+3], asphaltVerts[(s+1)*6+5] - asphaltVerts[(s-1)*6+5]);
                             
-                            if (dir === 'right') {
-                                needsFenceL[s] = true; // Curva a derecha, la fuerza centrífuga empuja a la izquierda
-                            } else if (dir === 'left') {
-                                needsFenceR[s] = true;  // Curva a izquierda, la fuerza centrífuga empuja a la derecha
-                            } else {
-                                // Fallback de seguridad: si no logramos detectar el giro, protegemos ambos lados
-                                needsFenceL[s] = true;
-                                needsFenceR[s] = true;
+                            if (distR > distL + 0.001) {
+                                needsFenceR[s] = true; // El lado derecho es más largo -> Exterior = Derecha
+                            } else if (distL > distR + 0.001) {
+                                needsFenceL[s] = true; // El lado izquierdo es más largo -> Exterior = Izquierda
                             }
-                        } else if (piece.subtype === 'rotonda' || piece.type === 'rotonda') {
-                            needsFenceL[s] = true; 
-                            needsFenceR[s] = true;
                         } else if (piece.type === 'chicane' || (piece.subtype && piece.subtype.includes('chicane'))) {
                             needsFenceL[s] = true; 
                             needsFenceR[s] = true;
                         } else if (piece.type === 'pit_entry' || piece.type === 'pit_exit' || (piece.subtype && piece.subtype.includes('pit'))) {
-                            needsFenceL[s] = true; // Toda la zona de Pitlane lleva vallas
+                            needsFenceL[s] = true; // Toda la zona de Pitlane lleva vallas en el exterior
                             needsFenceR[s] = true;
                         }
                     }
@@ -5087,7 +5112,7 @@
                     }
 
                     // EXTENSIÓN DE SEGURIDAD MÁXIMA PARA CURVAS (LEAD-IN / LEAD-OUT):
-                    // Ampliamos 6 segmentos (antes 3) para proteger fuertemente las entradas de frenada y salidas de aceleración
+                    // Ampliamos 6 segmentos para proteger las entradas de frenada y salidas de aceleración
                     let expandedL = [...needsFenceL];
                     let expandedR = [...needsFenceR];
                     const expansion = 6; 
@@ -5102,6 +5127,28 @@
                     needsFenceL = expandedL;
                     needsFenceR = expandedR;
 
+                    // POST-PROCESO ESTRICTO DE ANIQUILACIÓN: Limpieza milimétrica de interiores
+                    // Garantiza por fuerza bruta que NINGUNA valla (ni siquiera las expansiones) pise el interior
+                    for (let s = 1; s < aspVertCount - 1; s++) {
+                        const dist = asphaltDists[s];
+                        const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist <= p.distEnd + 0.1);
+                        if (!piece) continue;
+                        
+                        if (piece.subtype === 'rotonda' || piece.type === 'rotonda') {
+                            needsFenceR[s] = false; // INTERIOR de la rotonda borrado obligatoriamente
+                        } else if (piece.type === 'curve' || (piece.subtype && piece.subtype.toLowerCase().includes('curve'))) {
+                            const distL = Math.hypot(asphaltVerts[(s+1)*6] - asphaltVerts[(s-1)*6], asphaltVerts[(s+1)*6+2] - asphaltVerts[(s-1)*6+2]);
+                            const distR = Math.hypot(asphaltVerts[(s+1)*6+3] - asphaltVerts[(s-1)*6+3], asphaltVerts[(s+1)*6+5] - asphaltVerts[(s-1)*6+5]);
+                            
+                            // Si el derecho es más largo (es el exterior), eliminamos el izquierdo (interior) sea como sea.
+                            if (distR > distL + 0.001) {
+                                needsFenceL[s] = false; 
+                            } else if (distL > distR + 0.001) {
+                                needsFenceR[s] = false;
+                            }
+                        }
+                    }
+
                     const fenceMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.7, roughness: 0.3 });
                     const postMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, metalness: 0.3, roughness: 0.7 });
                     const postPositions = [];
@@ -5110,6 +5157,7 @@
                         let currentSegment = [];
                         const processSegment = (seg) => {
                             if (seg.length < 3) return; 
+                            
                             const rawPts = seg.map(idx => {
                                 const base = idx * 6 + (isLeft ? 0 : 3);
                                 return new THREE.Vector3(asphaltVerts[base], asphaltVerts[base+1], asphaltVerts[base+2]);
@@ -5404,7 +5452,7 @@
                     });
                     
                     for(let j=0; j<numLanes; j++) {
-                        createMultiSegmentRailMesh(rails.lanes[j], 0.7); 
+                        createMultiSegmentRailMesh(rails.visualLanes[j], 0.7); 
                     }
                     
                     createMultiSegmentRailMesh(rails.pit, 0.6); 
