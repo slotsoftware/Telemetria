@@ -2769,6 +2769,14 @@
               }
           }, []);
 
+          const handleProtectedAction = async (actionFn) => {
+              const auth = window.FirebaseAPI.getAuth();
+              const currentUser = auth.currentUser;
+              if (!currentUser || currentUser.isAnonymous) { alert(t.auth.reqVerify); setShowAuthModal(true); return; }
+              try { await currentUser.reload(); setUser({ ...auth.currentUser }); } catch(e) {}
+              if (auth.currentUser && auth.currentUser.emailVerified) { actionFn(); } else { alert(t.auth.reqVerify); setShowAuthModal(true); }
+          };
+
           useEffect(() => {
               const initFirebase = () => {
                   if (!window.FirebaseAPI) { setTimeout(initFirebase, 200); return; }
@@ -2804,11 +2812,11 @@
                   if (authMode === 'register') {
                       const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
                       await updateProfile(userCredential.user, { displayName: authUsername });
-                      // try { await sendEmailVerification(userCredential.user); } catch (e) { } // Bypass verification sending
+                      try { await sendEmailVerification(userCredential.user); } catch (e) { }
                       setUser({ ...userCredential.user, displayName: authUsername }); 
-                      setAuthMessage('¡Registro exitoso! Ya puedes acceder a la comunidad y al chat.'); 
-                      setTimeout(() => setShowAuthModal(false), 2000);
-                  } else { await signInWithEmailAndPassword(auth, authEmail, authPassword); setShowAuthModal(false); }
+                      alert(t.auth.verifyMsg); 
+                  } else { await signInWithEmailAndPassword(auth, authEmail, authPassword); }
+                  setShowAuthModal(false);
               } catch (error) {
                   if (error.code === 'auth/email-already-in-use') setAuthError('Este correo ya está registrado.');
                   else if (error.code === 'auth/invalid-credential') setAuthError('Correo o contraseña incorrectos.');
@@ -2832,13 +2840,66 @@
               }
           };
 
-          const handleProtectedAction = async (actionFn) => {
+          const handleSignOut = () => { const { getAuth, signOut } = window.FirebaseAPI; signOut(getAuth()); };
+
+          useEffect(() => {
+              if (!user || !dbRef.current || !showCommunityModal) return;
+              setIsCommunityLoading(true);
+              const { collection, onSnapshot } = window.FirebaseAPI;
+              const colRef = collection(dbRef.current, 'artifacts', appIdRef.current, 'public', 'data', 'community_circuits');
+              const unsubscribe = onSnapshot(colRef, (snapshot) => {
+                  const fetchedData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                  fetchedData.sort((a, b) => { const timeA = a.createdAt ? a.createdAt.toMillis() : 0; const timeB = b.createdAt ? b.createdAt.toMillis() : 0; return timeB - timeA; });
+                  setCommunityCircuits(fetchedData); setIsCommunityLoading(false);
+              }, (error) => { console.error(error); setIsCommunityLoading(false); });
+              return () => unsubscribe();
+          }, [user, showCommunityModal]);
+
+          const handlePublishToCommunity = async () => {
+              if (pieces.length === 0) { alert(t.alerts.pieces); return; }
               const auth = window.FirebaseAPI.getAuth();
-              const currentUser = auth.currentUser;
-              if (!currentUser || currentUser.isAnonymous) { alert("Debes iniciar sesión para usar esta función."); setShowAuthModal(true); return; }
-              try { await currentUser.reload(); setUser({ ...auth.currentUser }); } catch(e) {}
-              // if (auth.currentUser && auth.currentUser.emailVerified) { actionFn(); } else { alert(t.auth.reqVerify); setShowAuthModal(true); }
-              actionFn(); // Allow directly
+              if (!auth.currentUser || auth.currentUser.isAnonymous || !auth.currentUser.emailVerified) { alert(t.auth.reqVerify); setShowAuthModal(true); return; }
+              if (!dbRef.current) { alert("Conexión con la comunidad no establecida aún."); return; }
+              setIsPublishing(true);
+              try {
+                  const { collection, addDoc, serverTimestamp } = window.FirebaseAPI;
+                  const bDef = TRACK_DEFINITIONS[activeBrand] || TRACK_DEFINITIONS['NINCO'];
+                  const bColors = { neonColor: bDef.neonColor, trackColor: bDef.trackColor, railColor: bDef.railColor, slotColor: bDef.slotColor, borderColor1: bDef.borderColor1, borderColor2: bDef.borderColor2 };
+                  const circuitData = { 
+                      version: "2.0", brand: activeBrand, brandColors: bColors, mixedBrands: getMixedBrandsPayload(pieces), pieces: pieces, boardPoints: boardPoints, boardClosed: boardClosed, 
+                      autoBorders: autoBorders, authorId: user.uid, authorName: user.displayName || 'Piloto', pieceCount: pieces.length, createdAt: serverTimestamp() 
+                  };
+                  const colRef = collection(dbRef.current, 'artifacts', appIdRef.current, 'public', 'data', 'community_circuits');
+                  await addDoc(colRef, circuitData);
+                  alert(t.communityModal.success);
+              } catch (e) { alert("Hubo un error al compartir tu circuito."); } finally { setIsPublishing(false); }
+          };
+
+          const loadCommunityCircuit = (circuit) => {
+              const resolvedBrand = getResolvedBrand(circuit.brand, circuit.pieces);
+              setActiveBrand(resolvedBrand);
+              if (circuit.pieces) { 
+                  const safePieces = circuit.pieces.map(p => ({ 
+                      ...p, 
+                      uid: p.uid || Date.now() + Math.random(),
+                      brandKey: getResolvedBrand(p.brandKey || circuit.brand, [p])
+                  })); 
+                  setHistory([migrateToAbsolute(safePieces)]); setHistoryStep(0); 
+              }
+              if (circuit.boardPoints) setBoardPoints(circuit.boardPoints);
+              if (circuit.boardClosed !== undefined) setBoardClosed(circuit.boardClosed);
+              if (circuit.autoBorders !== undefined) setAutoBorders(circuit.autoBorders); else setAutoBorders(false);
+              setShowCommunityModal(false);
+              pendingFit.current = true;
+          };
+
+          const handleDeleteCommunityCircuit = async (circuitId) => {
+              if (!window.confirm(t.communityModal.confirmDel)) return;
+              try {
+                  const { doc, deleteDoc } = window.FirebaseAPI;
+                  const docRef = doc(dbRef.current, 'artifacts', appIdRef.current, 'public', 'data', 'community_circuits', circuitId);
+                  await deleteDoc(docRef);
+              } catch (error) { alert("No se pudo eliminar el circuito. Permiso denegado."); }
           };
 
           useEffect(() => {
@@ -2864,7 +2925,7 @@
           const handleSendMessage = async (e) => {
               e.preventDefault(); if (!newMessage.trim()) return;
               const auth = window.FirebaseAPI.getAuth();
-              if (!auth.currentUser || auth.currentUser.isAnonymous) { alert("Debes iniciar sesión para usar el chat."); setShowAuthModal(true); return; }
+              if (!auth.currentUser || auth.currentUser.isAnonymous || !auth.currentUser.emailVerified) { alert(t.auth.reqVerify); setShowAuthModal(true); return; }
               if (!dbRef.current) return;
               try {
                   const { collection, addDoc, serverTimestamp } = window.FirebaseAPI;
@@ -4382,10 +4443,10 @@
                           </div>
                           <div className="relative">
                               <form onSubmit={handleSendMessage} className="p-2 border-t border-cyan-500/30 bg-black/60 rounded-b-xl flex gap-2 z-20 relative">
-                                  <input type="text" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)} onKeyDown={(e)=>e.stopPropagation()} placeholder={t.chat.placeholder} className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none transition-colors select-text cursor-text" style={{ userSelect: 'text' }} disabled={!user || user.isAnonymous}/>
-                                  <button type="submit" disabled={!newMessage.trim() || !user || user.isAnonymous} className="bg-cyan-600 hover:bg-cyan-500 text-black px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"><MessageSquare size={14} className="fill-current"/></button>
+                                  <input type="text" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)} onKeyDown={(e)=>e.stopPropagation()} placeholder={t.chat.placeholder} className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none transition-colors select-text cursor-text" style={{ userSelect: 'text' }} disabled={!user || user.isAnonymous || !user.emailVerified}/>
+                                  <button type="submit" disabled={!newMessage.trim() || !user || user.isAnonymous || !user.emailVerified} className="bg-cyan-600 hover:bg-cyan-500 text-black px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"><MessageSquare size={14} className="fill-current"/></button>
                               </form>
-                              {(!user || user.isAnonymous) && (
+                              {(!user || user.isAnonymous || !user.emailVerified) && (
                                   <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px] rounded-b-xl flex flex-col items-center justify-center z-30 cursor-default">
                                       <div className="px-4 text-center mb-3"><span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">{t.chat.loginReq}</span></div>
                                       <button onClick={async (e) => { 
@@ -4395,9 +4456,10 @@
                                                   const auth = window.FirebaseAPI.getAuth();
                                                   await auth.currentUser.reload();
                                                   setUser({ ...auth.currentUser });
-                                                  return;
+                                                  if (auth.currentUser.emailVerified) return;
                                               } catch(err) {}
                                           }
+                                          alert(t.auth.reqVerify); 
                                           setShowAuthModal(true); 
                                       }} className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-black text-[10px] rounded uppercase tracking-widest transition-colors shadow-[0_0_10px_rgba(6,182,212,0.3)]">{(!user || user.isAnonymous) ? t.auth.loginBtn : t.auth.verifyCheck}</button>
                                   </div>
