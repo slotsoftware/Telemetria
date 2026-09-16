@@ -13,9 +13,37 @@
         }
 
         body { 
-            background: linear-gradient(180deg, #000000 0%, #051a05 50%, #0a290a 100%);
+            background-color: #051a05; /* Fallback base color */
             font-family: sans-serif; 
             color: #f0fdf4;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background-image: url('fondo.jpeg'); /* The image you will upload */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        
+        /* Fallback gradient overlay to ensure text readability if image is too bright */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(5,26,5,0.7) 50%, rgba(10,41,10,0.85) 100%);
         }
 
         /* Separador "Currado" - Efecto Láser */
@@ -65,15 +93,16 @@
 
         /* Panel Izquierdo */
         .neon-panel-solid {
-            background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 45%, #000000 55%, #0d0d0d 100%);
+            background: linear-gradient(145deg, rgba(26, 26, 26, 0.9) 0%, rgba(13, 13, 13, 0.95) 45%, rgba(0, 0, 0, 0.95) 55%, rgba(13, 13, 13, 0.9) 100%);
             border: 1px solid #39ff14;
             box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), inset 0 0 15px rgba(57, 255, 20, 0.05);
             color: #39ff14;
+            backdrop-filter: blur(5px);
         }
 
         /* Panel Derecho */
         .neon-panel-glass {
-            background: linear-gradient(180deg, rgba(20, 50, 20, 0.25) 0%, rgba(0, 20, 0, 0.4) 100%);
+            background: linear-gradient(180deg, rgba(20, 50, 20, 0.35) 0%, rgba(0, 20, 0, 0.5) 100%);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(57, 255, 20, 0.4);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
@@ -87,7 +116,7 @@
         }
 
         .btn-neon {
-            background: linear-gradient(180deg, #0f2e0f 0%, #000000 100%);
+            background: linear-gradient(180deg, rgba(15, 46, 15, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%);
             color: #39ff14;
             border: 1px solid #39ff14;
             transition: all 0.3s ease;
@@ -117,15 +146,16 @@
             border-radius: 1rem;
             box-shadow: 0 0 30px rgba(57, 255, 20, 0.1);
             border: 3px solid #1a472a;
-            background: #000;
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            backdrop-filter: blur(4px);
         }
 
         .input-neon {
-            background: rgba(0, 20, 0, 0.6);
+            background: rgba(0, 20, 0, 0.7);
             border: 1px solid #1a472a;
             color: #39ff14;
             transition: all 0.3s;
@@ -134,7 +164,7 @@
             border-color: #39ff14;
             box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
             outline: none;
-            background: rgba(0, 30, 0, 0.8);
+            background: rgba(0, 30, 0, 0.9);
         }
         .input-neon::placeholder {
             color: rgba(57, 255, 20, 0.3);
@@ -152,7 +182,11 @@
         }
     </style>
 </head>
-<body class="min-h-screen overflow-y-auto">
+<body class="min-h-screen overflow-y-auto relative">
+
+    <!-- Background Image Layers -->
+    <div class="bg-layer"></div>
+    <div class="bg-overlay"></div>
 
     <!-- Modal de Sesión Duplicada -->
     <div id="session-alert">
@@ -166,7 +200,7 @@
         </div>
     </div>
 
-    <div id="auth-container" class="min-h-screen flex flex-col items-center justify-center p-4 md:p-6">
+    <div id="auth-container" class="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 relative z-10">
         
         <div class="text-center mb-8 md:mb-10 mt-4 w-full">
             <!-- Título Principal (Único sitio con &) -->
@@ -175,7 +209,7 @@
             <!-- Separador "Currado" -->
             <div class="laser-separator"></div>
             
-            <p class="text-[#39ff14]/70 text-[9px] md:text-[10px] uppercase tracking-[0.3em] mt-2 font-bold">Creación de Circuitos y Telemetria</p>
+            <p class="text-[#39ff14]/70 text-[9px] md:text-[10px] uppercase tracking-[0.3em] mt-2 font-bold drop-shadow-md">Creación de Circuitos y Telemetria</p>
         </div>
 
         <div class="img-container">
@@ -206,7 +240,7 @@
                         Herramienta profesional de diseño y telemetría. Un solo pago de 20€, control total de por vida.
                     </p>
 
-                    <div class="bg-black/40 rounded-2xl p-5 border border-[#39ff14]/30 mb-6">
+                    <div class="bg-black/60 rounded-2xl p-5 border border-[#39ff14]/30 mb-6 backdrop-blur-sm">
                         <ul class="text-xs space-y-3 text-white font-bold">
                             <li class="flex items-center"><i class="fas fa-check-circle mr-2 text-[#39ff14]"></i> Solicita acceso vía Email</li>
                             <li class="flex items-center"><i class="fas fa-check-circle mr-2 text-[#39ff14]"></i> Pago único de 20,00€</li>
@@ -227,14 +261,14 @@
 
                 <form id="login-form" class="space-y-6 flex-grow">
                     <div>
-                        <label class="block text-[10px] font-black text-[#39ff14] uppercase mb-2 tracking-widest">Identificación</label>
+                        <label class="block text-[10px] font-black text-[#39ff14] uppercase mb-2 tracking-widest drop-shadow-md">Identificación</label>
                         <input type="email" id="email" required 
                             class="w-full input-neon rounded-xl p-4 text-sm"
                             placeholder="tu@email.com">
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-[#39ff14] uppercase mb-2 tracking-widest">Código de Activación</label>
+                        <label class="block text-[10px] font-black text-[#39ff14] uppercase mb-2 tracking-widest drop-shadow-md">Código de Activación</label>
                         <input type="text" id="code" required 
                             class="w-full input-neon rounded-xl p-4 text-center tracking-[0.5em] uppercase font-mono text-sm"
                             placeholder="XXX-XXX">
@@ -242,19 +276,19 @@
                     
                     <div id="msg-box" class="hidden p-3 rounded-xl text-xs text-center font-bold break-words"></div>
 
-                    <button type="submit" id="btn-login" class="btn-neon w-full font-black py-4 rounded-xl shadow-xl transition flex justify-center items-center text-sm tracking-widest uppercase">
+                    <button type="submit" id="btn-login" class="btn-neon w-full font-black py-4 rounded-xl shadow-xl transition flex justify-center items-center text-sm tracking-widest uppercase mt-auto">
                         ENTRAR <i class="fas fa-chevron-right ml-3 text-xs"></i>
                     </button>
                 </form>
             </div>
         </div>
         
-        <p class="mt-12 text-[9px] text-[#39ff14]/50 text-center max-w-lg uppercase tracking-[0.2em] font-medium">
+        <p class="mt-12 text-[9px] text-[#39ff14]/70 text-center max-w-lg uppercase tracking-[0.2em] font-medium drop-shadow-md">
             TRACKSTELEMETRY v2.0 <span class="mx-2">|</span> slotcarhome@gmail.com
         </p>
     </div>
 
-    <iframe id="app-frame" src="about:blank"></iframe>
+    <iframe id="app-frame" src="about:blank" class="z-20 relative"></iframe>
     
     <button onclick="logout()" id="logout-btn" class="hidden fixed bottom-8 right-8 btn-neon w-14 h-14 rounded-2xl shadow-2xl z-[100] flex items-center justify-center text-xl border-2 border-[#39ff14] bg-black">
         <i class="fas fa-power-off"></i>
@@ -265,6 +299,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, query, where, doc, updateDoc, setDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Configuración de Firebase
         const firebaseConfig = {
           apiKey: "AIzaSyDW-2Yc4kvZJYbNOVeesPZWdRThYe0noUI",
           authDomain: "correo-95e58.firebaseapp.com",
@@ -298,7 +333,6 @@
         
         function updateMailLink() {
             const userEmail = emailInput.value || "";
-            // NOMBRE TODO JUNTO EN EL EMAIL
             const subject = "Interés Licencia TRACKSTELEMETRY";
             const body = `Hola, equipo de SLOTSOFTWARE,%0D%0A%0D%0AEstoy interesado en adquirir la licencia de TRACKSTELEMETRY por el Precio de 20 Euros%0D%0A%0D%0AQuedo a la espera de sus instrucciones para proceder con el pago.%0D%0A%0D%0AGracias y un saludo.`;
             mailLink.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
@@ -392,6 +426,11 @@
 
         function showApp() {
             document.getElementById('auth-container').style.display = 'none';
+            // Hide the background layers when app shows
+            document.querySelector('.bg-layer').style.display = 'none';
+            document.querySelector('.bg-overlay').style.display = 'none';
+            document.body.style.background = 'black';
+            
             document.getElementById('app-frame').src = APP_FILENAME;
             document.getElementById('app-frame').style.display = 'block';
             document.getElementById('logout-btn').classList.remove('hidden');
