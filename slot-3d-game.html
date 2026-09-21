@@ -1602,7 +1602,7 @@
                 shadowGeo.rotateX(-Math.PI / 2);
                 const shadowMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, depthWrite: false, color: 0x000000 });
                 const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-                shadowMesh.position.set(0, 0.1, -9 * 0.25);
+                shadowMesh.position.set(0, 0.1, 9 * 0.35); // Alineado con el nuevo centro
                 vg.add(shadowMesh);
                 
                 return pg; 
@@ -3198,8 +3198,10 @@
                                 if (p1 && p2) {
                                     _dir.subVectors(p2, p1).normalize();
                                     
-                                    // PIVOTE EN EL MORRO: El coche sigue la pista desde delante, obligando a la cola a derrapar 
-                                    car.worldPos.copy(p1).addScaledVector(_dir, -2.8);
+                                    // PIVOTE CLAVADO: El contenedor se coloca EXACTAMENTE en el raíl (p1).
+                                    // Como el modelo 3D está desplazado internamente (+Z), el morro queda anclado
+                                    // a la guía y el eje trasero derrapa por inercia geométrica pura en las curvas.
+                                    car.worldPos.copy(p1);
                                     
                                     // AQUI DEFINIMOS isDecor PARA EL RESTO DEL CÁLCULO
                                     const isDecor = cas?.isDecor;
@@ -3834,7 +3836,10 @@
                 if (!isDecor) {
                     const smartBottomY = getSmartBottomY(rawModel);
                     rawModel.position.y -= smartBottomY;
-                    rawModel.position.z -= finalSize.z * 0.25;
+                    // FIX PIVOTE: En Three.js el coche mira hacia -Z. 
+                    // Desplazamos el modelo hacia atrás (+Z) para que el origen (0,0,0) 
+                    // quede justo en el morro (donde va la guía del slot).
+                    rawModel.position.z += finalSize.z * 0.35; 
                 } else {
                     rawModel.position.y -= finalBox.min.y; 
                 }
@@ -3858,7 +3863,8 @@
                         shadowGeo.rotateX(-Math.PI / 2);
                         const shadowMat = new THREE.MeshBasicMaterial({ map: fakeTex, transparent: true, opacity: 0.9, depthWrite: false, color: 0x000000 });
                         const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-                        shadowMesh.position.set(0, 0.1, -finalSize.z * 0.25);
+                        // Sombra alineada con el nuevo centro visual del coche (+Z)
+                        shadowMesh.position.set(0, 0.1, finalSize.z * 0.35);
                         templateGroup.add(shadowMesh);
 
                         const lightsGroup = new THREE.Group();
@@ -3868,23 +3874,27 @@
                         const hlIntensity = isNight ? 3.0 : 0;
                         const tlIntensity = isNight ? 1.5 : 0;
 
+                        // Las luces también deben estar alineadas con el nuevo centro
+                        const frontZ = -finalSize.z * 0.1; // Morro
+                        const rearZ = finalSize.z * 0.8;  // Cola
+
                         // Faro delantero derecho
                         const hl1 = new THREE.SpotLight(0xffffee, hlIntensity, 80, Math.PI/5, 0.6, 1.5);
-                        hl1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, -finalSize.z * 0.45);
+                        hl1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, frontZ);
                         hl1.name = "HEADLIGHT";
-                        hl1.target = new THREE.Object3D(); hl1.target.position.set(finalSize.x * 0.35, 0, -finalSize.z * 4.0);
+                        hl1.target = new THREE.Object3D(); hl1.target.position.set(finalSize.x * 0.35, 0, frontZ - 4.0);
                         lightsGroup.add(hl1); lightsGroup.add(hl1.target);
 
                         // Faro delantero izquierdo
                         const hl2 = new THREE.SpotLight(0xffffee, hlIntensity, 80, Math.PI/5, 0.6, 1.5);
-                        hl2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, -finalSize.z * 0.45);
+                        hl2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, frontZ);
                         hl2.name = "HEADLIGHT";
-                        hl2.target = new THREE.Object3D(); hl2.target.position.set(-finalSize.x * 0.35, 0, -finalSize.z * 4.0);
+                        hl2.target = new THREE.Object3D(); hl2.target.position.set(-finalSize.x * 0.35, 0, frontZ - 4.0);
                         lightsGroup.add(hl2); lightsGroup.add(hl2.target);
 
                         // Foco trasero (Luz general roja)
                         const tl = new THREE.PointLight(0xff0000, tlIntensity, 8);
-                        tl.position.set(0, finalSize.y * 0.4, finalSize.z * 0.4);
+                        tl.position.set(0, finalSize.y * 0.4, rearZ);
                         tl.name = "TAILLIGHT";
                         lightsGroup.add(tl);
 
@@ -3900,8 +3910,8 @@
                         const hg2 = new THREE.Mesh(glowGeo, headGlowMat); hg2.position.copy(hl2.position); lightsGroup.add(hg2);
                         
                         // Posicionar bombillas traseras
-                        const tg1 = new THREE.Mesh(glowGeo, tailGlowMat); tg1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, finalSize.z * 0.48); lightsGroup.add(tg1);
-                        const tg2 = new THREE.Mesh(glowGeo, tailGlowMat); tg2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, finalSize.z * 0.48); lightsGroup.add(tg2);
+                        const tg1 = new THREE.Mesh(glowGeo, tailGlowMat); tg1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, rearZ + 0.05); lightsGroup.add(tg1);
+                        const tg2 = new THREE.Mesh(glowGeo, tailGlowMat); tg2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, rearZ + 0.05); lightsGroup.add(tg2);
 
                         templateGroup.add(lightsGroup);
                     }
