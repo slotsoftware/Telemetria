@@ -2727,7 +2727,7 @@
                         return outVec;
                     };
 
-                    const LUT_RES = 0.5; // Alta resolución (1 punto cada medio centímetro)
+                    const LUT_RES = 0.15; // ULTRA resolución (evita leer el raíl como polígonos a gran velocidad)
                     const buildTrackLUT = (pa, distances, heavyFunc) => {
                         if ((!pa || pa.length === 0) && !heavyFunc) return null;
                         const maxD = distances[distances.length - 1];
@@ -3184,8 +3184,9 @@
                                     return pos;
                                 };
 
-                                // FIX STUTTER: LookAhead fijo evita que el vector direccional tiemble cuando el coche acelera o frena
-                                const lookAhead = 1.8; // REDUCIDO PARA QUE EL MORRO CLAVE EN EL RAÍL Y DERRAPE DE ATRÁS
+                                // FIX STUTTER: Un lookAhead un pelín más largo (2.5) hace de filtro paso-bajo y evita
+                                // que el coche vibre si hay micro-imperfecciones matemáticas en la curva de la pista.
+                                const lookAhead = 2.5; 
                                 
                                 if (hasRotonda && rallyPathRef.current.length > 0 && rallyDistancesRef.current.length > 0) {
                                     p1 = getPositionFromLUT(lutRally, car.distance, _rallyPos);
@@ -3298,23 +3299,19 @@
                                         _fpos.copy(car.worldPos);
                                         if (!isDecor) _fpos.add(_yOffset);
 
-                                        if (!pg.userData.initPos) {
-                                            pg.position.copy(_fpos);
-                                            pg.userData.initPos = true;
-                                        } else {
-                                            pg.position.x = _fpos.x;
-                                            pg.position.z = _fpos.z;
-                                            // Suavizado Y altísimo para evitar saltitos
-                                            pg.position.y += (_fpos.y - pg.position.y) * (1 - Math.exp(-35 * dt)); 
-                                        }
+                                        // PIVOTE Y POSICIÓN EXACTA (Sin interpolaciones Y raras que causen desincronización)
+                                        pg.position.copy(_fpos);
+                                        pg.userData.initPos = true;
 
                                         _flook.copy(_dir); 
                                         _targetMatrix.lookAt(_origin, _flook, _up);
                                         _targetRotation.setFromRotationMatrix(_targetMatrix);
                                         
-                                        // FIX MICRO-STUTTERING: Eliminar latencia en el giro (Casi instantáneo)
-                                        if (car.speed < 10.0) pg.quaternion.slerp(_targetRotation, 1 - Math.exp(-25 * dt));
-                                        else pg.quaternion.slerp(_targetRotation, 1 - Math.exp(-60 * dt));
+                                        // FIX TROMPO/STUTTERING ABSOLUTO: 
+                                        // En lugar de interpolar el giro (slerp) intentando suavizarlo, 
+                                        // el coche DEBE encajarse exactamente en el raíl fotograma a fotograma. 
+                                        // La suavidad ahora la da la Ultra-Resolución del raíl, no el código del coche.
+                                        pg.quaternion.copy(_targetRotation);
                                     }
                                 }
                             } // Fin de Lógica Normal
@@ -3354,8 +3351,8 @@
                                     _dirW.subVectors(_worldP2, _worldP1).normalize();
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, -30);
                                     _targetPos.y += 14;
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-35 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-45 * dt)); 
+                                    camera.position.lerp(_targetPos, 1 - Math.exp(-45 * dt)); 
+                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-55 * dt)); 
                                     camera.lookAt(cameraTarget); 
                                 } else if (cameraModeRef.current === 'FRONT') {
                                     _dirW.subVectors(_worldP2, _worldP1).normalize();
