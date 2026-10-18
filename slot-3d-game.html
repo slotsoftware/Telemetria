@@ -2756,21 +2756,33 @@
 
                     const getPositionFromLUT = (lutObj, d, outVec) => {
                         if (!lutObj) return outVec.set(0,0,0);
-                        let safeD = d;
-                        while (safeD < 0) safeD += lutObj.maxD;
-                        safeD = safeD % lutObj.maxD;
+                        const maxD = lutObj.maxD;
+                        let safeD = d % maxD;
+                        if (safeD < 0) safeD += maxD;
                         
+                        const totalPts = Math.floor(lutObj.data.length / 3);
                         const exactIdx = safeD / LUT_RES;
-                        const i0 = Math.floor(exactIdx);
-                        const i1 = Math.min(i0 + 1, (lutObj.data.length / 3) - 1);
-                        const ratio = exactIdx - i0;
+                        const i1 = Math.floor(exactIdx) % totalPts;
+                        const i2 = (i1 + 1) % totalPts;
+                        const i0 = (i1 - 1 + totalPts) % totalPts;
+                        const i3 = (i1 + 2) % totalPts;
                         
-                        const i0x3 = i0 * 3;
-                        const i1x3 = i1 * 3;
-                        
-                        outVec.x = lutObj.data[i0x3] + (lutObj.data[i1x3] - lutObj.data[i0x3]) * ratio;
-                        outVec.y = lutObj.data[i0x3+1] + (lutObj.data[i1x3+1] - lutObj.data[i0x3+1]) * ratio;
-                        outVec.z = lutObj.data[i0x3+2] + (lutObj.data[i1x3+2] - lutObj.data[i0x3+2]) * ratio;
+                        const t = exactIdx - Math.floor(exactIdx);
+                        const t2 = t * t;
+                        const t3 = t2 * t;
+
+                        const i0x3 = i0 * 3, i1x3 = i1 * 3, i2x3 = i2 * 3, i3x3 = i3 * 3;
+                        const data = lutObj.data;
+
+                        const p0x = data[i0x3], p0y = data[i0x3+1], p0z = data[i0x3+2];
+                        const p1x = data[i1x3], p1y = data[i1x3+1], p1z = data[i1x3+2];
+                        const p2x = data[i2x3], p2y = data[i2x3+1], p2z = data[i2x3+2];
+                        const p3x = data[i3x3], p3y = data[i3x3+1], p3z = data[i3x3+2];
+
+                        // Interpolación cúbica continua Catmull-Rom (elimina esquinas poligonales a alta velocidad)
+                        outVec.x = 0.5 * ((2 * p1x) + (-p0x + p2x) * t + (2 * p0x - 5 * p1x + 4 * p2x - p3x) * t2 + (-p0x + 3 * p1x - 3 * p2x + p3x) * t3);
+                        outVec.y = 0.5 * ((2 * p1y) + (-p0y + p2y) * t + (2 * p0y - 5 * p1y + 4 * p2y - p3y) * t2 + (-p0y + 3 * p1y - 3 * p2y + p3y) * t3);
+                        outVec.z = 0.5 * ((2 * p1z) + (-p0z + p2z) * t + (2 * p0z - 5 * p1z + 4 * p2z - p3z) * t2 + (-p0z + 3 * p1z - 3 * p2z + p3z) * t3);
                         
                         return outVec;
                     };
@@ -2827,10 +2839,25 @@
                         return arr[0];
                     };
 
+                    // Variables de estado para estabilización tipo consola (Frame Pacing & Camera Rig)
+                    let smoothDt = 1 / 60;
+                    const smoothCamDir = new THREE.Vector3(0, 0, 1);
+                    const smoothCamPos = new THREE.Vector3();
+                    const smoothCamLook = new THREE.Vector3();
+                    let camInitialized = false;
+                    const _prevDir = [new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 1)];
+                    const _carBodyRoll = [0, 0];
+
                     const animate = () => { 
                         animationId = requestAnimationFrame(animate); 
-                        // OPTIMIZACIÓN: Aumentamos el límite de delta-time a 0.1s para absorber lag de red sin tirones
-                        const rawDt = clock.current.getDelta(); const dt = Math.min(rawDt, 0.05); // FIX: dt reducido a 0.05 max para evitar trompicones
+                        const rawDt = clock.current.getDelta();
+                        
+                        // ESTABILIZADOR DE FRAME PACING (Estilo Consola PS2/PS3):
+                        // Filtra los micro-tirones del reloj del navegador para que el avance por fotograma sea de seda pura
+                        if (rawDt > 0 && rawDt < 0.1) {
+                            smoothDt = smoothDt * 0.92 + rawDt * 0.08;
+                        }
+                        const dt = (rawDt > 0.012 && rawDt < 0.022) ? (1 / 60) : Math.min(smoothDt, 0.033);
                         const nowTime = performance.now() / 1000;
                         const totalDist = accumulatedDist; const currentTrackLen = (hasRotonda && rallyDistancesRef.current.length > 0) ? rallyDistancesRef.current[rallyDistancesRef.current.length - 1] : totalDist;
 
@@ -2966,30 +2993,26 @@
 
                             // --- LÓGICA NORMAL (EN CARRIL) ---
                             if (!car.crashed) {
-                                // Lógica de Gasolina y Boxes
+                                // Lógica de Gasolina y Boxes (Repostaje inmediato al parar en el Pit Lane)
                                 if (ci === myCarIdx || isLocalAI) {
                                     if (isDigitalCircuit) {
                                         if (car.currentLane === 2) { 
-                                            let distInPit = car.distance - (car.pitEnteredDist || 0);
-                                            if (distInPit < 0) distInPit += currentTrackLen;
+                                            // Limitar velocidad máxima dentro del carril de boxes
+                                            targetSpeed = Math.min(targetSpeed, maxSpeed * 0.40);
 
-                                            if (distInPit > 50 && car.fuel < 100 && !car.isRefueling && !car.hasRefueledThisPit) {
+                                            // Si el jugador suelta el gatillo (o la IA decide parar) y el coche frena, reposta inmediatamente
+                                            if (car.fuel < 100 && !car.hasRefueledThisPit && (targetSpeed < 5.0 || car.isRefueling)) {
                                                 car.isRefueling = true;
-                                            }
-                                            
-                                            if (car.isRefueling) {
                                                 targetSpeed = 0; 
-                                                if (car.speed < 5.0) {
+                                                if (car.speed < 8.0) {
                                                     car.speed = 0; 
-                                                    car.fuel = Math.min(100, car.fuel + 33.34 * dt); 
+                                                    car.fuel = Math.min(100, car.fuel + 35.0 * dt); 
                                                     if (car.fuel >= 100) {
                                                         car.fuel = 100;
                                                         car.isRefueling = false; 
                                                         car.hasRefueledThisPit = true; 
                                                     }
                                                 }
-                                            } else {
-                                                targetSpeed = Math.min(targetSpeed, maxSpeed * 0.35); 
                                             }
                                         } else {
                                             car.isRefueling = false;
@@ -3184,9 +3207,8 @@
                                     return pos;
                                 };
 
-                                // FIX STUTTER: Un lookAhead un pelín más largo (2.5) hace de filtro paso-bajo y evita
-                                // que el coche vibre si hay micro-imperfecciones matemáticas en la curva de la pista.
-                                const lookAhead = 2.5; 
+                                // Tangente precisa para que el morro vaya clavado al raíl con suavidad de seda
+                                const lookAhead = 3.2; 
                                 
                                 if (hasRotonda && rallyPathRef.current.length > 0 && rallyDistancesRef.current.length > 0) {
                                     p1 = getPositionFromLUT(lutRally, car.distance, _rallyPos);
@@ -3199,9 +3221,13 @@
                                 if (p1 && p2) {
                                     _dir.subVectors(p2, p1).normalize();
                                     
+                                    // Calcular fuerza centrífuga en curva para inclinar la carrocería suavemente (Efecto Gran Turismo)
+                                    const turnRate = (_dir.x * _prevDir[ci].z - _dir.z * _prevDir[ci].x);
+                                    _prevDir[ci].lerp(_dir, 0.25).normalize();
+                                    const targetRoll = Math.max(-0.14, Math.min(0.14, turnRate * (car.speed / maxSpeed) * 4.5));
+                                    _carBodyRoll[ci] += (targetRoll - _carBodyRoll[ci]) * (1 - Math.exp(-15 * dt));
+
                                     // PIVOTE CLAVADO: El contenedor se coloca EXACTAMENTE en el raíl (p1).
-                                    // Como el modelo 3D está desplazado internamente (+Z), el morro queda anclado
-                                    // a la guía y el eje trasero derrapa por inercia geométrica pura en las curvas.
                                     car.worldPos.copy(p1);
                                     
                                     // AQUI DEFINIMOS isDecor PARA EL RESTO DEL CÁLCULO
@@ -3299,7 +3325,6 @@
                                         _fpos.copy(car.worldPos);
                                         if (!isDecor) _fpos.add(_yOffset);
 
-                                        // PIVOTE Y POSICIÓN EXACTA (Sin interpolaciones Y raras que causen desincronización)
                                         pg.position.copy(_fpos);
                                         pg.userData.initPos = true;
 
@@ -3307,88 +3332,92 @@
                                         _targetMatrix.lookAt(_origin, _flook, _up);
                                         _targetRotation.setFromRotationMatrix(_targetMatrix);
                                         
-                                        // FIX TROMPO/STUTTERING ABSOLUTO: 
-                                        // En lugar de interpolar el giro (slerp) intentando suavizarlo, 
-                                        // el coche DEBE encajarse exactamente en el raíl fotograma a fotograma. 
-                                        // La suavidad ahora la da la Ultra-Resolución del raíl, no el código del coche.
-                                        pg.quaternion.copy(_targetRotation);
+                                        // Suavizado rotacional de alta frecuencia (filtra micro-ruido sin perder precisión en la guía)
+                                        if (!pg.userData.quatInit) {
+                                            pg.quaternion.copy(_targetRotation);
+                                            pg.userData.quatInit = true;
+                                        } else {
+                                            pg.quaternion.slerp(_targetRotation, 1 - Math.exp(-45 * dt));
+                                        }
                                     }
                                 }
                             } // Fin de Lógica Normal
 
-                            // --- ACTUALIZACIÓN DE CÁMARA (EFECTO DE VELOCIDAD EXTREMA) ---
+                            // --- ACTUALIZACIÓN DE CÁMARA SINCRONIZADA (CERO JITTER / SUAVIDAD PS3) ---
                             if (p1 && p2 && ci === myCarIdx && vg) {
                                 vg.visible = cameraModeRef.current !== 'PILOT';
-                                _worldP1.copy(car.worldPos).add(trackGroup.position); // Usar centro del coche
+                                _worldP1.copy(car.worldPos).add(trackGroup.position);
                                 _worldP2.copy(p2).add(trackGroup.position);
 
-                                // 1. FOV DINÁMICO (Warp Speed)
+                                // 1. FOV DINÁMICO SUAVIZADO (Sin saltos bruscos de matriz de proyección)
                                 const speedRatio = Math.min(1.0, Math.max(0, car.speed / maxSpeed));
-                                let targetFOV = 50 + (speedRatio * 35); // Expande la visión de 50 a 85 grados
-                                if (cameraModeRef.current === 'PILOT') targetFOV += 20; 
+                                let targetFOV = 50 + (speedRatio * 22);
+                                if (cameraModeRef.current === 'PILOT') targetFOV += 18; 
                                 
-                                camera.fov += (targetFOV - camera.fov) * (1 - Math.exp(-12 * dt));
-                                camera.updateProjectionMatrix();
-
-                                // 2. CAMERA SHAKE (Vibración a altas velocidades)
-                                let shakeX = 0, shakeY = 0, shakeZ = 0;
-                                if (speedRatio > 0.6) {
-                                    const intensity = Math.pow((speedRatio - 0.6) / 0.4, 2) * 0.4; // Exponencial al final
-                                    shakeX = (Math.random() - 0.5) * intensity;
-                                    shakeY = (Math.random() - 0.5) * intensity;
-                                    shakeZ = (Math.random() - 0.5) * intensity;
+                                if (Math.abs(targetFOV - camera.fov) > 0.02) {
+                                    camera.fov += (targetFOV - camera.fov) * (1 - Math.exp(-8 * dt));
+                                    camera.updateProjectionMatrix();
                                 }
 
-                                // 3. SEGUIMIENTO AGRESIVO (Menos retardo, más adrenalina)
+                                // 2. VIBRACIÓN ARMÓNICA CONTINUA (Sustituye al Math.random() que causaba trompicones visuales)
+                                let shakeX = 0, shakeY = 0;
+                                if (speedRatio > 0.65) {
+                                    const intensity = Math.pow((speedRatio - 0.65) / 0.35, 2) * 0.08;
+                                    shakeX = Math.sin(nowTime * 45) * intensity;
+                                    shakeY = Math.cos(nowTime * 55) * intensity;
+                                }
+
+                                // 3. RIG DE CÁMARA CINEMATOGRÁFICO (Elimina el desfase elástico entre el coche y el fondo)
+                                _dirW.subVectors(_worldP2, _worldP1).normalize();
+                                if (!camInitialized) {
+                                    smoothCamDir.copy(_dirW);
+                                    smoothCamPos.copy(_worldP1);
+                                    smoothCamLook.copy(_worldP1);
+                                    camInitialized = true;
+                                } else {
+                                    // La dirección de la cámara gira con una inercia rotacional suave, pero su distancia al coche es exacta
+                                    smoothCamDir.lerp(_dirW, 1 - Math.exp(-14 * dt)).normalize();
+                                }
+
                                 if (cameraModeRef.current === 'PILOT') {
-                                    _dirW.subVectors(_worldP2, _worldP1).normalize();
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, 1.5);
                                     _targetPos.y += 2.5;
                                     _lookTarget.copy(_targetPos).addScaledVector(_dirW, 100);
                                     camera.position.copy(_targetPos); 
                                     camera.lookAt(_lookTarget);
                                 } else if (cameraModeRef.current === 'CHASE') {
-                                    _dirW.subVectors(_worldP2, _worldP1).normalize();
-                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, -30);
-                                    _targetPos.y += 14;
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-45 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-55 * dt)); 
-                                    camera.lookAt(cameraTarget); 
+                                    // Anclaje directo sobre el vector amortiguado: el coche nunca tiembla ni da tirones respecto al paisaje
+                                    camera.position.copy(_worldP1).addScaledVector(smoothCamDir, -30);
+                                    camera.position.y = _worldP1.y + 13.5 + shakeY;
+                                    camera.position.x += shakeX;
+                                    
+                                    _lookTarget.copy(_worldP1).addScaledVector(smoothCamDir, 10);
+                                    _lookTarget.y += 1.5;
+                                    camera.lookAt(_lookTarget); 
                                 } else if (cameraModeRef.current === 'FRONT') {
-                                    _dirW.subVectors(_worldP2, _worldP1).normalize();
-                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, 35);
-                                    _targetPos.y += 12;
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-30 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-40 * dt)); 
-                                    camera.lookAt(cameraTarget); 
+                                    camera.position.copy(_worldP1).addScaledVector(smoothCamDir, 32);
+                                    camera.position.y = _worldP1.y + 10;
+                                    camera.lookAt(_worldP1); 
                                 } else if (cameraModeRef.current === 'REAR') {
-                                    _dirW.subVectors(_worldP2, _worldP1).normalize();
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, -4);
                                     _targetPos.y += 3.0;
                                     _lookTarget.copy(_targetPos).addScaledVector(_dirW, -50);
                                     camera.position.copy(_targetPos); 
                                     camera.lookAt(_lookTarget);
                                 } else if (cameraModeRef.current === 'BIRD') {
-                                    _targetPos.set(_worldP1.x, 150, _worldP1.z + 1); // Más bajo que antes (era 180)
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-20 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-30 * dt)); 
-                                    camera.lookAt(cameraTarget); 
+                                    smoothCamPos.lerp(_worldP1, 1 - Math.exp(-12 * dt));
+                                    camera.position.set(smoothCamPos.x, _worldP1.y + 150, smoothCamPos.z + 1);
+                                    camera.lookAt(smoothCamPos); 
                                 } else if (cameraModeRef.current === 'DRONE') {
-                                    // DRON EXTREMO: Pegado y agresivo
-                                    _dirW.subVectors(_worldP2, _worldP1).normalize();
-                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, -14); 
-                                    _targetPos.y += 20; 
+                                    // Dron estabilizado con gimbal suave
+                                    _targetPos.copy(_worldP1).addScaledVector(smoothCamDir, -18); 
+                                    _targetPos.y += 22; 
+                                    _targetPos.x += Math.cos(nowTime * 2.5) * 0.4;
+                                    _targetPos.z += Math.sin(nowTime * 3.0) * 0.4;
                                     
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-25 * dt)); 
-                                    
-                                    _lookTarget.copy(_worldP1).addScaledVector(_dirW, 30);
-                                    cameraTarget.lerp(_lookTarget, 1 - Math.exp(-35 * dt)); 
-                                    
-                                    camera.lookAt(cameraTarget);
-                                    
-                                    // Dron extra sway
-                                    camera.position.x += Math.cos(nowTime * 4) * 0.3;
-                                    camera.position.z += Math.sin(nowTime * 6) * 0.4;
+                                    camera.position.copy(_targetPos); 
+                                    _lookTarget.copy(_worldP1).addScaledVector(smoothCamDir, 22);
+                                    camera.lookAt(_lookTarget);
                                 } else {
                                     cameraTarget.lerp(_zeroVec, 1 - Math.exp(-10 * dt)); 
                                     _camPos.setFromSpherical(spherical);
@@ -3396,18 +3425,13 @@
                                     camera.position.copy(_targetPos);
                                     camera.lookAt(cameraTarget);
                                 }
-
-                                // Aplicar sacudida de alta velocidad al final
-                                camera.position.x += shakeX;
-                                camera.position.y += shakeY;
-                                camera.position.z += shakeZ;
                             }
 
-                            // --- ROTACIÓN LOCAL DEL MODELO ---
+                            // --- ROTACIÓN LOCAL DEL MODELO + BALANCEO DE CARROCERÍA (BODY ROLL) ---
                             if (cas && vg && !car.crashed) {
                                 vg.rotation.x = (cas.rotation ? cas.rotation[0] : 0) * Math.PI / 180; 
                                 vg.rotation.y = (cas.rotation ? cas.rotation[1] : 0) * Math.PI / 180; 
-                                vg.rotation.z = (cas.rotation ? cas.rotation[2] : 0) * Math.PI / 180;
+                                vg.rotation.z = ((cas.rotation ? cas.rotation[2] : 0) * Math.PI / 180) + (_carBodyRoll[ci] || 0);
                                 vg.position.set(cas.offset ? cas.offset[0] : 0, cas.offset ? cas.offset[1] : 0, cas.offset ? cas.offset[2] : 0);
                                 if(cas.scale !== undefined && vg.children.length > 0) { 
                                     const model = vg.children[0]; 
