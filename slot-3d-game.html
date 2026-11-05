@@ -623,7 +623,7 @@
                 matWood: "MADEIRA",
                 matAsphalt: "ALCATRÃO",
                 controller: "COMANDO",
-                multiTitle: "COMPETICIÓN ONLINE",
+                multiTitle: "COMPETIÇÃO ONLINE",
                 createRoomPrivate: "CRIAR SALA COM CÓDIGO",
                 createRoomPublic: "CRIAR SALA PÚBLICA",
                 joinRoom: "JUNTAR-SE",
@@ -1125,21 +1125,21 @@
                                 
                                 // Sustituimos la corrupta por la limpia
                                 const oldGeo = child.geometry;
-                                child.geometry = cleanGeo;
-                                oldGeo.dispose();
-                                
-                                if (child.material) { 
-                                    if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) { 
-                                        // OPTIMIZACIÓN GARAJE: MeshPhongMaterial es muchísimo más rápido que Standard (PBR) y mantiene un brillo estupendo
-                                        const newMat = new THREE.MeshPhongMaterial({ map: child.material.map, color: child.material.color, shininess: 80, side: THREE.FrontSide }); 
-                                        child.material.dispose(); 
-                                        child.material = newMat; 
-                                    } 
-                                } 
-                            } 
-                        });
+                        child.geometry = cleanGeo;
+                        oldGeo.dispose();
                         
-                        // 1. Resetear posición para cálculos limpios
+                        if (child.material) { 
+                            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) { 
+                                // OPTIMIZACIÓN GARAJE: MeshPhongMaterial es muchísimo más rápido que Standard (PBR) y mantiene un brillo estupendo
+                                const newMat = new THREE.MeshPhongMaterial({ map: child.material.map, color: child.material.color, shininess: 80, side: THREE.FrontSide }); 
+                                child.material.dispose(); 
+                                child.material = newMat; 
+                            } 
+                        } 
+                    } 
+                });
+                
+                // 1. Resetear posición para cálculos limpios
                         model.position.set(0,0,0);
                         model.rotation.set(0,0,0);
                         model.scale.set(1,1,1);
@@ -1242,7 +1242,7 @@
 
                         displayTrackGroup.position.y = 0;
                         carGroup.add(displayTrackGroup);
-                    });
+                    }, undefined, (err) => console.error("Error loading garage car:", err));
                 }
 
                 return () => { isActive = false; };
@@ -1596,13 +1596,24 @@
                 const pg = new THREE.Group(), vg = new THREE.Group(); 
                 pg.add(vg); 
                 
+                // Coche base 3D idéntico a 3d.html (se muestra al instante y se reemplaza al cargar el GLB)
+                const bm = new THREE.MeshPhongMaterial({ color, shininess: 80 }), bg = new THREE.BoxGeometry(4.5, 1.2, 9), b = new THREE.Mesh(bg, bm); 
+                b.position.set(0, 0.8, 3.15); b.castShadow = true; vg.add(b); 
+                const cg = new THREE.BoxGeometry(3.5, 0.8, 4), cm = new THREE.MeshLambertMaterial({ color: 0x111111 }), c = new THREE.Mesh(cg, cm); 
+                c.position.set(0, 1.8, 3.15); vg.add(c); 
+                const wg = new THREE.CylinderGeometry(1.2, 1.2, 0.8, 16); wg.rotateZ(Math.PI/2); 
+                const wm = new THREE.MeshLambertMaterial({ color: 0x222222 }); 
+                [[-2.5, 6.15], [2.5, 6.15], [-2.5, 0.15], [2.5, 0.15]].forEach(p => { 
+                    const w = new THREE.Mesh(wg, wm); w.position.set(p[0], 1.2, p[1]); vg.add(w); 
+                });
+
                 // --- Sombra Falsa Inicial Cero Cálculos ---
                 const tex = getFakeShadowTexture();
                 const shadowGeo = new THREE.PlaneGeometry(4.5 * 1.4, 9 * 1.3);
                 shadowGeo.rotateX(-Math.PI / 2);
                 const shadowMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, depthWrite: false, color: 0x000000 });
                 const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-                shadowMesh.position.set(0, 0.1, -9 * 0.25);
+                shadowMesh.position.set(0, 0.1, 9 * 0.35);
                 vg.add(shadowMesh);
                 
                 return pg; 
@@ -2574,11 +2585,15 @@
                             // Esto hace que la carga del circuito sea casi instantánea.
                             for (let i = 0; i < pathPoints.length; i += 12) {
                                 const p = pathPoints[i];
+                                if (!p || isNaN(p.x) || isNaN(p.z)) continue; // FIX: Prevenir NaN de puntos corruptos
                                 const dx = vx - p.x;
                                 const dz = vz - p.z;
                                 const dSq = dx*dx + dz*dz;
                                 if (dSq < minDistSq) minDistSq = dSq;
                             }
+                            
+                            // FIX: Si el array está vacío o no hay pista válida, terreno plano para evitar Infinity
+                            if (minDistSq === Infinity) return 0;
                             
                             const safeRadius = 35.0; 
                             const safeRadiusSq = safeRadius * safeRadius;
@@ -2591,13 +2606,16 @@
                             const terrainNoise = noise(vx, vz);
                             const valleyRise = Math.pow(Math.max(0, distToTrack - safeRadius) * 0.1, 1.2);
                             
-                            return (terrainNoise + valleyRise) * blend;
+                            const finalHeight = (terrainNoise + valleyRise) * blend;
+                            return isFinite(finalHeight) ? finalHeight : 0; // FIX: Cortafuegos matemático
                         };
 
                         for (let i = 0; i < posAttr.count; i++) {
                             const vx = posAttr.getX(i);
                             const vz = posAttr.getZ(i);
-                            const vy = getTerrainHeight(vx, vz, 0); 
+                            let vy = getTerrainHeight(vx, vz, 0); 
+                            
+                            if (!isFinite(vy) || isNaN(vy)) vy = 0; // FIX: Evitar que el BufferGeometry reviente
                             
                             posAttr.setY(i, vy);
                             
@@ -2720,24 +2738,22 @@
                         return outVec;
                     };
 
-                    const LUT_RES = 0.2; // Ultra-alta resolución (1 punto cada 2 milímetros) para eliminar vibraciones poligonales
+                    const LUT_RES = 0.15; // ULTRA resolución (evita leer el raíl como polígonos a gran velocidad)
                     const buildTrackLUT = (pa, distances, heavyFunc) => {
                         if ((!pa || pa.length === 0) && !heavyFunc) return null;
                         const maxD = distances[distances.length - 1];
                         if (maxD <= 0) return null;
                         
-                        const steps = Math.ceil(maxD / LUT_RES);
-                        const lut = new Float32Array((steps + 2) * 3);
+                        const lut = new Float32Array(Math.ceil(maxD / LUT_RES) * 3 + 3);
                         const temp = new THREE.Vector3();
                         
-                        for (let s = 0; s <= steps + 1; s++) {
-                            const d = Math.min(s * LUT_RES, maxD);
-                            const idx = s * 3;
+                        for (let d = 0; d <= maxD; d += LUT_RES) {
+                            const idx = Math.floor(d / LUT_RES) * 3;
                             if (heavyFunc) heavyFunc(d, temp);
                             else getPositionAtDistance_Heavy(pa, d, temp);
                             lut[idx] = temp.x; lut[idx+1] = temp.y; lut[idx+2] = temp.z;
                         }
-                        return { data: lut, maxD, steps };
+                        return { data: lut, maxD };
                     };
 
                     // Computar y almacenar LUTs en RAM antes de arrancar
@@ -2755,17 +2771,29 @@
                         let safeD = d % maxD;
                         if (safeD < 0) safeD += maxD;
                         
+                        const totalPts = Math.floor(lutObj.data.length / 3);
                         const exactIdx = safeD / LUT_RES;
-                        const i0 = Math.floor(exactIdx);
-                        const i1 = (i0 + 1) % lutObj.steps;
-                        const ratio = exactIdx - i0;
+                        const i1 = Math.floor(exactIdx) % totalPts;
+                        const i2 = (i1 + 1) % totalPts;
+                        const i0 = (i1 - 1 + totalPts) % totalPts;
+                        const i3 = (i1 + 2) % totalPts;
                         
-                        const i0x3 = i0 * 3;
-                        const i1x3 = i1 * 3;
-                        
-                        outVec.x = lutObj.data[i0x3] + (lutObj.data[i1x3] - lutObj.data[i0x3]) * ratio;
-                        outVec.y = lutObj.data[i0x3+1] + (lutObj.data[i1x3+1] - lutObj.data[i0x3+1]) * ratio;
-                        outVec.z = lutObj.data[i0x3+2] + (lutObj.data[i1x3+2] - lutObj.data[i0x3+2]) * ratio;
+                        const t = exactIdx - Math.floor(exactIdx);
+                        const t2 = t * t;
+                        const t3 = t2 * t;
+
+                        const i0x3 = i0 * 3, i1x3 = i1 * 3, i2x3 = i2 * 3, i3x3 = i3 * 3;
+                        const data = lutObj.data;
+
+                        const p0x = data[i0x3], p0y = data[i0x3+1], p0z = data[i0x3+2];
+                        const p1x = data[i1x3], p1y = data[i1x3+1], p1z = data[i1x3+2];
+                        const p2x = data[i2x3], p2y = data[i2x3+1], p2z = data[i2x3+2];
+                        const p3x = data[i3x3], p3y = data[i3x3+1], p3z = data[i3x3+2];
+
+                        // Interpolación cúbica continua Catmull-Rom (elimina esquinas poligonales a alta velocidad)
+                        outVec.x = 0.5 * ((2 * p1x) + (-p0x + p2x) * t + (2 * p0x - 5 * p1x + 4 * p2x - p3x) * t2 + (-p0x + 3 * p1x - 3 * p2x + p3x) * t3);
+                        outVec.y = 0.5 * ((2 * p1y) + (-p0y + p2y) * t + (2 * p0y - 5 * p1y + 4 * p2y - p3y) * t2 + (-p0y + 3 * p1y - 3 * p2y + p3y) * t3);
+                        outVec.z = 0.5 * ((2 * p1z) + (-p0z + p2z) * t + (2 * p0z - 5 * p1z + 4 * p2z - p3z) * t2 + (-p0z + 3 * p1z - 3 * p2z + p3z) * t3);
                         
                         return outVec;
                     };
@@ -2794,7 +2822,6 @@
 
                     let lastNetTime = 0;
                     let displaySpeedHUD = 0;
-                    let smoothedDt = 1 / 60;
 
                     const _worldP1 = new THREE.Vector3();
                     const _worldP2 = new THREE.Vector3();
@@ -2803,14 +2830,11 @@
                     const _lookTarget = new THREE.Vector3();
                     const _zeroVec = new THREE.Vector3(0,0,0);
                     
-                    // Pre-asignamos todos los objetos temporales fuera del bucle de renderizado (Cero Garbage Collection)
+                    // FIX MEMORIA: Pre-asignamos vectores para evitar crear miles de objetos por segundo (Lag/Crashes)
                     const _toOther = new THREE.Vector3();
                     const _forward = new THREE.Vector3();
                     const _right = new THREE.Vector3();
                     const _pushDir = new THREE.Vector3();
-                    const _crashP1 = new THREE.Vector3();
-                    const _crashP2 = new THREE.Vector3();
-                    const _dummyBird = new THREE.Object3D();
 
                     // OPTIMIZACIÓN CPU: Búsqueda Binaria de pistas (elimina el lag de Array.find en cada frame)
                     const getPieceFast = (d) => {
@@ -2826,15 +2850,25 @@
                         return arr[0];
                     };
 
+                    // Variables de estado para estabilización tipo consola (Frame Pacing & Camera Rig)
+                    let smoothDt = 1 / 60;
+                    const smoothCamDir = new THREE.Vector3(0, 0, 1);
+                    const smoothCamPos = new THREE.Vector3();
+                    const smoothCamLook = new THREE.Vector3();
+                    let camInitialized = false;
+                    const _prevDir = [new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 1)];
+                    const _carBodyRoll = [0, 0];
+
                     const animate = () => { 
                         animationId = requestAnimationFrame(animate); 
-                        
-                        // Filtro de suavizado temporal (EMA) para eliminar micro-tirones del navegador
                         const rawDt = clock.current.getDelta();
-                        const clampedDt = Math.min(Math.max(rawDt, 0.001), 0.05);
-                        smoothedDt += (clampedDt - smoothedDt) * 0.25;
-                        const dt = smoothedDt;
-
+                        
+                        // ESTABILIZADOR DE FRAME PACING (Estilo Consola PS2/PS3):
+                        // Filtra los micro-tirones del reloj del navegador para que el avance por fotograma sea de seda pura
+                        if (rawDt > 0 && rawDt < 0.1) {
+                            smoothDt = smoothDt * 0.92 + rawDt * 0.08;
+                        }
+                        const dt = (rawDt > 0.012 && rawDt < 0.022) ? (1 / 60) : Math.min(smoothDt, 0.033);
                         const nowTime = performance.now() / 1000;
                         const totalDist = accumulatedDist; const currentTrackLen = (hasRotonda && rallyDistancesRef.current.length > 0) ? rallyDistancesRef.current[rallyDistancesRef.current.length - 1] : totalDist;
 
@@ -2937,8 +2971,7 @@
                                         const safeMultiplier = 0.88 + (diffLevel * 0.04); 
                                         let calculatedTarget = Math.min(maxSpeed * diffFactors[diffLevel], absoluteSafeLimit * safeMultiplier);
                                         
-                                        // Variación suave sinusoidal en lugar de Math.random() por fotograma para que la IA no tiemble
-                                        calculatedTarget *= (0.99 + Math.sin(nowTime * 3.0 + ci) * 0.01);
+                                        calculatedTarget *= (0.98 + Math.random() * 0.04);
                                         targetSpeed = calculatedTarget;
                                     }
                                 }
@@ -2956,45 +2989,41 @@
                                     pg.userData.initPos = false;
                                     pg.rotation.set(0,0,0);
                                 } else {
-                                    // Derrape lateral suave sin instanciar vectores nuevos
-                                    car.speed *= Math.exp(-2.5 * dt); // Fricción exponencial continua
+                                    // Derrape lateral suave en lugar de vuelo libre pesado (Mejora FPS y jugabilidad)
+                                    car.speed *= (1 - 2.5 * dt); // Fricción fuerte
                                     car.worldPos.addScaledVector(_forward, car.speed * dt);
                                     car.worldPos.addScaledVector(_right, (car.crashVelocity.x > 0 ? 1 : -1) * car.speed * 0.5 * dt);
                                     
                                     pg.position.copy(car.worldPos);
                                     pg.rotation.y += car.crashAngularVelocity.y * dt;
                                     
-                                    p1 = _crashP1.copy(car.worldPos);
-                                    p2 = _crashP2.copy(car.worldPos).add(_forward);
+                                    p1 = car.worldPos.clone();
+                                    p2 = car.worldPos.clone().add(_forward);
                                 }
                             }
 
                             // --- LÓGICA NORMAL (EN CARRIL) ---
                             if (!car.crashed) {
-                                // Lógica de Gasolina y Boxes
+                                // Lógica de Gasolina y Boxes (Repostaje inmediato al parar en el Pit Lane)
                                 if (ci === myCarIdx || isLocalAI) {
                                     if (isDigitalCircuit) {
                                         if (car.currentLane === 2) { 
-                                            let distInPit = car.distance - (car.pitEnteredDist || 0);
-                                            if (distInPit < 0) distInPit += currentTrackLen;
+                                            // Limitar velocidad máxima dentro del carril de boxes
+                                            targetSpeed = Math.min(targetSpeed, maxSpeed * 0.40);
 
-                                            if (distInPit > 50 && car.fuel < 100 && !car.isRefueling && !car.hasRefueledThisPit) {
+                                            // Si el jugador suelta el gatillo (o la IA decide parar) y el coche frena, reposta inmediatamente
+                                            if (car.fuel < 100 && !car.hasRefueledThisPit && (targetSpeed < 5.0 || car.isRefueling)) {
                                                 car.isRefueling = true;
-                                            }
-                                            
-                                            if (car.isRefueling) {
                                                 targetSpeed = 0; 
-                                                if (car.speed < 5.0) {
+                                                if (car.speed < 8.0) {
                                                     car.speed = 0; 
-                                                    car.fuel = Math.min(100, car.fuel + 33.34 * dt); 
+                                                    car.fuel = Math.min(100, car.fuel + 35.0 * dt); 
                                                     if (car.fuel >= 100) {
                                                         car.fuel = 100;
                                                         car.isRefueling = false; 
                                                         car.hasRefueledThisPit = true; 
                                                     }
                                                 }
-                                            } else {
-                                                targetSpeed = Math.min(targetSpeed, maxSpeed * 0.35); 
                                             }
                                         } else {
                                             car.isRefueling = false;
@@ -3022,13 +3051,9 @@
                                 const prevDist = car.distance;
 
                                 if (!isPausedRef.current) {
-                                    // Aceleración y frenado con curva de respuesta suave sin sobreimpulsos (overshoot)
-                                    if (car.speed < targetSpeed) {
-                                        car.speed = Math.min(targetSpeed, car.speed + accelRate * dt);
-                                    } else if (car.speed > targetSpeed) {
-                                        car.speed = Math.max(targetSpeed, car.speed - brakeRate * dt);
-                                    }
-                                    if (car.speed < 0.01) car.speed = 0;
+                                    if (car.speed < targetSpeed) car.speed += accelRate * dt;
+                                    else if (car.speed > targetSpeed) car.speed -= brakeRate * dt;
+                                    if (car.speed < 0) car.speed = 0;
                                     
                                     if (car.speed > 0) {
                                         car.distance += car.speed * dt;
@@ -3193,8 +3218,8 @@
                                     return pos;
                                 };
 
-                                // Tangente corta y precisa de 4.5 unidades para que el morro del coche siga el raíl con suavidad quirúrgica
-                                const lookAhead = 4.5; 
+                                // Tangente precisa para que el morro vaya clavado al raíl con suavidad de seda
+                                const lookAhead = 3.2; 
                                 
                                 if (hasRotonda && rallyPathRef.current.length > 0 && rallyDistancesRef.current.length > 0) {
                                     p1 = getPositionFromLUT(lutRally, car.distance, _rallyPos);
@@ -3206,6 +3231,14 @@
 
                                 if (p1 && p2) {
                                     _dir.subVectors(p2, p1).normalize();
+                                    
+                                    // Calcular fuerza centrífuga en curva para inclinar la carrocería suavemente (Efecto Gran Turismo)
+                                    const turnRate = (_dir.x * _prevDir[ci].z - _dir.z * _prevDir[ci].x);
+                                    _prevDir[ci].lerp(_dir, 0.25).normalize();
+                                    const targetRoll = Math.max(-0.14, Math.min(0.14, turnRate * (car.speed / maxSpeed) * 4.5));
+                                    _carBodyRoll[ci] += (targetRoll - _carBodyRoll[ci]) * (1 - Math.exp(-15 * dt));
+
+                                    // PIVOTE CLAVADO: El contenedor se coloca EXACTAMENTE en el raíl (p1).
                                     car.worldPos.copy(p1);
                                     
                                     // AQUI DEFINIMOS isDecor PARA EL RESTO DEL CÁLCULO
@@ -3298,69 +3331,84 @@
                                         }
                                     }
 
-                                    // --- APLICAR POSICIÓN Y ROTACIÓN CONTINUA EN PISTA ---
+                                    // --- APLICAR POSICIÓN EN PISTA (SI NO HA CHOCADO) ---
                                     if (!car.crashed) {
                                         _fpos.copy(car.worldPos);
                                         if (!isDecor) _fpos.add(_yOffset);
 
-                                        if (!pg.userData.initPos) {
-                                            pg.position.copy(_fpos);
-                                            pg.userData.initPos = true;
-                                        } else {
-                                            // Interpolación de posición de alta frecuencia para absorber micro-variaciones
-                                            const posBlend = 1 - Math.exp(-60 * dt);
-                                            pg.position.x += (_fpos.x - pg.position.x) * posBlend;
-                                            pg.position.z += (_fpos.z - pg.position.z) * posBlend;
-                                            pg.position.y += (_fpos.y - pg.position.y) * (1 - Math.exp(-25 * dt));
-                                        }
+                                        pg.position.copy(_fpos);
+                                        pg.userData.initPos = true;
 
                                         _flook.copy(_dir); 
                                         _targetMatrix.lookAt(_origin, _flook, _up);
                                         _targetRotation.setFromRotationMatrix(_targetMatrix);
                                         
-                                        // Rotación progresiva sin saltos bruscos al pasar de parado a movimiento
-                                        const rotSpeed = 20 + Math.min(car.speed * 0.15, 30);
-                                        pg.quaternion.slerp(_targetRotation, 1 - Math.exp(-rotSpeed * dt));
+                                        // Suavizado rotacional de alta frecuencia (filtra micro-ruido sin perder precisión en la guía)
+                                        if (!pg.userData.quatInit) {
+                                            pg.quaternion.copy(_targetRotation);
+                                            pg.userData.quatInit = true;
+                                        } else {
+                                            pg.quaternion.slerp(_targetRotation, 1 - Math.exp(-45 * dt));
+                                        }
                                     }
                                 }
                             } // Fin de Lógica Normal
 
-                            // --- ACTUALIZACIÓN DE CÁMARA CINEMATOGRÁFICA (ANCLADA AL COCHE SUAVIZADO) ---
+                            // --- ACTUALIZACIÓN DE CÁMARA SINCRONIZADA (CERO JITTER / SUAVIDAD PS3) ---
                             if (p1 && p2 && ci === myCarIdx && vg) {
                                 vg.visible = cameraModeRef.current !== 'PILOT';
+                                _worldP1.copy(car.worldPos).add(trackGroup.position);
+                                _worldP2.copy(p2).add(trackGroup.position);
+
+                                // 1. FOV DINÁMICO SUAVIZADO (Sin saltos bruscos de matriz de proyección)
+                                const speedRatio = Math.min(1.0, Math.max(0, car.speed / maxSpeed));
+                                let targetFOV = 50 + (speedRatio * 22);
+                                if (cameraModeRef.current === 'PILOT') targetFOV += 18; 
                                 
-                                // Anclamos la cámara a la posición visual interpolada (pg.position) y no al punto crudo para 0 vibraciones
-                                _worldP1.copy(pg.position).add(trackGroup.position);
-                                _dirW.set(0, 0, -1).applyQuaternion(pg.quaternion).normalize();
+                                if (Math.abs(targetFOV - camera.fov) > 0.02) {
+                                    camera.fov += (targetFOV - camera.fov) * (1 - Math.exp(-8 * dt));
+                                    camera.updateProjectionMatrix();
+                                }
+
+                                // 2. VIBRACIÓN ARMÓNICA CONTINUA (Sustituye al Math.random() que causaba trompicones visuales)
+                                let shakeX = 0, shakeY = 0;
+                                if (speedRatio > 0.65) {
+                                    const intensity = Math.pow((speedRatio - 0.65) / 0.35, 2) * 0.08;
+                                    shakeX = Math.sin(nowTime * 45) * intensity;
+                                    shakeY = Math.cos(nowTime * 55) * intensity;
+                                }
+
+                                // 3. RIG DE CÁMARA CINEMATOGRÁFICO (Elimina el desfase elástico entre el coche y el fondo)
+                                _dirW.subVectors(_worldP2, _worldP1).normalize();
+                                if (!camInitialized) {
+                                    smoothCamDir.copy(_dirW);
+                                    smoothCamPos.copy(_worldP1);
+                                    smoothCamLook.copy(_worldP1);
+                                    camInitialized = true;
+                                } else {
+                                    // La dirección de la cámara gira con una inercia rotacional suave, pero su distancia al coche es exacta
+                                    smoothCamDir.lerp(_dirW, 1 - Math.exp(-14 * dt)).normalize();
+                                }
 
                                 if (cameraModeRef.current === 'PILOT') {
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, 1.5);
-                                    _targetPos.y += 2.8;
-                                    _lookTarget.copy(_targetPos).addScaledVector(_dirW, 50);
+                                    _targetPos.y += 2.5;
+                                    _lookTarget.copy(_targetPos).addScaledVector(_dirW, 100);
                                     camera.position.copy(_targetPos); 
                                     camera.lookAt(_lookTarget);
                                 } else if (cameraModeRef.current === 'CHASE') {
-                                    // Efecto de cámara elástica de juego arcade/simulación 3D
-                                    const dynamicDist = 34 + Math.min(car.speed * 0.015, 6);
-                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, -dynamicDist);
-                                    _targetPos.y += 19;
+                                    // Anclaje directo sobre el vector amortiguado: el coche nunca tiembla ni da tirones respecto al paisaje
+                                    camera.position.copy(_worldP1).addScaledVector(smoothCamDir, -30);
+                                    camera.position.y = _worldP1.y + 13.5 + shakeY;
+                                    camera.position.x += shakeX;
                                     
-                                    const camLookAhead = _lookTarget.copy(_worldP1).addScaledVector(_dirW, 8);
-                                    if (!camera.userData.initChase) {
-                                        camera.position.copy(_targetPos);
-                                        cameraTarget.copy(camLookAhead);
-                                        camera.userData.initChase = true;
-                                    } else {
-                                        camera.position.lerp(_targetPos, 1 - Math.exp(-18 * dt)); 
-                                        cameraTarget.lerp(camLookAhead, 1 - Math.exp(-30 * dt)); 
-                                    }
-                                    camera.lookAt(cameraTarget); 
+                                    _lookTarget.copy(_worldP1).addScaledVector(smoothCamDir, 10);
+                                    _lookTarget.y += 1.5;
+                                    camera.lookAt(_lookTarget); 
                                 } else if (cameraModeRef.current === 'FRONT') {
-                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, 35);
-                                    _targetPos.y += 12;
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-20 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-30 * dt)); 
-                                    camera.lookAt(cameraTarget); 
+                                    camera.position.copy(_worldP1).addScaledVector(smoothCamDir, 32);
+                                    camera.position.y = _worldP1.y + 10;
+                                    camera.lookAt(_worldP1); 
                                 } else if (cameraModeRef.current === 'REAR') {
                                     _targetPos.copy(_worldP1).addScaledVector(_dirW, -4);
                                     _targetPos.y += 3.0;
@@ -3368,22 +3416,19 @@
                                     camera.position.copy(_targetPos); 
                                     camera.lookAt(_lookTarget);
                                 } else if (cameraModeRef.current === 'BIRD') {
-                                    _targetPos.set(_worldP1.x, 180, _worldP1.z + 1);
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-15 * dt)); 
-                                    cameraTarget.lerp(_worldP1, 1 - Math.exp(-25 * dt)); 
-                                    camera.lookAt(cameraTarget); 
+                                    smoothCamPos.lerp(_worldP1, 1 - Math.exp(-12 * dt));
+                                    camera.position.set(smoothCamPos.x, _worldP1.y + 150, smoothCamPos.z + 1);
+                                    camera.lookAt(smoothCamPos); 
                                 } else if (cameraModeRef.current === 'DRONE') {
-                                    // CÁMARA DRON RACING: Seguimiento fluido con balanceo orgánico
-                                    _targetPos.copy(_worldP1).addScaledVector(_dirW, -18);
-                                    _targetPos.y += 28;
-                                    _targetPos.x += Math.cos(nowTime * 2) * 1.5;
-                                    _targetPos.z += Math.sin(nowTime * 3) * 1.5;
+                                    // Dron estabilizado con gimbal suave
+                                    _targetPos.copy(_worldP1).addScaledVector(smoothCamDir, -18); 
+                                    _targetPos.y += 22; 
+                                    _targetPos.x += Math.cos(nowTime * 2.5) * 0.4;
+                                    _targetPos.z += Math.sin(nowTime * 3.0) * 0.4;
                                     
-                                    camera.position.lerp(_targetPos, 1 - Math.exp(-12 * dt)); 
-                                    
-                                    _lookTarget.copy(_worldP1).addScaledVector(_dirW, 16);
-                                    cameraTarget.lerp(_lookTarget, 1 - Math.exp(-20 * dt)); 
-                                    camera.lookAt(cameraTarget);
+                                    camera.position.copy(_targetPos); 
+                                    _lookTarget.copy(_worldP1).addScaledVector(smoothCamDir, 22);
+                                    camera.lookAt(_lookTarget);
                                 } else {
                                     cameraTarget.lerp(_zeroVec, 1 - Math.exp(-10 * dt)); 
                                     _camPos.setFromSpherical(spherical);
@@ -3393,11 +3438,11 @@
                                 }
                             }
 
-                            // --- ROTACIÓN LOCAL DEL MODELO ---
+                            // --- ROTACIÓN LOCAL DEL MODELO + BALANCEO DE CARROCERÍA (BODY ROLL) ---
                             if (cas && vg && !car.crashed) {
                                 vg.rotation.x = (cas.rotation ? cas.rotation[0] : 0) * Math.PI / 180; 
                                 vg.rotation.y = (cas.rotation ? cas.rotation[1] : 0) * Math.PI / 180; 
-                                vg.rotation.z = (cas.rotation ? cas.rotation[2] : 0) * Math.PI / 180;
+                                vg.rotation.z = ((cas.rotation ? cas.rotation[2] : 0) * Math.PI / 180) + (_carBodyRoll[ci] || 0);
                                 vg.position.set(cas.offset ? cas.offset[0] : 0, cas.offset ? cas.offset[1] : 0, cas.offset ? cas.offset[2] : 0);
                                 if(cas.scale !== undefined && vg.children.length > 0) { 
                                     const model = vg.children[0]; 
@@ -3440,10 +3485,11 @@
 
                         const avgRaceTime = raceStateRef.current.laps > 0 ? (raceStateRef.current.completedLapsTotalTime / raceStateRef.current.laps) : 0;
 
-                        // --- MAGIA ANIMAL: Aves volando de fondo (Sin instanciar memoria) ---
+                        // --- MAGIA ANIMAL: Aves volando de fondo ---
                         if (sceneRef.current && sceneRef.current.userData.birds) {
                             const bMesh = sceneRef.current.userData.birds.mesh;
                             const bData = sceneRef.current.userData.birds.data;
+                            const dummyBird = new THREE.Object3D();
                             
                             for(let i=0; i<bData.length; i++) {
                                 const bd = bData[i];
@@ -3458,13 +3504,13 @@
                                 const nx = bd.cx + Math.cos(angle + 0.1) * bd.radius;
                                 const nz = bd.cz + Math.sin(angle + 0.1) * bd.radius;
                                 
-                                _dummyBird.position.set(bx, by, bz);
-                                _dummyBird.lookAt(nx, by, nz);
+                                dummyBird.position.set(bx, by, bz);
+                                dummyBird.lookAt(nx, by, nz);
                                 // Inclinación natural al tomar la curva
-                                _dummyBird.rotateZ(Math.sin(nowTime * 8 + bd.offset) * 0.3 - 0.2); 
+                                dummyBird.rotateZ(Math.sin(nowTime * 8 + bd.offset) * 0.3 - 0.2); 
                                 
-                                _dummyBird.updateMatrix();
-                                bMesh.setMatrixAt(i, _dummyBird.matrix);
+                                dummyBird.updateMatrix();
+                                bMesh.setMatrixAt(i, dummyBird.matrix);
                             }
                             bMesh.instanceMatrix.needsUpdate = true;
                         }
@@ -3822,7 +3868,10 @@
                 if (!isDecor) {
                     const smartBottomY = getSmartBottomY(rawModel);
                     rawModel.position.y -= smartBottomY;
-                    rawModel.position.z -= finalSize.z * 0.25;
+                    // FIX PIVOTE: En Three.js el coche mira hacia -Z. 
+                    // Desplazamos el modelo hacia atrás (+Z) para que el origen (0,0,0) 
+                    // quede justo en el morro (donde va la guía del slot).
+                    rawModel.position.z += finalSize.z * 0.35; 
                 } else {
                     rawModel.position.y -= finalBox.min.y; 
                 }
@@ -3846,7 +3895,8 @@
                         shadowGeo.rotateX(-Math.PI / 2);
                         const shadowMat = new THREE.MeshBasicMaterial({ map: fakeTex, transparent: true, opacity: 0.9, depthWrite: false, color: 0x000000 });
                         const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-                        shadowMesh.position.set(0, 0.1, -finalSize.z * 0.25);
+                        // Sombra alineada con el nuevo centro visual del coche (+Z)
+                        shadowMesh.position.set(0, 0.1, finalSize.z * 0.35);
                         templateGroup.add(shadowMesh);
 
                         const lightsGroup = new THREE.Group();
@@ -3856,23 +3906,27 @@
                         const hlIntensity = isNight ? 3.0 : 0;
                         const tlIntensity = isNight ? 1.5 : 0;
 
+                        // Las luces también deben estar alineadas con el nuevo centro
+                        const frontZ = -finalSize.z * 0.1; // Morro
+                        const rearZ = finalSize.z * 0.8;  // Cola
+
                         // Faro delantero derecho
                         const hl1 = new THREE.SpotLight(0xffffee, hlIntensity, 80, Math.PI/5, 0.6, 1.5);
-                        hl1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, -finalSize.z * 0.45);
+                        hl1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, frontZ);
                         hl1.name = "HEADLIGHT";
-                        hl1.target = new THREE.Object3D(); hl1.target.position.set(finalSize.x * 0.35, 0, -finalSize.z * 4.0);
+                        hl1.target = new THREE.Object3D(); hl1.target.position.set(finalSize.x * 0.35, 0, frontZ - 4.0);
                         lightsGroup.add(hl1); lightsGroup.add(hl1.target);
 
                         // Faro delantero izquierdo
                         const hl2 = new THREE.SpotLight(0xffffee, hlIntensity, 80, Math.PI/5, 0.6, 1.5);
-                        hl2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, -finalSize.z * 0.45);
+                        hl2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, frontZ);
                         hl2.name = "HEADLIGHT";
-                        hl2.target = new THREE.Object3D(); hl2.target.position.set(-finalSize.x * 0.35, 0, -finalSize.z * 4.0);
+                        hl2.target = new THREE.Object3D(); hl2.target.position.set(-finalSize.x * 0.35, 0, frontZ - 4.0);
                         lightsGroup.add(hl2); lightsGroup.add(hl2.target);
 
                         // Foco trasero (Luz general roja)
                         const tl = new THREE.PointLight(0xff0000, tlIntensity, 8);
-                        tl.position.set(0, finalSize.y * 0.4, finalSize.z * 0.4);
+                        tl.position.set(0, finalSize.y * 0.4, rearZ);
                         tl.name = "TAILLIGHT";
                         lightsGroup.add(tl);
 
@@ -3888,8 +3942,8 @@
                         const hg2 = new THREE.Mesh(glowGeo, headGlowMat); hg2.position.copy(hl2.position); lightsGroup.add(hg2);
                         
                         // Posicionar bombillas traseras
-                        const tg1 = new THREE.Mesh(glowGeo, tailGlowMat); tg1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, finalSize.z * 0.48); lightsGroup.add(tg1);
-                        const tg2 = new THREE.Mesh(glowGeo, tailGlowMat); tg2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, finalSize.z * 0.48); lightsGroup.add(tg2);
+                        const tg1 = new THREE.Mesh(glowGeo, tailGlowMat); tg1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, rearZ + 0.05); lightsGroup.add(tg1);
+                        const tg2 = new THREE.Mesh(glowGeo, tailGlowMat); tg2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, rearZ + 0.05); lightsGroup.add(tg2);
 
                         templateGroup.add(lightsGroup);
                     }
@@ -4881,7 +4935,6 @@
           const [audioEnabled, setAudioEnabled] = useState(true);
           const [musicEnabled, setMusicEnabled] = useState(true);
           
-          // Usamos dos refs distintos para evitar bloqueos del navegador al cambiar de canción
           const menuMusicRef = useRef(null);
           const raceMusicRef = useRef(null);
 
@@ -4892,34 +4945,38 @@
                       if (menuMusicRef.current) menuMusicRef.current.volume = 0;
                       if (raceMusicRef.current) {
                           raceMusicRef.current.volume = 0.2;
-                          raceMusicRef.current.play().catch(e => console.warn("Race play prevented:", e));
+                          raceMusicRef.current.play().catch(()=>{});
                       }
                   } else {
                       if (raceMusicRef.current) raceMusicRef.current.volume = 0;
                       if (menuMusicRef.current) {
                           menuMusicRef.current.volume = 0.2;
-                          menuMusicRef.current.play().catch(e => console.warn("Menu play prevented:", e));
+                          menuMusicRef.current.play().catch(()=>{});
                       }
                   }
-              } else {
-                  if (menuMusicRef.current) menuMusicRef.current.pause();
-                  if (raceMusicRef.current) raceMusicRef.current.pause();
               }
           }, [circuitData, musicEnabled]);
 
-          // NUEVO: Autoplay Unlocker para navegadores estrictos. Activa el audio al primer clic.
+          // Autoplay Unlocker al primer clic o toque en la pantalla
           useEffect(() => {
               const unlockAudio = () => {
                   if (musicEnabled) {
-                      if (circuitData && raceMusicRef.current && raceMusicRef.current.paused) raceMusicRef.current.play().catch(()=>{});
-                      if (!circuitData && menuMusicRef.current && menuMusicRef.current.paused) menuMusicRef.current.play().catch(()=>{});
+                      if (menuMusicRef.current) {
+                          menuMusicRef.current.volume = circuitData ? 0 : 0.2;
+                          menuMusicRef.current.play().then(() => {
+                              window.removeEventListener('pointerdown', unlockAudio);
+                              window.removeEventListener('keydown', unlockAudio);
+                          }).catch(()=>{});
+                      }
+                      if (raceMusicRef.current) {
+                          raceMusicRef.current.volume = circuitData ? 0.2 : 0;
+                          raceMusicRef.current.play().catch(()=>{});
+                      }
                   }
                   if (audioEnabled) {
                       const ctx = getAudioContext();
                       if (ctx && ctx.state === 'suspended') ctx.resume();
                   }
-                  window.removeEventListener('pointerdown', unlockAudio);
-                  window.removeEventListener('keydown', unlockAudio);
               };
               window.addEventListener('pointerdown', unlockAudio);
               window.addEventListener('keydown', unlockAudio);
@@ -4929,14 +4986,6 @@
               };
           }, [musicEnabled, audioEnabled, circuitData]);
 
-          // Cargar voces del sistema operativo
-          useEffect(() => {
-              if ('speechSynthesis' in window) {
-                  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
-              }
-          }, []);
-
-          // Control directo del audio
           const toggleAudio = () => {
               const nextState = !audioEnabled;
               setAudioEnabled(nextState);
@@ -5149,51 +5198,104 @@
               const fetchCloudAssets = async () => {
                   setIsFetchingList(true);
                   try {
-                      const resCars = await fetch('https://api.github.com/repos/slotsoftware/Game3d/contents/Coches');
-                      let firstCarUrl = null;
-                      let firstCarName = null;
-                      let secondCarUrl = null;
-                      let secondCarName = null;
-                      if (resCars.ok) {
-                          const data = await resCars.json();
-                          const glbs = data.filter(f => f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf'));
-                          setCloudCars(glbs);
-                          if (glbs.length > 0) {
-                              setCurrentCarIndex(0);
-                              firstCarName = glbs[0].name;
-                              firstCarUrl = `https://slotsoftware.github.io/Game3d/Coches/${firstCarName}`;
-                              
-                              if (glbs.length > 1) {
-                                  secondCarName = glbs[1].name;
-                                  secondCarUrl = `https://slotsoftware.github.io/Game3d/Coches/${secondCarName}`;
-                              } else {
-                                  secondCarName = firstCarName;
-                                  secondCarUrl = firstCarUrl;
+                      // EXACTAMENTE IGUAL QUE EN 3d.html: Usar raw.githubusercontent.com (tiene CORS abierto en Gemini)
+                      let glbs = [];
+                      
+                      // 1. Intentar listar desde Game3d/Coches o Telemetria/coches
+                      const endpoints = [
+                          { api: 'https://api.github.com/repos/slotsoftware/Game3d/contents/Coches', rawBase: 'https://raw.githubusercontent.com/slotsoftware/Game3d/main/Coches/' },
+                          { api: 'https://api.github.com/repos/slotsoftware/Telemetria/contents/coches', rawBase: 'https://raw.githubusercontent.com/slotsoftware/Telemetria/main/coches/' }
+                      ];
+
+                      for (const ep of endpoints) {
+                          try {
+                              const res = await fetch(ep.api);
+                              if (res.ok) {
+                                  const data = await res.json();
+                                  if (Array.isArray(data)) {
+                                      const found = data
+                                          .filter(f => f.name && (f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')))
+                                          .map(f => ({ name: f.name, rawUrl: f.download_url || `${ep.rawBase}${encodeURIComponent(f.name)}` }));
+                                      if (found.length > 0) {
+                                          glbs = found;
+                                          break;
+                                      }
+                                  }
                               }
-                          }
+                          } catch (e) {}
                       }
 
+                      // 2. Fallback idéntico a 3d.html si la API de GitHub da error 403 (Rate Limit)
+                      if (glbs.length === 0) {
+                          const fallbacks = ['amartin.glb', 'seat_leon.glb', 'porsche.glb', 'audi.glb', 'coche1.glb', 'coche2.glb'];
+                          glbs = fallbacks.map(name => ({
+                              name,
+                              rawUrl: `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/coches/${name}`
+                          }));
+                      }
+
+                      // Función de carga por Blob idéntica a 3d.html (línea 1995) para evitar bloqueos CORS
+                      const fetchCarBlobUrl = async (item) => {
+                          const urlsToTry = [
+                              item.rawUrl,
+                              `https://raw.githubusercontent.com/slotsoftware/Game3d/main/Coches/${encodeURIComponent(item.name)}`,
+                              `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/coches/${encodeURIComponent(item.name)}`
+                          ];
+                          for (const u of urlsToTry) {
+                              if (!u) continue;
+                              try {
+                                  const r = await fetch(u);
+                                  if (r.ok) {
+                                      const blob = await r.blob();
+                                      return URL.createObjectURL(blob);
+                                  }
+                              } catch (e) {}
+                          }
+                          return item.rawUrl;
+                      };
+
+                      if (glbs.length > 0) {
+                          setCloudCars(glbs);
+                          setCurrentCarIndex(0);
+                          
+                          const firstItem = glbs[0];
+                          const secondItem = glbs.length > 1 ? glbs[1] : glbs[0];
+                          
+                          const firstBlobUrl = await fetchCarBlobUrl(firstItem);
+                          const secondBlobUrl = await fetchCarBlobUrl(secondItem);
+
+                          setCustomCarAssets(prev => ({
+                              ...prev,
+                              1: { ...prev[1], glb: firstBlobUrl, glbName: firstItem.name, isDecor: false },
+                              2: { ...prev[2], glb: secondBlobUrl, glbName: secondItem.name, isDecor: false }
+                          }));
+                      }
+
+                      // 3. Cargar Decoración usando raw.githubusercontent.com como en 3d.html
                       let decorUpdates = {};
-                      // Asignación directa de los archivos solicitados a los slots de decoración
                       const targetTrees = ['Alamo.glb', 'Pino.glb', 'Roble.glb', 'Prado.glb'];
                       const decorSlots = [3, 4, 5, 6, 7, 8];
+                      
                       decorSlots.forEach((slotId, index) => {
                           const fileName = targetTrees[index % targetTrees.length];
-                          const decorUrl = `https://slotsoftware.github.io/Telemetria/decora/${fileName}`;
-                          const randomScatter = Math.floor(Math.random() * 11) + 5; 
-                          decorUpdates[slotId] = { glb: decorUrl, glbName: fileName, isDecor: true, scatterCount: randomScatter, setup: null, rotation: [0, 0, 0], yOffset: 0 };
+                          const decorUrl = `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/decora/${fileName}`;
+                          const randomScatter = Math.floor(Math.random() * 11) + 5;
+                          
+                          decorUpdates[slotId] = {
+                              glb: decorUrl,
+                              glbName: fileName,
+                              isDecor: true,
+                              scatterCount: randomScatter,
+                              setup: null,
+                              rotation: [0, 0, 0],
+                              yOffset: 0
+                          };
                       });
 
                       setCustomCarAssets(prev => {
                           const nextState = { ...prev };
-                          if (firstCarUrl && !prev[1].glb) {
-                              nextState[1] = { ...nextState[1], glb: firstCarUrl, glbName: firstCarName, isDecor: false };
-                          }
-                          if (secondCarUrl && !prev[2].glb) {
-                              nextState[2] = { ...nextState[2], glb: secondCarUrl, glbName: secondCarName, isDecor: false };
-                          }
                           Object.keys(decorUpdates).forEach(id => {
-                              if (!prev[id].glb) { 
+                              if (!prev[id].glb) {
                                   nextState[id] = { ...nextState[id], ...decorUpdates[id] };
                               }
                           });
@@ -5203,14 +5305,31 @@
                   } catch (e) { console.error("Error fetching cloud assets:", e); }
                   setIsFetchingList(false);
               };
-              setTimeout(fetchCloudAssets, 800);
+              
+              fetchCloudAssets();
           }, []);
 
-          const loadCloudCarDirect = (index) => {
+          const loadCloudCarDirect = async (index) => {
                if (index < 0 || index >= cloudCars.length) return;
                const fileData = cloudCars[index];
-               const rawUrl = `https://slotsoftware.github.io/Game3d/Coches/${fileData.name}`;
-               setCustomCarAssets(prev => ({ ...prev, [editingCarId]: { ...prev[editingCarId], glb: rawUrl, glbName: fileData.name, isDecor: false } }));
+               const urlsToTry = [
+                   fileData.rawUrl,
+                   `https://raw.githubusercontent.com/slotsoftware/Game3d/main/Coches/${encodeURIComponent(fileData.name)}`,
+                   `https://raw.githubusercontent.com/slotsoftware/Telemetria/main/coches/${encodeURIComponent(fileData.name)}`
+               ];
+               let finalUrl = urlsToTry[0];
+               for (const u of urlsToTry) {
+                   if (!u) continue;
+                   try {
+                       const r = await fetch(u);
+                       if (r.ok) {
+                           const blob = await r.blob();
+                           finalUrl = URL.createObjectURL(blob);
+                           break;
+                       }
+                   } catch (e) {}
+               }
+               setCustomCarAssets(prev => ({ ...prev, [editingCarId]: { ...prev[editingCarId], glb: finalUrl, glbName: fileData.name, isDecor: false } }));
           };
 
           const nextCar = () => {
@@ -5645,9 +5764,9 @@
 
           return (
             <>
-                {/* Audio Elements Persistentes (Bypass de Autoplay - SIN crossOrigin) */}
-                <audio ref={menuMusicRef} loop preload="auto" src="https://slotsoftware.github.io/Game3d/Musica/1.mp3" />
-                <audio ref={raceMusicRef} loop preload="auto" src="https://slotsoftware.github.io/Game3d/Musica/2.mp3" />
+                {/* Audio Elements Persistentes apuntando a los MP3 oficiales de GitHub */}
+                <audio ref={menuMusicRef} loop preload="auto" src="https://raw.githubusercontent.com/slotsoftware/Game3d/main/Musica/1.mp3" />
+                <audio ref={raceMusicRef} loop preload="auto" src="https://raw.githubusercontent.com/slotsoftware/Game3d/main/Musica/2.mp3" />
 
                 {toastMsg && (
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in pointer-events-none">
