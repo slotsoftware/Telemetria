@@ -2684,19 +2684,19 @@
                             const cas = carAssetsRef.current[ci + 1];
                             const setup = cas?.setup;
 
-                            // VELOCIDAD Y RESPUESTA ESTILO PS3 ARCADE / SLOT DE ALTA COMPETICIÓN
-                            let maxSpeed = 820;
-                            let accelRate = 950;
-                            let brakeRate = 1200;
+                            // VELOCIDADES Y FÍSICAS REALISTAS ORIGINALES (Manteniendo la fluidez de 60 FPS)
+                            let maxSpeed = 380;
+                            let accelRate = 300;
+                            let brakeRate = 420;
 
                             if (setup) {
                                 const speedFactor = (setup.motorRPM / 20000) * (2.5 / setup.gearRatio);
-                                maxSpeed = 820 * speedFactor;
+                                maxSpeed = 380 * speedFactor;
 
                                 const accelFactor = (setup.motorTorque / 300) * (80 / setup.weight) * (setup.gearRatio / 2.5);
-                                accelRate = 950 * accelFactor;
+                                accelRate = 300 * accelFactor;
 
-                                brakeRate = 1200 * (setup.tireGrip / 80) * (80 / setup.weight);
+                                brakeRate = 420 * (setup.tireGrip / 80) * (80 / setup.weight);
                             }
 
                             const isLocalAI = (!multiplayerSession && aiDifficultyRef.current > 0 && ci === rivalIdx);
@@ -2720,17 +2720,17 @@
                                         targetSpeed = 0;
                                     } else {
                                         const diffLevel = aiDifficultyRef.current;
-                                        const diffFactors = [0, 0.72, 0.85, 0.96, 1.08, 1.20]; 
+                                        const diffFactors = [0, 0.55, 0.70, 0.85, 0.95, 1.05]; 
                                         
-                                        const lookAheadDist = car.speed > 350 ? 75 : (car.speed > 180 ? 40 : 20);
+                                        const lookAheadDist = car.speed > 180 ? 55 : (car.speed > 90 ? 30 : 15);
                                         const currentP = getPieceFast(car.distance);
                                         let nextDist = (car.distance + lookAheadDist) % currentTrackLen;
                                         const nextP = getPieceFast(nextDist);
 
                                         const gripFactor = (setup?.tireGrip || 80) / 80.0;
                                         const evalPiece = (p) => {
-                                            if (p && p.type === 'curve') return Math.sqrt(Math.abs(p.radius || 20)) * gripFactor * 58.0;
-                                            if (p && (p.type === 'rotonda' || p.subtype === 'rotonda')) return Math.sqrt(15) * gripFactor * 58.0;
+                                            if (p && p.type === 'curve') return Math.sqrt(Math.abs(p.radius || 20)) * gripFactor * 32.0;
+                                            if (p && (p.type === 'rotonda' || p.subtype === 'rotonda')) return Math.sqrt(15) * gripFactor * 32.0;
                                             return maxSpeed;
                                         };
 
@@ -2738,7 +2738,7 @@
                                         const safe2 = evalPiece(nextP);
                                         const absoluteSafeLimit = Math.min(safe1, safe2);
                                         
-                                        const safeMultiplier = 0.86 + (diffLevel * 0.035); 
+                                        const safeMultiplier = 0.80 + (diffLevel * 0.04); 
                                         targetSpeed = Math.min(maxSpeed * diffFactors[diffLevel], absoluteSafeLimit * safeMultiplier);
                                     }
                                 }
@@ -3056,11 +3056,11 @@
                                         if (currentPiece && currentPiece.type === 'curve') {
                                             const r = Math.abs(currentPiece.radius || 20);
                                             const gripFactor = (setup?.tireGrip || 80) / 80.0;
-                                            const maxV = Math.sqrt(r) * gripFactor * 62.0; 
+                                            const maxV = Math.sqrt(r) * gripFactor * 32.0; 
                                             
-                                            if (car.speed > maxV + 25) { 
+                                            if (car.speed > maxV + 15) { 
                                                 car.crashed = true;
-                                                car.crashTimer = 1.2;
+                                                car.crashTimer = 1.5;
                                                 
                                                 _forward.copy(_dir).normalize();
                                                 _right.set(_forward.z, 0, -_forward.x).normalize();
@@ -3102,8 +3102,8 @@
                                 _worldP1.copy(pg.position).add(trackGroup.position);
                                 _worldP2.copy(p2).add(trackGroup.position);
 
-                                // FOV Dinámico estilo PS3 (Sensación de velocidad al acelerar)
-                                const targetFov = 56 + Math.min(18, (car.speed / 820) * 18);
+                                // FOV estable sin deformar la sensación de escala
+                                const targetFov = 52 + Math.min(6, (car.speed / 380) * 6);
                                 if (Math.abs(camera.fov - targetFov) > 0.1) {
                                     camera.fov += (targetFov - camera.fov) * (1 - Math.exp(-8 * dt));
                                     camera.updateProjectionMatrix();
@@ -3245,7 +3245,7 @@
                             bMesh.instanceMatrix.needsUpdate = true;
                         }
 
-                        displaySpeedHUD += ((myCarForHUD.speed * 0.42) - displaySpeedHUD) * 15.0 * dt;
+                        displaySpeedHUD += ((myCarForHUD.speed * 1.1) - displaySpeedHUD) * 15.0 * dt;
 
                         if (nowTime - lastHudUpdateTime > 0.05) {
                             lastHudUpdateTime = nowTime;
@@ -3265,7 +3265,7 @@
                             if (telemetryRefs.speed.current) telemetryRefs.speed.current.textContent = Math.floor(displaySpeedHUD).toString().padStart(3, '0');
                             
                             const currentSetup = carAssetsRef.current[1]?.setup;
-                            const maxDisplaySpeed = currentSetup ? (820 * (currentSetup.motorRPM / 20000) * (2.5 / currentSetup.gearRatio)) : 820;
+                            const maxDisplaySpeed = currentSetup ? (380 * (currentSetup.motorRPM / 20000) * (2.5 / currentSetup.gearRatio)) : 380;
                             if (telemetryRefs.rpmBar.current) telemetryRefs.rpmBar.current.style.width = `${Math.min(100, (myCarForHUD.speed / maxDisplaySpeed) * 100).toFixed(1)}%`;
                             
                             if (isDigitalCircuit) {
