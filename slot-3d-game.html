@@ -1171,8 +1171,13 @@
             const throttleTextRef = useRef(null);
             const throttleLabelRef = useRef(null);
             const throttleInputRef = useRef(null);
+            const triggerVisualRef = useRef(null);
+            const brakeLedRef = useRef(null);
             const [laneChangeActive, setLaneChangeActive] = useState(false);
             const [pitEntryActive, setPitEntryActive] = useState(false);
+            const [controllerCurve, setControllerCurve] = useState('LIN'); // SOFT, LIN, AGGR
+            const controllerCurveRef = useRef('LIN');
+            useEffect(() => { controllerCurveRef.current = controllerCurve; }, [controllerCurve]);
             const [sceneReady, setSceneReady] = useState(false);
             const [showBoardMenu, setShowBoardMenu] = useState(false);
             const [showMultiMenu, setShowMultiMenu] = useState(false);
@@ -1355,10 +1360,15 @@
                 });
 
                 manualThrottleRef.current = 0;
+                targetThrottleRef.current = 0;
+                triggerVelocityRef.current = 0;
+                isHoldingTriggerRef.current = false;
+                isKeyHoldingTriggerRef.current = false;
                 if (throttleInputRef.current) throttleInputRef.current.value = "0";
                 if (throttleFillRef.current) throttleFillRef.current.style.width = '0%';
-                if (throttleTextRef.current) { throttleTextRef.current.textContent = '0'; throttleTextRef.current.className = 'font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-gray-700'; }
-                if (throttleLabelRef.current) throttleLabelRef.current.className = 'text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-gray-600';
+                if (triggerVisualRef.current) triggerVisualRef.current.style.left = '0%';
+                if (throttleTextRef.current) { throttleTextRef.current.textContent = '0'; throttleTextRef.current.className = 'font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/30'; }
+                if (throttleLabelRef.current) throttleLabelRef.current.className = 'text-[12px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/40';
                 
                 setIsPreRace(true);
                 setCountdown(null);
@@ -1401,6 +1411,10 @@
             };
 
             const manualThrottleRef = useRef(0);
+            const targetThrottleRef = useRef(0);
+            const triggerVelocityRef = useRef(0);
+            const isHoldingTriggerRef = useRef(false);
+            const isKeyHoldingTriggerRef = useRef(false);
             const carMeshesRef = useRef([]);
             const decorMeshesRef = useRef({}); 
             const pieceMapRef = useRef([]);
@@ -2648,8 +2662,61 @@
                         const nowTime = performance.now() / 1000;
                         const totalDist = accumulatedDist; const currentTrackLen = (hasRotonda && rallyDistancesRef.current.length > 0) ? rallyDistancesRef.current[rallyDistancesRef.current.length - 1] : totalDist;
 
+                        // --- FÍSICA REAL DE GATILLO DE MANDO DE SLOT (MUELLE + AMORTIGUACIÓN + CURVA DE POTENCIA) ---
+                        const holdingTrigger = isHoldingTriggerRef.current || isKeyHoldingTriggerRef.current;
+                        const desiredTrigger = holdingTrigger ? targetThrottleRef.current : 0;
+
+                        if (holdingTrigger) {
+                            // Amortiguación progresiva al apretar o modular el dedo en el gatillo
+                            const stiffness = 260;
+                            const damping = 26;
+                            const force = (desiredTrigger - manualThrottleRef.current) * stiffness - triggerVelocityRef.current * damping;
+                            triggerVelocityRef.current += force * dt;
+                            manualThrottleRef.current += triggerVelocityRef.current * dt;
+                        } else {
+                            // Muelle mecánico de retorno rápido al soltar el gatillo (posición de freno dinámico)
+                            const returnStiffness = 520;
+                            const returnDamping = 34;
+                            const force = (0 - manualThrottleRef.current) * returnStiffness - triggerVelocityRef.current * returnDamping;
+                            triggerVelocityRef.current += force * dt;
+                            manualThrottleRef.current += triggerVelocityRef.current * dt;
+                            if (manualThrottleRef.current < 0.4 && Math.abs(triggerVelocityRef.current) < 8) {
+                                manualThrottleRef.current = 0;
+                                triggerVelocityRef.current = 0;
+                            }
+                        }
+                        manualThrottleRef.current = Math.max(0, Math.min(100, manualThrottleRef.current));
+
+                        // Actualizar visualmente el gatillo físico en tiempo real
+                        const trigVal = manualThrottleRef.current;
+                        const isBraking = trigVal < 1.5 && physicsState.current[myCarIdx]?.speed > 8;
+                        if (throttleFillRef.current) {
+                            throttleFillRef.current.style.width = `${trigVal.toFixed(1)}%`;
+                            throttleFillRef.current.style.boxShadow = trigVal > 8 ? `inset -5px 0 20px rgba(255,255,255,0.5)` : 'none';
+                        }
+                        if (triggerVisualRef.current) {
+                            triggerVisualRef.current.style.left = `calc(${trigVal.toFixed(1)}% - 14px)`;
+                        }
+                        if (throttleInputRef.current && !isHoldingTriggerRef.current) {
+                            throttleInputRef.current.value = trigVal;
+                        }
+                        if (brakeLedRef.current) {
+                            brakeLedRef.current.className = `w-2.5 h-2.5 rounded-full transition-all ${isBraking ? 'bg-red-500 shadow-[0_0_12px_#ef4444] scale-110' : 'bg-red-950/60 border border-red-500/30'}`;
+                        }
+                        if (throttleTextRef.current) {
+                            const roundedTrig = Math.round(trigVal);
+                            if (throttleTextRef.current.textContent !== String(roundedTrig)) {
+                                throttleTextRef.current.textContent = roundedTrig;
+                                throttleTextRef.current.className = `font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${trigVal > 90 ? 'text-red-400' : trigVal > 5 ? 'text-white' : (isBraking ? 'text-red-500' : 'text-white/30')}`;
+                            }
+                        }
+                        if (throttleLabelRef.current) {
+                            throttleLabelRef.current.textContent = isBraking ? (langRef.current === 'en' ? 'BRAKE' : 'FRENO') : tRef.current.controller;
+                            throttleLabelRef.current.className = `text-[12px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isBraking ? 'text-red-400 animate-pulse' : (trigVal > 5 ? 'text-white' : 'text-white/40')}`;
+                        }
+
                         if (!raceStateRef.current.started && !isPreRaceRef.current) {
-                            if (manualThrottleRef.current > 0 || (multiplayerSession && remoteStateRef.current.throttle > 0)) {
+                            if (manualThrottleRef.current > 1 || (multiplayerSession && remoteStateRef.current.throttle > 0)) {
                                 raceStateRef.current.started = true;
                                 raceStateRef.current.lapStartTime = nowTime;
                                 raceStateRef.current.totalStartTime = nowTime;
@@ -2711,7 +2778,12 @@
                                     if (raceStateRef.current.finished) {
                                         targetSpeed = 0;
                                     } else {
-                                        targetSpeed = maxSpeed * (manualThrottleRef.current / 100.0);
+                                        // Curva electrónica del mando (Suave, Lineal o Agresiva)
+                                        const rawNorm = manualThrottleRef.current / 100.0;
+                                        let curvedNorm = rawNorm;
+                                        if (controllerCurveRef.current === 'SOFT') curvedNorm = Math.pow(rawNorm, 1.65);
+                                        else if (controllerCurveRef.current === 'AGGR') curvedNorm = Math.pow(rawNorm, 0.65);
+                                        targetSpeed = maxSpeed * curvedNorm;
                                     }
                                 } else if (multiplayerSession) {
                                     targetSpeed = maxSpeed * ((remoteStateRef.current?.throttle || 0) / 100.0);
@@ -2816,8 +2888,19 @@
                                 const prevDist = car.distance;
 
                                 if (!isPausedRef.current) {
-                                    if (car.speed < targetSpeed) car.speed += accelRate * dt;
-                                    else if (car.speed > targetSpeed) car.speed -= brakeRate * dt;
+                                    if (car.speed < targetSpeed) {
+                                        car.speed += accelRate * dt;
+                                    } else if (car.speed > targetSpeed) {
+                                        // Comportamiento de mando real de Slot:
+                                        // Si el gatillo vuelve a 0 (< 2%), entra el cortocircuito de FRENO DINÁMICO del motor (frenada fuerte).
+                                        // Si el piloto sólo afloja un poco el gatillo, el coche desacelera por inercia/freno motor más suave.
+                                        if (ci === myCarIdx) {
+                                            const activeBrake = manualThrottleRef.current < 2.0 ? (brakeRate * 1.35) : (brakeRate * 0.55);
+                                            car.speed -= activeBrake * dt;
+                                        } else {
+                                            car.speed -= brakeRate * dt;
+                                        }
+                                    }
                                     if (car.speed < 0) car.speed = 0;
                                     
                                     if (car.speed > 0) {
@@ -3338,19 +3421,56 @@
                     
                     animate(); 
 
+                    const onKeyDown = (e) => {
+                        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+                        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                            e.preventDefault();
+                            isKeyHoldingTriggerRef.current = true;
+                            targetThrottleRef.current = 100;
+                        } else if (e.code === 'KeyC') {
+                            setLaneChangeActive(prev => !prev);
+                        } else if (e.code === 'KeyB') {
+                            setPitEntryActive(prev => !prev);
+                        }
+                    };
+                    const onKeyUp = (e) => {
+                        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                            isKeyHoldingTriggerRef.current = false;
+                            if (!isHoldingTriggerRef.current) targetThrottleRef.current = 0;
+                        }
+                    };
+                    const releasePointerTrigger = () => {
+                        if (isHoldingTriggerRef.current) {
+                            isHoldingTriggerRef.current = false;
+                            if (!isKeyHoldingTriggerRef.current) targetThrottleRef.current = 0;
+                        }
+                    };
+
                     window.addEventListener('resize', onResize); 
+                    window.addEventListener('keydown', onKeyDown);
+                    window.addEventListener('keyup', onKeyUp);
+                    window.addEventListener('pointerup', releasePointerTrigger);
+                    window.addEventListener('pointercancel', releasePointerTrigger);
+                    window.addEventListener('touchend', releasePointerTrigger);
+                    window.addEventListener('mouseup', releasePointerTrigger);
                     renderer.domElement.addEventListener('mousedown', onMouseDown); 
                     window.addEventListener('mousemove', onMouseMove); 
                     window.addEventListener('mouseup', onMouseUp); 
                     renderer.domElement.addEventListener('wheel', onWheel, {passive:false}); 
                     renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false}); 
                     window.addEventListener('touchmove', onTouchMove, {passive: false}); 
-                    window.addEventListener('touchend', onTouchEnd);
+                    renderer.domElement.addEventListener('touchend', onTouchEnd);
                     
                     setSceneReady(true);
 
                     return () => { 
                         window.removeEventListener('resize', onResize); 
+                        window.removeEventListener('keydown', onKeyDown);
+                        window.removeEventListener('keyup', onKeyUp);
+                        window.removeEventListener('pointerup', releasePointerTrigger);
+                        window.removeEventListener('pointercancel', releasePointerTrigger);
+                        window.removeEventListener('touchend', releasePointerTrigger);
+                        window.removeEventListener('mouseup', releasePointerTrigger);
                         window.removeEventListener('mousemove', onMouseMove); 
                         window.removeEventListener('mouseup', onMouseUp); 
                         if(renderer && renderer.domElement){ 
@@ -4047,31 +4167,84 @@
                             </button>
                         </div>
 
-                        {/* Horizontal Throttle Pedal/Trigger */}
-                        <div className="relative w-full h-24 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex items-center group cursor-pointer mt-1">
-                            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'}}></div>
-                            
-                            <div ref={throttleFillRef} className="absolute left-0 top-0 bottom-0 transition-all duration-75 z-10" style={{ width: `0%`, background: `linear-gradient(to right, #3b82f6 0%, #39ff14 50%, #ef4444 100%)`, boxShadow: `none` }}></div>
-                            
-                            <input ref={throttleInputRef} type="range" min="0" max="100" defaultValue="0" onInput={(e) => {
-                                const val = parseFloat(e.target.value);
-                                manualThrottleRef.current = val;
-                                if (throttleFillRef.current) {
-                                    throttleFillRef.current.style.width = `${val}%`;
-                                    throttleFillRef.current.style.boxShadow = val > 10 ? `inset -5px 0 20px rgba(255,255,255,0.5)` : 'none';
-                                }
-                                if (throttleTextRef.current) {
-                                    throttleTextRef.current.textContent = Math.round(val);
-                                    throttleTextRef.current.className = `font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${val>90?'text-red-400':val>10?'text-white':'text-white/30'}`;
-                                }
-                                if (throttleLabelRef.current) {
-                                    throttleLabelRef.current.className = `text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${val>10 ? 'text-white' : 'text-white/40'}`;
-                                }
-                            }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
-                            
-                            <div className="relative z-30 flex justify-between items-center w-full px-6 pointer-events-none">
-                                <span ref={throttleLabelRef} className="text-[14px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/40">{t.controller}</span>
-                                <span ref={throttleTextRef} className="font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/30">0</span>
+                        {/* MANDO ELECTRÓNICO DE SLOT REAL (CON MUELLE AMORTIGUADO, FRENO DINÁMICO Y CURVA) */}
+                        <div className="w-full bg-black/55 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl p-3 flex flex-col gap-2 mt-1 select-none">
+                            {/* Cabecera del Mando: LED de Freno + Selector de Curva de Potencia */}
+                            <div className="flex justify-between items-center px-1">
+                                <div className="flex items-center gap-2">
+                                    <div ref={brakeLedRef} className="w-2.5 h-2.5 rounded-full bg-red-950/60 border border-red-500/30 transition-all"></div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/60">
+                                        {lang === 'en' ? 'SPRING TRIGGER • AUTO BRAKE' : 'GATILLO CON MUELLE • FRENO AUTO'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1 bg-black/60 p-0.5 rounded-lg border border-white/10">
+                                    {[
+                                        { id: 'SOFT', label: lang === 'en' ? 'SOFT' : 'SUAVE' },
+                                        { id: 'LIN', label: 'LIN' },
+                                        { id: 'AGGR', label: lang === 'en' ? 'PRO' : 'AGRES' }
+                                    ].map(c => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => setControllerCurve(c.id)}
+                                            className={`px-2 py-0.5 rounded text-[8px] font-black tracking-wider transition-all ${controllerCurve === c.id ? 'bg-[#00f0ff] text-black shadow-[0_0_8px_#00f0ff]' : 'text-white/40 hover:text-white'}`}
+                                        >
+                                            {c.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Recorrido Físico del Gatillo con Muelle */}
+                            <div className="relative w-full h-20 bg-gradient-to-r from-red-950/40 via-black/80 to-black/80 rounded-xl border border-white/15 shadow-inner overflow-hidden flex items-center group cursor-grab active:cursor-grabbing touch-none">
+                                {/* Marcas de devanado / contactos de resistencia de mando de Slot */}
+                                <div className="absolute inset-0 opacity-25 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 12px, rgba(255,255,255,0.12) 12px, rgba(255,255,255,0.12) 14px)'}}></div>
+                                
+                                {/* Zona de contacto de Freno (Posición 0) */}
+                                <div className="absolute left-0 top-0 bottom-0 w-3 bg-red-500/30 border-r border-red-500/50 z-10 pointer-events-none"></div>
+
+                                {/* Relleno luminoso de potencia */}
+                                <div ref={throttleFillRef} className="absolute left-0 top-0 bottom-0 z-10 pointer-events-none" style={{ width: `0%`, background: `linear-gradient(to right, #3b82f6 0%, #39ff14 55%, #ef4444 100%)`, boxShadow: `none` }}></div>
+                                
+                                {/* Pieza física del Gatillo (con muelle) */}
+                                <div ref={triggerVisualRef} className="absolute top-1 bottom-1 w-7 rounded-lg bg-gradient-to-b from-gray-100 to-gray-400 border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.9)] z-20 pointer-events-none flex flex-col items-center justify-center gap-1" style={{ left: '0%' }}>
+                                    <div className="w-1 h-2 bg-black/40 rounded-full"></div>
+                                    <div className="w-1 h-2 bg-black/40 rounded-full"></div>
+                                    <div className="w-1 h-2 bg-black/40 rounded-full"></div>
+                                </div>
+
+                                {/* Input interactivo táctil / ratón con retorno automático al soltar */}
+                                <input
+                                    ref={throttleInputRef}
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    defaultValue="0"
+                                    onPointerDown={(e) => {
+                                        isHoldingTriggerRef.current = true;
+                                        targetThrottleRef.current = parseFloat(e.currentTarget.value);
+                                    }}
+                                    onTouchStart={(e) => {
+                                        isHoldingTriggerRef.current = true;
+                                    }}
+                                    onInput={(e) => {
+                                        isHoldingTriggerRef.current = true;
+                                        targetThrottleRef.current = parseFloat(e.target.value);
+                                    }}
+                                    onPointerUp={() => {
+                                        isHoldingTriggerRef.current = false;
+                                        targetThrottleRef.current = 0;
+                                    }}
+                                    onTouchEnd={() => {
+                                        isHoldingTriggerRef.current = false;
+                                        targetThrottleRef.current = 0;
+                                    }}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-grab active:cursor-grabbing z-30 touch-none"
+                                />
+                                
+                                <div className="relative z-20 flex justify-between items-center w-full px-6 pointer-events-none">
+                                    <span ref={throttleLabelRef} className="text-[12px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/40">{t.controller}</span>
+                                    <span ref={throttleTextRef} className="font-digital font-black text-5xl italic drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/30">0</span>
+                                </div>
                             </div>
                         </div>
 
