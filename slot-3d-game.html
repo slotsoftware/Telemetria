@@ -1490,9 +1490,136 @@
             
             const createGrassTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#1a4a1c'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 3000; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#1e5a22' : '#143a16'; const x = Math.random() * 512; const y = Math.random() * 512; const w = 1 + Math.random() * 2; const h = 2 + Math.random() * 6; ctx.fillRect(x, y, w, h); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(5, 5); return texture; };
             const createWoodTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#654321'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 600; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#5C4033' : '#3e2723'; const x = Math.random() * 512; const y = Math.random() * 512; const w = Math.random() * 100 + 50; const h = Math.random() * 4 + 1; ctx.fillRect(x, y, w, h); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
-            const createStoneTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#6b7280'; ctx.fillRect(0, 0, 512, 512); for (let i = 0; i < 150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#4b5563' : '#9ca3af'; const x = Math.random() * 600 - 50; const y = Math.random() * 600 - 50; const w = Math.random() * 160 + 60; const h = Math.random() * 80 + 30; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 4; ctx.strokeRect(x,y,w,h); } const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(0.5, 0.5); return texture; };
+            const createStoneTexture = () => { 
+                const cv = document.createElement('canvas'); 
+                cv.width = 1024; 
+                cv.height = 512; 
+                const cx = cv.getContext('2d'); 
+                cx.fillStyle = '#2d2d2d'; 
+                cx.fillRect(0, 0, 1024, 512); 
+                const rows = 8, cols = 16, rowH = 64, colW = 64; 
+                for (let r = 0; r < rows; r++) { 
+                    const offset = (r % 2 === 0) ? 0 : 32; 
+                    for (let c = -1; c < cols; c++) { 
+                        const x = c * colW + offset;
+                        const y = r * rowH;
+                        const w = 60 + (Math.random() * 16 - 8);
+                        const shade = 40 + Math.random() * 45; 
+                        cx.fillStyle = `rgb(${shade},${shade},${shade})`; 
+                        cx.fillRect(x + 2, y + 2, w, 60); 
+                        cx.fillStyle = 'rgba(255,255,255,0.08)'; 
+                        cx.fillRect(x + 2, y + 2, w, 4); 
+                        cx.fillStyle = 'rgba(0,0,0,0.5)'; 
+                        cx.fillRect(x + 2, y + 58, w, 4); 
+                    } 
+                } 
+                cx.fillStyle = '#15803d'; 
+                cx.beginPath(); 
+                cx.moveTo(0, 0); 
+                for(let i = 0; i <= 1024; i += 16) { 
+                    const isLong = Math.random() > 0.7;
+                    const drop = isLong ? (Math.random() * 140 + 40) : (Math.random() * 40 + 10); 
+                    cx.lineTo(i, drop); 
+                    cx.lineTo(i + 8, drop - Math.random() * 20); 
+                } 
+                cx.lineTo(1024, 0); 
+                cx.fill(); 
+                cx.fillStyle = '#22c55e'; 
+                for(let i = 0; i < 250; i++) {
+                    cx.fillRect(Math.random() * 1024, Math.random() * 100, 2 + Math.random()*2, Math.random() * 25 + 5); 
+                }
+                const t = new THREE.CanvasTexture(cv); 
+                t.wrapS = THREE.RepeatWrapping; 
+                t.wrapT = THREE.RepeatWrapping; 
+                return t; 
+            };
             const createKerbTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 64; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ef4444'; ctx.fillRect(0, 0, 64, 64); ctx.fillStyle = '#ffffff'; ctx.fillRect(64, 0, 64, 64); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
             const createWallTexture = () => { const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.fillStyle = '#dd1111'; ctx.fillRect(0, 0, 128, 128); ctx.fillStyle = '#eeeeee'; ctx.fillRect(128, 0, 128, 128); ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, 256, 16); ctx.fillStyle = '#444444'; ctx.fillRect(0, 16, 256, 8); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping; return texture; };
+            
+            // Textura de asfalto de competición con grano realista y marcas de neumáticos en las trazadas
+            const createAsphaltTexture = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#18191c';
+                ctx.fillRect(0, 0, 512, 512);
+                for (let i = 0; i < 18000; i++) {
+                    const v = 18 + Math.floor(Math.random() * 24);
+                    ctx.fillStyle = `rgb(${v},${v},${v + 2})`;
+                    ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+                }
+                // Huellas sutiles de goma oscura alrededor de ambos carriles
+                const drawRubberGroove = (cx) => {
+                    const g = ctx.createLinearGradient(cx - 45, 0, cx + 45, 0);
+                    g.addColorStop(0, 'rgba(0,0,0,0)');
+                    g.addColorStop(0.5, 'rgba(5,5,8,0.55)');
+                    g.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = g;
+                    ctx.fillRect(cx - 45, 0, 90, 512);
+                };
+                drawRubberGroove(140);
+                drawRubberGroove(372);
+                // Líneas blancas sutiles en los bordes exteriores de la pista
+                ctx.fillStyle = 'rgba(255,255,255,0.22)';
+                ctx.fillRect(8, 0, 6, 512);
+                ctx.fillRect(498, 0, 6, 512);
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                return texture;
+            };
+
+            // Textura de proyección de faros en el suelo (Additive Blending)
+            const getHeadlightBeamTexture = () => {
+                if (window.headlightBeamTex) return window.headlightBeamTex;
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, 512, 512);
+                
+                // Doble haz difuminado cálido y realista sobre el asfalto (sin bordes duros de cono)
+                const drawSoftBeam = (cx) => {
+                    ctx.save();
+                    ctx.translate(cx, 485);
+                    ctx.scale(1.0, 2.3);
+                    const grad = ctx.createRadialGradient(0, 0, 2, 0, -95, 145);
+                    grad.addColorStop(0.0, 'rgba(255, 250, 235, 0.85)');
+                    grad.addColorStop(0.22, 'rgba(255, 240, 205, 0.48)');
+                    grad.addColorStop(0.55, 'rgba(255, 225, 175, 0.14)');
+                    grad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(0, -85, 145, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                };
+                drawSoftBeam(195);
+                drawSoftBeam(317);
+
+                const tex = new THREE.CanvasTexture(canvas);
+                window.headlightBeamTex = tex;
+                return tex;
+            };
+
+            // Textura de halo difuminado suave (para faros delanteros cálidos y pilotos traseros rojos)
+            const getSoftLightGlowTexture = (r, g, b) => {
+                const key = `glow_${r}_${g}_${b}`;
+                if (window[key]) return window[key];
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 62);
+                grad.addColorStop(0.0, `rgba(255, 255, 255, 1.0)`);
+                grad.addColorStop(0.2, `rgba(${r}, ${g}, ${b}, 0.85)`);
+                grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.30)`);
+                grad.addColorStop(1.0, `rgba(${r}, ${g}, ${b}, 0.0)`);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 128, 128);
+                const tex = new THREE.CanvasTexture(canvas);
+                window[key] = tex;
+                return tex;
+            };
+
             const createCar = (id, color) => { 
                 const pg = new THREE.Group(), vg = new THREE.Group(); 
                 pg.add(vg); 
@@ -1567,59 +1694,132 @@
                     scene = new THREE.Scene(); 
                     sceneRef.current = scene;
 
-                    // --- CIELO REALISTA TIPO PS3 (Optimizado 512x512 para 60 FPS estables) ---
+                    // --- CIELO REALISTA DE ALTA DEFINICIÓN CON SOL DE TARDE Y LUNA DETALLADA ---
                     const skyCanvas = document.createElement('canvas');
-                    skyCanvas.width = 512; skyCanvas.height = 512;
+                    skyCanvas.width = 1024; skyCanvas.height = 1024;
                     const skyTex = new THREE.CanvasTexture(skyCanvas);
                     skyTex.mapping = THREE.EquirectangularReflectionMapping;
                     scene.background = skyTex;
-                    // No usar skyTex como scene.environment dinámico porque obliga a la GPU a recalcular reflejos PBR en cada polígono
                     scene.environment = null; 
-                    scene.fog = new THREE.FogExp2(0xf97316, 0.0012);
+                    scene.fog = new THREE.FogExp2(0xd97757, 0.00075);
+
+                    // --- OBJETOS CELESTES 3D (LUNA GIGANTE CON CRÁTERES Y HALO + SOL CÁLIDO) ---
+                    const celestialGroup = new THREE.Group();
+                    scene.add(celestialGroup);
+                    scene.userData.celestialGroup = celestialGroup;
+
+                    // Textura detallada de la Luna
+                    const moonCanvas = document.createElement('canvas');
+                    moonCanvas.width = 512; moonCanvas.height = 512;
+                    const mCtx = moonCanvas.getContext('2d');
+                    const mGrad = mCtx.createRadialGradient(220, 220, 20, 256, 256, 256);
+                    mGrad.addColorStop(0, '#ffffff');
+                    mGrad.addColorStop(0.7, '#e2e8f0');
+                    mGrad.addColorStop(1, '#94a3b8');
+                    mCtx.fillStyle = mGrad;
+                    mCtx.fillRect(0, 0, 512, 512);
+                    // Mares lunares y cráteres realistas
+                    const craters = [
+                        [160, 180, 65, 0.14], [320, 210, 85, 0.12], [210, 340, 55, 0.15],
+                        [350, 350, 40, 0.10], [140, 290, 35, 0.12], [270, 130, 45, 0.11]
+                    ];
+                    craters.forEach(([cx, cy, cr, alpha]) => {
+                        mCtx.fillStyle = `rgba(51, 65, 85, ${alpha})`;
+                        mCtx.beginPath(); mCtx.arc(cx, cy, cr, 0, Math.PI * 2); mCtx.fill();
+                        mCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+                        mCtx.lineWidth = 3;
+                        mCtx.beginPath(); mCtx.arc(cx - 3, cy - 3, cr, 0, Math.PI * 2); mCtx.stroke();
+                    });
+                    const moonTex = new THREE.CanvasTexture(moonCanvas);
+
+                    const moonMesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(120, 32, 32),
+                        new THREE.MeshBasicMaterial({ map: moonTex, fog: false })
+                    );
+                    moonMesh.position.set(-900, 420, -1600);
+                    celestialGroup.add(moonMesh);
+
+                    // Halo atmosférico alrededor de la Luna 3D
+                    const haloCanvas = document.createElement('canvas');
+                    haloCanvas.width = 256; haloCanvas.height = 256;
+                    const hCtx = haloCanvas.getContext('2d');
+                    const hGrad = hCtx.createRadialGradient(128, 128, 25, 128, 128, 128);
+                    hGrad.addColorStop(0.0, 'rgba(186, 230, 253, 0.85)');
+                    hGrad.addColorStop(0.35, 'rgba(125, 211, 252, 0.28)');
+                    hGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+                    hCtx.fillStyle = hGrad;
+                    hCtx.fillRect(0, 0, 256, 256);
+                    const haloSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                        map: new THREE.CanvasTexture(haloCanvas),
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        fog: false
+                    }));
+                    haloSprite.scale.set(650, 650, 1);
+                    moonMesh.add(haloSprite);
+                    scene.userData.moonMesh = moonMesh;
 
                     const updateSky = (night) => {
                         const skyCtx = skyCanvas.getContext('2d');
-                        const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 512);
+                        const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 1024);
                         
                         if (night) {
-                            skyGrad.addColorStop(0.0, '#020617');  
-                            skyGrad.addColorStop(0.2, '#171133');  
-                            skyGrad.addColorStop(0.4, '#0f172a');  
-                            skyGrad.addColorStop(0.6, '#000000');
-                            skyGrad.addColorStop(1.0, '#020617');
+                            skyGrad.addColorStop(0.0, '#01040d');  
+                            skyGrad.addColorStop(0.22, '#060d24');  
+                            skyGrad.addColorStop(0.42, '#0f172a');  
+                            skyGrad.addColorStop(0.52, '#090d1a');
+                            skyGrad.addColorStop(1.0, '#01040d');
                         } else {
-                            skyGrad.addColorStop(0.0, '#1e1b4b');
-                            skyGrad.addColorStop(0.2, '#4c1d95');
-                            skyGrad.addColorStop(0.35, '#db2777');
-                            skyGrad.addColorStop(0.45, '#ea580c');
-                            skyGrad.addColorStop(0.5, '#1e293b');
-                            skyGrad.addColorStop(0.6, '#4c1d95');
-                            skyGrad.addColorStop(1.0, '#1e1b4b');
+                            // Día equilibrado estilo Gran Turismo (sin quemar blancos)
+                            skyGrad.addColorStop(0.0, '#0c2d57');
+                            skyGrad.addColorStop(0.22, '#1d5b8c');
+                            skyGrad.addColorStop(0.40, '#6096ba');
+                            skyGrad.addColorStop(0.48, '#e09f67');
+                            skyGrad.addColorStop(0.52, '#334155');
+                            skyGrad.addColorStop(1.0, '#0f172a');
                         }
                         
                         skyCtx.fillStyle = skyGrad;
-                        skyCtx.fillRect(0, 0, 512, 512);
+                        skyCtx.fillRect(0, 0, 1024, 1024);
                         
                         if (night) {
-                            for(let i=0; i<400; i++) {
-                                skyCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.9 + 0.1})`;
-                                skyCtx.fillRect(Math.random() * 512, Math.random() * 512, 1.5, 1.5);
+                            // Cielo estrellado nítido con constelaciones brillantes
+                            for(let i=0; i<1200; i++) {
+                                const sy = Math.random() * 520;
+                                const size = Math.random() < 0.12 ? 2.4 : 1.3;
+                                skyCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.85 + 0.15})`;
+                                skyCtx.fillRect(Math.random() * 1024, sy, size, size);
                             }
-                            const moonX = 400, moonY = 100, moonR = 16;
+                            // Luna en el domo equirectangular + Luna 3D activa
+                            const moonX = 760, moonY = 310, moonR = 28;
+                            const mGlow = skyCtx.createRadialGradient(moonX, moonY, moonR * 0.5, moonX, moonY, moonR * 4.5);
+                            mGlow.addColorStop(0, 'rgba(224, 242, 254, 0.9)');
+                            mGlow.addColorStop(0.4, 'rgba(125, 211, 252, 0.25)');
+                            mGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                            skyCtx.fillStyle = mGlow;
+                            skyCtx.beginPath(); skyCtx.arc(moonX, moonY, moonR * 4.5, 0, Math.PI * 2); skyCtx.fill();
+
                             skyCtx.beginPath(); skyCtx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
                             skyCtx.fillStyle = '#f8fafc';
                             skyCtx.fill();
                         } else {
-                            const sunX = 256, sunY = 225, sunR = 24;
-                            skyCtx.beginPath();
-                            skyCtx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
-                            skyCtx.fillStyle = '#ffffff';
-                            skyCtx.fill();
+                            // Sol cálido suave de tarde
+                            const sunX = 512, sunY = 410, sunR = 32;
+                            const sGlow = skyCtx.createRadialGradient(sunX, sunY, sunR * 0.4, sunX, sunY, sunR * 5);
+                            sGlow.addColorStop(0, 'rgba(254, 243, 199, 0.85)');
+                            sGlow.addColorStop(0.35, 'rgba(251, 146, 60, 0.3)');
+                            sGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                            skyCtx.fillStyle = sGlow;
+                            skyCtx.beginPath(); skyCtx.arc(sunX, sunY, sunR * 5, 0, Math.PI * 2); skyCtx.fill();
                         }
                         
+                        if (scene.userData.moonMesh) {
+                            scene.userData.moonMesh.visible = night;
+                        }
                         skyTex.needsUpdate = true;
-                        scene.fog.color.setHex(night ? 0x0f172a : 0xbe123c);
-                        scene.fog.density = night ? 0.0025 : 0.0012;
+                        scene.fog.color.setHex(night ? 0x050914 : 0x64748b);
+                        scene.fog.density = night ? 0.0014 : 0.00065;
                     };
                     scene.userData.updateSky = updateSky;
                     updateSky(isNightModeRef.current);
@@ -1630,9 +1830,11 @@
                     camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.5, 10000); 
                     renderer = new THREE.WebGLRenderer({ antialias: qSettings.aa, powerPreference: "high-performance", precision: "mediump" }); 
                     renderer.setPixelRatio(Math.min(qSettings.pr, 1.25)); renderer.setSize(window.innerWidth, window.innerHeight); 
-                    renderer.shadowMap.enabled = qSettings.shadow; renderer.shadowMap.type = THREE.BasicShadowMap;
+                    renderer.shadowMap.enabled = qSettings.shadow; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                     renderer.outputEncoding = THREE.sRGBEncoding;
-                    renderer.toneMapping = THREE.NoToneMapping;
+                    // ACESFilmicToneMapping con exposición controlada evita que el día se vea quemado y realza los faros de noche
+                    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    renderer.toneMappingExposure = isNightModeRef.current ? 1.15 : 0.78;
                     renderer.localClippingEnabled = false; 
                     rendererRef.current = renderer;
                     while(containerRef.current.firstChild) containerRef.current.removeChild(containerRef.current.firstChild); containerRef.current.appendChild(renderer.domElement);
@@ -1641,19 +1843,22 @@
                     composer = new THREE.EffectComposer(renderer);
                     composer.addPass(renderScene);
 
-                    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.9, 0.4, 0.85);
+                    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.75, 0.4, 0.85);
                     composer.addPass(bloomPass);
+                    scene.userData.bloomPass = bloomPass;
 
-                    const ambLight = new THREE.AmbientLight(0xffedd5, 0.65);
+                    // Iluminación diurna equilibrada (sin exceso de brillo) y noche profunda para que destaquen los faros
+                    const ambLight = new THREE.AmbientLight(0xffe4c4, isNightModeRef.current ? 0.12 : 0.38);
                     scene.add(ambLight); 
                     scene.userData.ambientLight = ambLight;
 
-                    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.5);
+                    const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, isNightModeRef.current ? 0.15 : 0.35);
                     scene.add(hemiLight);
+                    scene.userData.hemiLight = hemiLight;
 
-                    const dl = new THREE.DirectionalLight(0xfffae8, 1.1);
-                    dl.position.set(200, 300, -200);
-                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1024; dl.shadow.mapSize.height = 1024;
+                    const dl = new THREE.DirectionalLight(0xfff1d6, isNightModeRef.current ? 0.22 : 0.82);
+                    dl.position.set(220, 260, -220);
+                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1536; dl.shadow.mapSize.height = 1536;
                     dl.shadow.camera.near = 10; dl.shadow.camera.far = 1200; dl.shadow.camera.left = -350; dl.shadow.camera.right = 350; dl.shadow.camera.top = 350; dl.shadow.camera.bottom = -350; dl.shadow.bias = -0.001; scene.add(dl);
                     dirLightRef.current = dl;
                     
@@ -1691,7 +1896,7 @@
                     const easeSine = (t) => (1 - Math.cos(t * Math.PI)) / 2;
                     const cubicBezier = (p0, p1, p2, p3, t) => { const u = 1 - t; return (u*u*u * p0) + (3*u*u*t * p1) + (3*u*t*t * p2) + (t*t*t * p3); };
 
-                    const resMult = 0.5;
+                    const resMult = 1.5;
 
                     circuitData.pieces.forEach((p, index) => {
                         if (p.subtype === 'rotonda' || p.name === 'Rotonda') {
@@ -1740,7 +1945,7 @@
 
                         let pieceLen = p.length || 0;
 
-                        let steps = (p.type === 'curve') ? Math.max(6, Math.ceil(Math.abs(p.angle || 0) * 1.5 * resMult)) : Math.max(4, Math.ceil((Math.abs(pieceLen) / 3.0) * resMult));
+                        let steps = (p.type === 'curve') ? Math.max(12, Math.ceil(Math.abs(p.angle || 0) * 1.5 * resMult)) : Math.max(10, Math.ceil((Math.abs(pieceLen) / 3.0) * resMult));
                         if (p.subtype && p.subtype.includes('chicane')) steps = Math.max(steps, 24);
                         
                         const stepLen = pieceLen / steps; const totalSweep = (p.type==='curve') ? ((p.angle || 0) * Math.PI / 180) * (p.direction==='left'?-1:1) : 0; const stepAngle = totalSweep / steps;
@@ -1833,29 +2038,46 @@
                     const applyBridgeElevations = () => {
                         const stepCount = rails.lane1.length;
                         const totalTrackLength = vertexDistances[vertexDistances.length - 1] || 1;
-                        let BRIDGE_TOP_H = 14.5, RAMP_LENGTH = 100.0, FLAT_TOP_LEN = 5.0, SEARCH_GAP = 50.0, INTERSECTION_MERGE_RADIUS = 80.0, BLEND_DIST = 60.0;
+                        
+                        // PARÁMETROS EXACTOS DEL FICHERO 2D->3D DE REFERENCIA (Modo 'Medio' de máxima calidad)
+                        let BRIDGE_TOP_H = 10.5;
+                        let RAMP_LENGTH = 130.0;
+                        let FLAT_TOP_LEN = 40.0;
+                        let SEARCH_GAP = 50.0;
+                        let INTERSECTION_MERGE_RADIUS = 100.0;
+                        let BLEND_DIST = 70.0;
 
                         const hasManualElevation = pieceMapRef.current.some(p => (p.elevation || 0) !== 0);
 
                         if (hasManualElevation) {
-                            const MANUAL_LEVEL_HEIGHT = 10.0; 
-                            const TRACK_RESOLUTION = 1.0; 
+                            // --- MODO MANUAL: Muestreo Uniforme y Blur Gaussiano circular idéntico al 2D ---
+                            const MANUAL_LEVEL_HEIGHT = 12.0; // 1 nivel en 2D = 12 unidades de altura en 3D
+                            const TRACK_RESOLUTION = 1.0; // 1 muestra por cada centímetro de pista
                             const numSamples = Math.max(10, Math.ceil(totalTrackLength / TRACK_RESOLUTION)); 
                             const rawHeights = new Float32Array(numSamples);
+
                             for (let i = 0; i < numSamples; i++) { 
                                 const dist = i * TRACK_RESOLUTION; 
-                                const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist <= p.distEnd) || pieceMapRef.current[0]; 
+                                const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist < p.distEnd) || pieceMapRef.current[pieceMapRef.current.length - 1]; 
                                 rawHeights[i] = (piece.elevation || 0) * MANUAL_LEVEL_HEIGHT; 
                             }
                             
+                            const isClosedTrack = !hasRotonda;
+
                             const applyBlur = (input, windowRadius) => { 
                                 const output = new Float32Array(numSamples); 
                                 for(let i = 0; i < numSamples; i++) { 
                                     let sum = 0; 
                                     let count = 0;
                                     for(let j = -windowRadius; j <= windowRadius; j++) { 
-                                        const idx = i + j;
-                                        if (idx >= 0 && idx < numSamples) {
+                                        let idx = i + j;
+                                        if (isClosedTrack) {
+                                            idx = (idx + numSamples) % numSamples;
+                                            sum += input[idx];
+                                            count++;
+                                        } else {
+                                            if (idx < 0) idx = 0;
+                                            if (idx >= numSamples) idx = numSamples - 1;
                                             sum += input[idx]; 
                                             count++;
                                         }
@@ -1865,23 +2087,44 @@
                                 return output; 
                             };
                             
-                            const blurRadius = Math.max(1, Math.floor(25.0 / TRACK_RESOLUTION)); 
+                            // Radio de 40cm y 3 pasadas para curva tipo S (Gaussiana) perfecta sin escalones
+                            const blurRadius = Math.max(1, Math.floor(40.0 / TRACK_RESOLUTION)); 
                             let smoothHeights = rawHeights; 
-                            smoothHeights = applyBlur(smoothHeights, blurRadius); 
                             smoothHeights = applyBlur(smoothHeights, blurRadius); 
                             smoothHeights = applyBlur(smoothHeights, blurRadius); 
                             smoothHeights = applyBlur(smoothHeights, blurRadius); 
                             
                             getElevationAtDist = (queryDist) => { 
-                                if (queryDist < 0) queryDist = 0; 
-                                if (queryDist >= totalTrackLength) queryDist = totalTrackLength - 0.01; 
+                                const rPiece = pieceMapRef.current.find(p => p.subtype === 'rotonda' && queryDist >= p.distStart && queryDist <= p.distEnd + 0.5);
+                                if (rPiece) queryDist = rPiece.distStart;
+
+                                if (isClosedTrack) {
+                                    if (queryDist < 0) queryDist += totalTrackLength;
+                                    queryDist = queryDist % totalTrackLength;
+                                } else {
+                                    if (queryDist < 0) queryDist = 0; 
+                                    if (queryDist >= totalTrackLength) queryDist = totalTrackLength - 0.001; 
+                                }
+
                                 const exactIndex = queryDist / TRACK_RESOLUTION; 
-                                const index0 = Math.floor(exactIndex); 
-                                const index1 = Math.min(numSamples - 1, index0 + 1); 
-                                const ratio = exactIndex - index0; 
+                                let index0 = Math.floor(exactIndex); 
+                                let index1 = index0 + 1; 
+
+                                if (isClosedTrack) {
+                                    index0 = index0 % numSamples;
+                                    index1 = index1 % numSamples;
+                                } else {
+                                    if (index0 >= numSamples - 1) {
+                                        index0 = numSamples - 1;
+                                        index1 = numSamples - 1;
+                                    }
+                                }
+
+                                const ratio = exactIndex - Math.floor(exactIndex); 
                                 return smoothHeights[index0] * (1 - ratio) + smoothHeights[index1] * ratio; 
                             };
                         } else {
+                            // --- MODO AUTOMÁTICO (Detección Inteligente con soporte de rectas paralelas/superpuestas) ---
                             const centerPoints = [];
                             for(let i=0; i<stepCount; i++) {
                                 let p1 = rails.lane1[i]; let p2 = rails.lane2[i];
@@ -1894,7 +2137,7 @@
 
                             const flatZones = [];
                             pieceMapRef.current.forEach(p => {
-                                const isSpecial = [ 'crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'digital_console', 'connection', 'analog_connect', 'starting_grid', 'chicane_entry', 'chicane_exit', 'chicane', 'rotonda' ].includes(p.subtype) || ['pit_entry', 'pit_exit'].includes(p.type) || (p.name && p.name.toLowerCase().includes('chicane'));
+                                const isSpecial = [ 'crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'digital_console', 'connection', 'analog_connect', 'starting_grid', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'chicane', 'rotonda' ].includes(p.subtype) || ['pit_entry', 'pit_exit'].includes(p.type);
                                 if (isSpecial) flatZones.push({ start: p.distStart - 15.0, end: p.distEnd + 15.0 });
                             });
 
@@ -1912,9 +2155,14 @@
 
                             const testPoints = [];
                             for(let i=0; i<stepCount; i+=2) { 
-                                if (centerPoints[i]) {
+                                if (centerPoints[i] && centerPoints[i+1]) {
                                     const piece = getPieceAtIdx(i);
-                                    testPoints.push({ x: centerPoints[i].x, z: centerPoints[i].z, dist: vertexDistances[i], idx: i, type: 'normal', piece });
+                                    const dx = centerPoints[i+1].x - centerPoints[i].x;
+                                    const dz = centerPoints[i+1].z - centerPoints[i].z;
+                                    const len = Math.hypot(dx, dz);
+                                    if (len > 0) {
+                                        testPoints.push({ x: centerPoints[i].x, z: centerPoints[i].z, dist: vertexDistances[i], idx: i, type: 'normal', piece, dx: dx/len, dz: dz/len });
+                                    }
                                 }
                             }
                             
@@ -1922,21 +2170,26 @@
                                 const piece = getPieceAtIdx(rot.refIdx);
                                 const dStart = piece ? piece.distStart : vertexDistances[rot.refIdx];
                                 const dEnd = piece ? piece.distEnd : (vertexDistances[rot.refIdx + 1] || dStart + 100);
-                                rot.points.forEach((pt, pi) => {
-                                    if (pi % 2 === 0) { 
+                                for(let pi=0; pi < rot.points.length - 1; pi+=2) {
+                                    const pt = rot.points[pi];
+                                    const ptNext = rot.points[pi+1];
+                                    const dx = ptNext.x - pt.x;
+                                    const dz = ptNext.z - pt.z;
+                                    const len = Math.hypot(dx, dz);
+                                    if (len > 0) {
                                         const approxDist = dStart + ((dEnd - dStart) * (pi / rot.points.length));
-                                        testPoints.push({ x: pt.x, z: pt.z, dist: approxDist, idx: rot.refIdx, type: 'rotonda', piece });
+                                        testPoints.push({ x: pt.x, z: pt.z, dist: approxDist, idx: rot.refIdx, type: 'rotonda', piece, dx: dx/len, dz: dz/len });
                                     }
-                                });
+                                }
                             });
 
                             for(let i=0; i<testPoints.length; i++) {
                                 const tp1 = testPoints[i];
-                                const isSpecial1 = tp1.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp1.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp1.piece.type));
+                                const isSpecial1 = tp1.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp1.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp1.piece.type));
                                 
                                 for(let j=i+1; j<testPoints.length; j++) {
                                     const tp2 = testPoints[j];
-                                    const isSpecial2 = tp2.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp2.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp2.piece.type));
+                                    const isSpecial2 = tp2.piece && (['crossing', 'digital_x', 'change_right', 'change_left', 'pit_parallel_double_x', 'chicane_entry', 'chicane_exit', 'chicane3_entry', 'chicane3_middle', 'chicane3_exit', 'analog_connect', 'connection', 'digital_console', 'starting_grid'].includes(tp2.piece.subtype) || ['pit_entry', 'pit_exit'].includes(tp2.piece.type));
                                     
                                     if (tp1.piece && tp2.piece) {
                                         const idxDiff = Math.abs(tp1.piece.index - tp2.piece.index);
@@ -1951,56 +2204,47 @@
                                     if (travelDist > totalTrackLength / 2) travelDist = totalTrackLength - travelDist; 
 
                                     if(travelDist > SEARCH_GAP) {
-                                        const dist2D = Math.sqrt((tp1.x - tp2.x)**2 + (tp1.z - tp2.z)**2);
-                                        if(dist2D < 24.0) { 
-                                            if (tp1.type === 'normal' && tp2.type === 'normal') {
-                                                const p1Next = centerPoints[tp1.idx+1]; const p2Next = centerPoints[tp2.idx+1];
-                                                if(p1Next && p2Next) {
-                                                    const dx1 = p1Next.x - centerPoints[tp1.idx].x; const dz1 = p1Next.z - centerPoints[tp1.idx].z;
-                                                    const dx2 = p2Next.x - centerPoints[tp2.idx].x; const dz2 = p2Next.z - centerPoints[tp2.idx].z;
-                                                    const len1 = Math.sqrt(dx1*dx1 + dz1*dz1); const len2 = Math.sqrt(dx2*dx2 + dz2*dz2);
-                                                    if(len1 > 0 && len2 > 0) {
-                                                        const dot = (dx1*dx2 + dz1*dz2) / (len1 * len2);
-                                                        if(Math.abs(dot) > 0.92) continue; 
-                                                    }
-                                                }
-                                            }
+                                        const dist2D = Math.hypot(tp1.x - tp2.x, tp1.z - tp2.z);
+                                        if(dist2D < 18.0) { 
+                                            const dot = (tp1.dx * tp2.dx) + (tp1.dz * tp2.dz);
+                                            const isParallel = Math.abs(dot) > 0.85;
+                                            const isDoubleLongStraight = isParallel;
 
                                             const midX = (tp1.x + tp2.x) / 2; const midZ = (tp1.z + tp2.z) / 2;
-                                            const exists = intersections.some(c => (midX - c.midX)**2 + (midZ - c.midZ)**2 < (INTERSECTION_MERGE_RADIUS * INTERSECTION_MERGE_RADIUS));
+                                            const existingCross = intersections.find(c => (midX - c.midX)**2 + (midZ - c.midZ)**2 < (INTERSECTION_MERGE_RADIUS * INTERSECTION_MERGE_RADIUS));
 
-                                            if(!exists) {
+                                            if(!existingCross) {
                                                 let goesUpIdx = tp2.idx;
                                                 if (tp1.type === 'rotonda' && tp2.type !== 'rotonda') goesUpIdx = tp2.idx;
                                                 else if (tp2.type === 'rotonda' && tp1.type !== 'rotonda') goesUpIdx = tp1.idx;
                                                 else if (isSpecial1 && !isSpecial2) goesUpIdx = tp2.idx;
                                                 else if (isSpecial2 && !isSpecial1) goesUpIdx = tp1.idx;
                                                 else {
-                                                    const elev1 = tp1.piece?.elevation || 0; const elev2 = tp2.piece?.elevation || 0;
-                                                    if (elev1 > 0 || elev2 < 0) goesUpIdx = tp1.idx;
-                                                    else if (elev2 > 0 || elev1 < 0) goesUpIdx = tp2.idx;
+                                                    const type1 = tp1.piece?.type || 'straight'; const type2 = tp2.piece?.type || 'straight';
+                                                    if (type1 === 'straight' && type2 === 'curve') goesUpIdx = tp1.idx;
+                                                    else if (type1 === 'curve' && type2 === 'straight') goesUpIdx = tp2.idx;
                                                     else {
-                                                        const room1 = getRoom(tp1.dist); const room2 = getRoom(tp2.dist);
-                                                        const type1 = tp1.piece?.type || 'straight'; const type2 = tp2.piece?.type || 'straight';
-                                                        
-                                                        if (room1 > room2 + 40) goesUpIdx = tp1.idx;
-                                                        else if (room2 > room1 + 40) goesUpIdx = tp2.idx;
-                                                        else if (type1 === 'straight' && type2 === 'curve') goesUpIdx = tp1.idx;
-                                                        else if (type1 === 'curve' && type2 === 'straight') goesUpIdx = tp2.idx;
-                                                        else {
-                                                            if (type1 === 'curve' && type2 === 'curve') {
-                                                                const r1 = tp1.piece?.radius || 0; const r2 = tp2.piece?.radius || 0;
-                                                                if (r1 > r2 + 5) goesUpIdx = tp1.idx;
-                                                                else if (r2 > r1 + 5) goesUpIdx = tp2.idx;
-                                                                else goesUpIdx = room1 >= room2 ? tp1.idx : tp2.idx;
-                                                            } else {
+                                                        if (type1 === 'curve' && type2 === 'curve') {
+                                                            const r1 = tp1.piece?.radius || 0; const r2 = tp2.piece?.radius || 0;
+                                                            if (r1 > r2) goesUpIdx = tp1.idx;
+                                                            else if (r2 > r1) goesUpIdx = tp2.idx;
+                                                            else {
+                                                                const room1 = getRoom(tp1.dist); const room2 = getRoom(tp2.dist);
                                                                 goesUpIdx = room1 >= room2 ? tp1.idx : tp2.idx;
                                                             }
+                                                        } else {
+                                                            const room1 = getRoom(tp1.dist); const room2 = getRoom(tp2.dist);
+                                                            goesUpIdx = room1 >= room2 ? tp1.idx : tp2.idx;
                                                         }
                                                     }
                                                 }
                                                 const centerDist = (goesUpIdx === tp1.idx) ? tp1.dist : tp2.dist;
-                                                intersections.push({ centerDist, midX, midZ });
+                                                intersections.push({ centerDist, midX, midZ, isDoubleLongStraight, isParallel });
+                                            } else {
+                                                if (isDoubleLongStraight) {
+                                                    existingCross.isDoubleLongStraight = true;
+                                                    if (isParallel) existingCross.isParallel = true;
+                                                }
                                             }
                                         }
                                     }
@@ -2008,19 +2252,26 @@
                             }
 
                             getElevationAtDist = (queryDist) => {
+                                const rPiece = pieceMapRef.current.find(p => p.subtype === 'rotonda' && queryDist >= p.distStart && queryDist <= p.distEnd + 0.5);
+                                if (rPiece) queryDist = rPiece.distStart;
+
                                 let maxH = 0;
                                 intersections.forEach(cross => {
                                     let distToCenter = Math.abs(queryDist - cross.centerDist);
                                     if (distToCenter > totalTrackLength / 2) distToCenter = totalTrackLength - distToCenter;
                                     
-                                    if (distToCenter < (FLAT_TOP_LEN/2 + RAMP_LENGTH)) {
+                                    const targetHeight = cross.isDoubleLongStraight ? BRIDGE_TOP_H * 1.85 : BRIDGE_TOP_H;
+                                    const targetRamp = cross.isDoubleLongStraight ? RAMP_LENGTH * 1.25 : RAMP_LENGTH;
+                                    const targetFlat = (cross.isDoubleLongStraight && cross.isParallel) ? FLAT_TOP_LEN * 4.5 : FLAT_TOP_LEN;
+
+                                    if (distToCenter < (targetFlat/2 + targetRamp)) {
                                         let h = 0;
-                                        if (distToCenter <= FLAT_TOP_LEN / 2) {
-                                            h = BRIDGE_TOP_H;
+                                        if (distToCenter <= targetFlat / 2) {
+                                            h = targetHeight;
                                         } else {
-                                            const rampPos = (distToCenter - FLAT_TOP_LEN/2) / RAMP_LENGTH;
+                                            const rampPos = (distToCenter - targetFlat/2) / targetRamp;
                                             const smoothFactor = (rampPos * rampPos * (3 - 2 * rampPos)); 
-                                            h = BRIDGE_TOP_H * (1 - smoothFactor);
+                                            h = targetHeight * (1 - smoothFactor);
                                         }
                                         maxH = Math.max(maxH, h);
                                     }
@@ -2028,8 +2279,14 @@
                                 
                                 let flatMultiplier = 1.0;
                                 flatZones.forEach(fz => {
-                                    let distToStart = queryDist - fz.start; if (distToStart < -totalTrackLength/2) distToStart += totalTrackLength; if (distToStart > totalTrackLength/2) distToStart -= totalTrackLength;
-                                    let distToEnd = queryDist - fz.end; if (distToEnd < -totalTrackLength/2) distToEnd += totalTrackLength; if (distToEnd > totalTrackLength/2) distToEnd -= totalTrackLength;
+                                    let distToStart = queryDist - fz.start;
+                                    if (distToStart < -totalTrackLength / 2) distToStart += totalTrackLength;
+                                    if (distToStart > totalTrackLength / 2) distToStart -= totalTrackLength;
+                                    
+                                    let distToEnd = queryDist - fz.end;
+                                    if (distToEnd < -totalTrackLength / 2) distToEnd += totalTrackLength;
+                                    if (distToEnd > totalTrackLength / 2) distToEnd -= totalTrackLength;
+
                                     let fzLength = fz.end - fz.start;
                                     let isInZone = distToStart >= 0 && distToStart <= fzLength;
                                     
@@ -2071,15 +2328,17 @@
 
                         rails.changes.forEach(changeItem => {
                             if (!changeItem.points) return;
+                            const dStart = vertexDistances[changeItem.refIdx] || 0;
                             if (changeItem.isRotonda) {
+                                const rPiece = pieceMapRef.current.find(p => p.subtype === 'rotonda' && Math.abs(p.distStart - dStart) < 5.0);
+                                const rLen = rPiece ? (rPiece.distEnd - rPiece.distStart) : (changeItem.totalLen || 50.0);
                                 changeItem.points.forEach((pt, pi) => {
                                     const fraction = pi / (changeItem.points.length - 1 || 1);
-                                    const ptDist = changeItem.baseDist + (fraction * changeItem.totalLen);
+                                    const ptDist = dStart + (rLen * fraction);
                                     const y = getElevationAtDist(ptDist);
                                     if (Math.abs(y) > 0.001) pt.y += y;
                                 });
                             } else {
-                                const dStart = vertexDistances[changeItem.refIdx] || 0;
                                 const dEnd = vertexDistances[changeItem.refIdx + changeItem.count] || (dStart + 50);
                                 changeItem.points.forEach((pt, pi) => {
                                      const fraction = pi / (changeItem.points.length - 1 || 1);
@@ -2118,26 +2377,31 @@
                         const wallVerts = []; const wallIndices = []; const wallUVs = [];
                         const bottomVerts = []; const bottomIndices = []; const bottomUVs = [];
 
-                        let tunnelRadius = 18.0; 
-                        let tunnelClearance = 8.5; 
-                        let depthOffset = 1.0; 
-                        const floorY = -0.5; 
+                        let depthOffset = 1.2; 
+                        const floorY = 0.0; 
 
                         const getTunnelBottomY = (x, z, currentY, currentDist) => {
                             let bottomY = floorY; 
                             if (currentY > 2.0) {
-                                for (let i = 0; i < aspVertCount; i += 3) { 
-                                    if (Math.abs(asphaltDistances[i] - currentDist) > 40.0) {
-                                        const cx = (asphaltVerts[i * 6] + asphaltVerts[i * 6 + 3]) / 2;
-                                        const cz = (asphaltVerts[i * 6 + 2] + asphaltVerts[i * 6 + 5]) / 2;
-                                        const cy = (asphaltVerts[i * 6 + 1] + asphaltVerts[i * 6 + 4]) / 2;
+                                for (let s_bottom = 0; s_bottom < aspVertCount; s_bottom += 1) { 
+                                    if (Math.abs(asphaltDistances[s_bottom] - currentDist) > 40.0) {
+                                        const i = s_bottom * 6;
+                                        const cx = (asphaltVerts[i] + asphaltVerts[i + 3]) / 2;
+                                        const cz = (asphaltVerts[i + 2] + asphaltVerts[i + 5]) / 2;
+                                        const cy = (asphaltVerts[i + 1] + asphaltVerts[i + 4]) / 2;
                                         
-                                        if (cy < currentY - 1.5) {
+                                        if (cy < currentY - 3.0) {
                                             const d2 = (cx - x)**2 + (cz - z)**2;
-                                            if (d2 < tunnelRadius**2) {
+                                            const checkRadius = 10.5;
+                                            if (d2 < checkRadius**2) {
                                                 const dist2d = Math.sqrt(d2);
-                                                const arch = Math.cos((dist2d / tunnelRadius) * (Math.PI / 2)); 
-                                                const localH = cy + (tunnelClearance * arch);
+                                                let arch = Math.sqrt(1 - Math.pow(dist2d / checkRadius, 2));
+                                                const maxClearance = (currentY - depthOffset) - cy;
+                                                let localH = cy + (maxClearance * arch);
+                                                if (dist2d < 7.5) {
+                                                    const minPassHeight = cy + 6.0;
+                                                    if (localH < minPassHeight) localH = Math.min(minPassHeight, currentY - depthOffset);
+                                                }
                                                 if (localH > bottomY) bottomY = localH;
                                             }
                                         }
@@ -2147,25 +2411,67 @@
                             return Math.min(bottomY, currentY - depthOffset);
                         };
 
+                        // 1. Pre-calcular las alturas de corte de los muros
+                        const rawBottomL = new Float32Array(aspVertCount);
+                        const rawBottomR = new Float32Array(aspVertCount);
+
                         for (let s = 0; s < aspVertCount; s++) {
                             const xL = asphaltVerts[s * 6], yL = asphaltVerts[s * 6 + 1], zL = asphaltVerts[s * 6 + 2];
                             const xR = asphaltVerts[s * 6 + 3], yR = asphaltVerts[s * 6 + 4], zR = asphaltVerts[s * 6 + 5];
                             const dist = asphaltDistances[s];
                             
-                            let bottomL = yL > 0.5 ? getTunnelBottomY(xL, zL, yL, dist) : floorY;
-                            let bottomR = yR > 0.5 ? getTunnelBottomY(xR, zR, yR, dist) : floorY;
+                            rawBottomL[s] = Math.max(floorY, yL > 0.5 ? getTunnelBottomY(xL, zL, yL, dist) : floorY);
+                            rawBottomR[s] = Math.max(floorY, yR > 0.5 ? getTunnelBottomY(xR, zR, yR, dist) : floorY);
+                        }
+
+                        // 2. Aplicar suavizado ligero para evitar escalones sin deformar el arco semicircular
+                        const smoothBottomL = new Float32Array(aspVertCount);
+                        const smoothBottomR = new Float32Array(aspVertCount);
+                        const tunnelBlurRadius = 2;
+
+                        for (let i = 0; i < aspVertCount; i++) {
+                            let sumL = 0, sumR = 0, count = 0;
+                            let peakL = rawBottomL[i], peakR = rawBottomR[i];
+                            for (let j = -tunnelBlurRadius; j <= tunnelBlurRadius; j++) {
+                                let idx = i + j;
+                                if (idx >= 0 && idx < aspVertCount) {
+                                    if (Math.abs(asphaltDistances[idx] - asphaltDistances[i]) < 15.0) {
+                                        sumL += rawBottomL[idx];
+                                        sumR += rawBottomR[idx];
+                                        if (rawBottomL[idx] > peakL) peakL = rawBottomL[idx];
+                                        if (rawBottomR[idx] > peakR) peakR = rawBottomR[idx];
+                                        count++;
+                                    }
+                                }
+                            }
+                            const avgL = count > 0 ? sumL / count : rawBottomL[i];
+                            const avgR = count > 0 ? sumR / count : rawBottomR[i];
+                            smoothBottomL[i] = (avgL * 0.2) + (peakL * 0.8);
+                            smoothBottomR[i] = (avgR * 0.2) + (peakR * 0.8);
+                            smoothBottomL[i] = Math.min(smoothBottomL[i], asphaltVerts[i * 6 + 1] - depthOffset);
+                            smoothBottomR[i] = Math.min(smoothBottomR[i], asphaltVerts[i * 6 + 4] - depthOffset);
+                        }
+
+                        // 3. Generar la geometría final de los muros y techos de túnel
+                        for (let s = 0; s < aspVertCount; s++) {
+                            const xL = asphaltVerts[s * 6], yL = asphaltVerts[s * 6 + 1], zL = asphaltVerts[s * 6 + 2];
+                            const xR = asphaltVerts[s * 6 + 3], yR = asphaltVerts[s * 6 + 4], zR = asphaltVerts[s * 6 + 5];
+                            const dist = asphaltDistances[s];
                             
-                            bottomL = Math.max(floorY, bottomL);
-                            bottomR = Math.max(floorY, bottomR);
+                            let bottomL = smoothBottomL[s];
+                            let bottomR = smoothBottomR[s];
                             
+                            const uvScaleX = 0.025;
+                            const uvScaleY = 0.08;
+
                             wallVerts.push(xL, yL, zL); wallVerts.push(xL, bottomL, zL); 
-                            wallUVs.push(dist * 0.05, yL * 0.1); wallUVs.push(dist * 0.05, bottomL * 0.1);
+                            wallUVs.push(dist * uvScaleX, 1.0); wallUVs.push(dist * uvScaleX, 1.0 - (yL - bottomL) * uvScaleY);
                             
                             wallVerts.push(xR, yR, zR); wallVerts.push(xR, bottomR, zR);
-                            wallUVs.push(dist * 0.05, yR * 0.1); wallUVs.push(dist * 0.05, bottomR * 0.1);
+                            wallUVs.push(dist * uvScaleX, 1.0); wallUVs.push(dist * uvScaleX, 1.0 - (yR - bottomR) * uvScaleY);
                             
                             bottomVerts.push(xL, bottomL, zL); bottomVerts.push(xR, bottomR, zR);
-                            bottomUVs.push(0, dist * 0.05); bottomUVs.push(1, dist * 0.05);
+                            bottomUVs.push(0, dist * 0.1); bottomUVs.push(1, dist * 0.1);
                             
                             if (s > 0) {
                                 const cur = s * 4, prev = (s - 1) * 4;
@@ -2193,8 +2499,7 @@
                         const stoneTex = createStoneTexture();
                         const structMat = new THREE.MeshStandardMaterial({ 
                             map: stoneTex,
-                            color: 0x999999,
-                            roughness: 0.9,
+                            roughness: 0.95,
                             metalness: 0.1,
                             side: THREE.DoubleSide 
                         });
@@ -2366,10 +2671,12 @@
                     for (let i = 0; i < aspVertCount - 1; i++) { const tl = i * 2; const tr = i * 2 + 1; const ntl = (i + 1) * 2; const ntr = (i + 1) * 2 + 1; const bl = tl + totalTopVerts; const br = tr + totalTopVerts; const nbl = ntl + totalTopVerts; const nbr = ntr + totalTopVerts; solidIndices.push(tl, bl, ntl); solidIndices.push(bl, nbl, ntl); solidIndices.push(tr, ntr, br); solidIndices.push(ntr, nbr, br); }
                     const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(solidVerts, 3)); ag.setAttribute('uv', new THREE.Float32BufferAttribute(solidUVs, 2)); ag.setIndex(solidIndices); ag.computeVertexNormals(); 
                     
-                    const am = new THREE.Mesh(ag, new THREE.MeshPhongMaterial({ 
-                        color: 0x1a1a1a, 
-                        shininess: 35,
-                        specular: 0x333333,
+                    const asphaltTex = createAsphaltTexture();
+                    const am = new THREE.Mesh(ag, new THREE.MeshStandardMaterial({ 
+                        map: asphaltTex,
+                        color: 0xdcdcdc, 
+                        roughness: 0.72,
+                        metalness: 0.12,
                         side: THREE.DoubleSide 
                     })); 
                     am.receiveShadow = true; am.castShadow = false; am.position.y = 0.0; trackGroup.add(am);
@@ -2487,6 +2794,36 @@
                         boardMesh.receiveShadow = true; 
                         scene.add(boardMesh); 
                         boardMeshRef.current = boardMesh; 
+
+                        // --- BANDADA DE PÁJAROS 3D SOBREVOLANDO ELVALLE ---
+                        const birdCount = 28;
+                        const birdGeo = new THREE.BufferGeometry();
+                        const birdVerts = new Float32Array([
+                            // Ala izquierda
+                            0, 0, 0.6,   -1.8, 0.35, 0,   0, 0, -0.6,
+                            // Ala derecha
+                            0, 0, 0.6,    0, 0, -0.6,     1.8, 0.35, 0
+                        ]);
+                        birdGeo.setAttribute('position', new THREE.BufferAttribute(birdVerts, 3));
+                        birdGeo.computeVertexNormals();
+                        const birdMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
+                        const birdInstanced = new THREE.InstancedMesh(birdGeo, birdMat, birdCount);
+                        birdInstanced.frustumCulled = false;
+                        scene.add(birdInstanced);
+
+                        const birdsData = [];
+                        const orbitRadiusBase = Math.max(size.x, size.z) * 0.45 + 60;
+                        for (let bi = 0; bi < birdCount; bi++) {
+                            birdsData.push({
+                                cx: (Math.random() - 0.5) * size.x * 0.6,
+                                cz: (Math.random() - 0.5) * size.z * 0.6,
+                                cy: 48 + Math.random() * 45,
+                                radius: orbitRadiusBase * (0.45 + Math.random() * 0.75),
+                                speed: (0.22 + Math.random() * 0.25) * (Math.random() > 0.2 ? 1 : -1),
+                                offset: Math.random() * Math.PI * 2
+                            });
+                        }
+                        scene.userData.birds = { mesh: birdInstanced, data: birdsData };
                         
                         // Sincronizar inmediatamente la referencia para que applyScatter use el tamaño real del circuito
                         boardSettingsRef.current = { ...boardSettingsRef.current, width: baseW, depth: baseD, x: 0, z: 0, material: 'grass' };
@@ -2662,25 +2999,22 @@
                         const nowTime = performance.now() / 1000;
                         const totalDist = accumulatedDist; const currentTrackLen = (hasRotonda && rallyDistancesRef.current.length > 0) ? rallyDistancesRef.current[rallyDistancesRef.current.length - 1] : totalDist;
 
-                        // --- FÍSICA REAL DE GATILLO DE MANDO DE SLOT (MUELLE + AMORTIGUACIÓN + CURVA DE POTENCIA) ---
+                        // --- MANDO DE SLOT REAL: RESPUESTA DIRECTA AL DEDO Y RETORNO AMORTIGUADO POR MUELLE AL SOLTAR ---
                         const holdingTrigger = isHoldingTriggerRef.current || isKeyHoldingTriggerRef.current;
-                        const desiredTrigger = holdingTrigger ? targetThrottleRef.current : 0;
 
                         if (holdingTrigger) {
-                            // Amortiguación progresiva al apretar o modular el dedo en el gatillo
-                            const stiffness = 260;
-                            const damping = 26;
-                            const force = (desiredTrigger - manualThrottleRef.current) * stiffness - triggerVelocityRef.current * damping;
-                            triggerVelocityRef.current += force * dt;
-                            manualThrottleRef.current += triggerVelocityRef.current * dt;
+                            // Seguimiento inmediato y sedoso al dedo/tecla sin rebotes ni peleas con el DOM
+                            const followRate = isKeyHoldingTriggerRef.current ? 18 : 38;
+                            manualThrottleRef.current += (targetThrottleRef.current - manualThrottleRef.current) * (1 - Math.exp(-followRate * dt));
+                            triggerVelocityRef.current = 0;
                         } else {
-                            // Muelle mecánico de retorno rápido al soltar el gatillo (posición de freno dinámico)
-                            const returnStiffness = 520;
-                            const returnDamping = 34;
+                            // Retorno por muelle amortiguado hacia 0 (posición de freno dinámico)
+                            const returnStiffness = 280;
+                            const returnDamping = 32;
                             const force = (0 - manualThrottleRef.current) * returnStiffness - triggerVelocityRef.current * returnDamping;
                             triggerVelocityRef.current += force * dt;
                             manualThrottleRef.current += triggerVelocityRef.current * dt;
-                            if (manualThrottleRef.current < 0.4 && Math.abs(triggerVelocityRef.current) < 8) {
+                            if (manualThrottleRef.current < 0.5) {
                                 manualThrottleRef.current = 0;
                                 triggerVelocityRef.current = 0;
                             }
@@ -2696,9 +3030,6 @@
                         }
                         if (triggerVisualRef.current) {
                             triggerVisualRef.current.style.left = `calc(${trigVal.toFixed(1)}% - 14px)`;
-                        }
-                        if (throttleInputRef.current && !isHoldingTriggerRef.current) {
-                            throttleInputRef.current.value = trigVal;
                         }
                         if (brakeLedRef.current) {
                             brakeLedRef.current.className = `w-2.5 h-2.5 rounded-full transition-all ${isBraking ? 'bg-red-500 shadow-[0_0_12px_#ef4444] scale-110' : 'bg-red-950/60 border border-red-500/30'}`;
@@ -3269,10 +3600,30 @@
                                     const model = vg.children[0]; 
                                     if(model.userData.baseScale) model.scale.copy(model.userData.baseScale).multiplyScalar(cas.scale); 
                                 }
+                                // Control dinámico de pilotos traseros difuminados (posición nocturna + luz de freno)
+                                const carBraking = (ci === myCarIdx) ? isBraking : (car.speed > targetSpeed + 12);
+                                if (vg.userData.tailMat) {
+                                    vg.userData.tailMat.opacity = isNightModeRef.current ? (carBraking ? 1.0 : 0.72) : (carBraking ? 0.85 : 0.0);
+                                }
+                                if (vg.userData.tailGroundMat) {
+                                    vg.userData.tailGroundMat.opacity = isNightModeRef.current ? (carBraking ? 0.65 : 0.32) : (carBraking ? 0.38 : 0.0);
+                                }
+                                if (vg.userData.tailLight) {
+                                    vg.userData.tailLight.intensity = isNightModeRef.current ? (carBraking ? 1.35 : 0.55) : (carBraking ? 0.6 : 0);
+                                }
                             } else if (vg && car.crashed) {
                                  vg.rotation.set(0,0,0);
                                  vg.position.set(0,0,0);
                             }
+                        }
+
+                        // Mantener la Luna 3D anclada en el horizonte lejano respecto a la cámara
+                        if (scene.userData.moonMesh && camera) {
+                            scene.userData.moonMesh.position.set(
+                                camera.position.x - 650,
+                                Math.max(240, camera.position.y + 180),
+                                camera.position.z - 1200
+                            );
                         }
 
                         if (peerConn && peerConn.open) {
@@ -3644,14 +3995,23 @@
                 const scene = sceneRef.current;
                 const isNight = isNightMode;
 
+                if (rendererRef.current) {
+                    rendererRef.current.toneMappingExposure = isNight ? 1.18 : 0.78;
+                }
+
                 if (scene.userData.ambientLight) {
-                    scene.userData.ambientLight.intensity = isNight ? 0.05 : 0.4;
-                    scene.userData.ambientLight.color.setHex(isNight ? 0x223355 : 0xffedd5); 
+                    scene.userData.ambientLight.intensity = isNight ? 0.12 : 0.38;
+                    scene.userData.ambientLight.color.setHex(isNight ? 0x1e293b : 0xffe4c4); 
+                }
+
+                if (scene.userData.hemiLight) {
+                    scene.userData.hemiLight.intensity = isNight ? 0.16 : 0.35;
+                    scene.userData.hemiLight.color.setHex(isNight ? 0x38bdf8 : 0x93c5fd);
                 }
 
                 if (dirLightRef.current) {
-                    dirLightRef.current.intensity = isNight ? 0.1 : 1.2;
-                    dirLightRef.current.color.setHex(isNight ? 0x64748b : 0xfffae8); 
+                    dirLightRef.current.intensity = isNight ? 0.22 : 0.82;
+                    dirLightRef.current.color.setHex(isNight ? 0x7dd3fc : 0xfff1d6); 
                 }
 
                 if (scene.userData.updateSky) {
@@ -3662,10 +4022,12 @@
                     const vg = pg.children[0];
                     if (vg) {
                         vg.traverse(child => {
-                            if (child.name === "HEADLIGHT") child.intensity = isNight ? 3.0 : 0;
-                            if (child.name === "TAILLIGHT") child.intensity = isNight ? 1.5 : 0;
-                            if (child.material && child.material.name === "GLOW_HEAD") child.material.opacity = isNight ? 0.9 : 0;
-                            if (child.material && child.material.name === "GLOW_TAIL") child.material.opacity = isNight ? 0.9 : 0;
+                            if (child.name === "HEADLIGHT") child.intensity = isNight ? 5.2 : 0;
+                            if (child.name === "TAILLIGHT") child.intensity = isNight ? 0.55 : 0;
+                            if (child.name === "HEADLIGHT_GROUND_BEAM") child.visible = isNight;
+                            if (child.name === "TAILLIGHT_GROUND_GLOW") child.visible = isNight;
+                            if (child.material && child.material.name === "GLOW_HEAD") child.material.opacity = isNight ? 0.92 : 0.0;
+                            if (child.material && child.material.name === "GLOW_TAIL") child.material.opacity = isNight ? 0.72 : 0.0;
                         });
                     }
                 });
@@ -3743,27 +4105,111 @@
                         lightsGroup.name = "CarLightsGroup";
 
                         const isNight = isNightModeRef.current;
-                        const hlIntensity = isNight ? 3.0 : 0;
-                        const tlIntensity = isNight ? 1.5 : 0;
+                        const hlIntensity = isNight ? 5.2 : 0;
+                        const tlIntensity = isNight ? 0.55 : 0;
 
-                        // En vez de 2 SpotLights + 1 PointLight por coche (que hunden los FPS en WebGL),
-                        // usamos 1 PointLight delantera optimizada para modo noche + mallas emisivas brillantes
-                        const hl1 = new THREE.PointLight(0xffffee, hlIntensity, 65, 1.5);
-                        hl1.position.set(0, finalSize.y * 0.4, -finalSize.z * 0.55);
-                        hl1.name = "HEADLIGHT";
-                        lightsGroup.add(hl1);
+                        // Coordenadas exactas del morro (-Z) y de la parte trasera (+Z) fuera de la carrocería para que no queden tapadas
+                        const frontZ = -finalSize.z * 0.76;
+                        const rearZ = finalSize.z * 0.29;
+                        const lightY = Math.max(0.55, finalSize.y * 0.34);
 
-                        const glowGeo = new THREE.SphereGeometry(0.14, 6, 6);
-                        const headGlowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: isNight ? 0.95 : 0 });
+                        // 1. Faro SpotLight blanco cálido hacia adelante (sin geometría de cono visible)
+                        const hlSpot = new THREE.SpotLight(0xfff4e0, hlIntensity, 165, Math.PI / 3.2, 0.75, 1.2);
+                        hlSpot.position.set(0, lightY + 0.3, frontZ);
+                        hlSpot.name = "HEADLIGHT";
+                        const hlTarget = new THREE.Object3D();
+                        hlTarget.position.set(0, -0.3, frontZ - 48);
+                        lightsGroup.add(hlTarget);
+                        hlSpot.target = hlTarget;
+                        lightsGroup.add(hlSpot);
+
+                        // 2. Halos difuminados cálidos en los dos faros delanteros (Sprites suaves sin bordes)
+                        const warmFlareTex = getSoftLightGlowTexture(255, 238, 200);
+                        const headGlowMat = new THREE.SpriteMaterial({
+                            map: warmFlareTex,
+                            color: 0xfff5e4,
+                            transparent: true,
+                            opacity: isNight ? 0.92 : 0.0,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
                         headGlowMat.name = "GLOW_HEAD";
-                        const tailGlowMat = new THREE.MeshBasicMaterial({ color: 0xff1111, transparent: true, opacity: isNight ? 0.95 : 0 });
+
+                        const hgL = new THREE.Sprite(headGlowMat);
+                        hgL.scale.set(2.2, 2.2, 1);
+                        hgL.position.set(finalSize.x * 0.32, lightY, frontZ - 0.15);
+                        lightsGroup.add(hgL);
+
+                        const hgR = new THREE.Sprite(headGlowMat);
+                        hgR.scale.set(2.2, 2.2, 1);
+                        hgR.position.set(-finalSize.x * 0.32, lightY, frontZ - 0.15);
+                        lightsGroup.add(hgR);
+
+                        // 3. Proyección difuminada cálida sobre el asfalto delante del coche
+                        const beamTex = getHeadlightBeamTexture();
+                        const groundBeamGeo = new THREE.PlaneGeometry(19, 44);
+                        groundBeamGeo.rotateX(-Math.PI / 2);
+                        const groundBeamMat = new THREE.MeshBasicMaterial({
+                            map: beamTex,
+                            transparent: true,
+                            opacity: 0.78,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
+                        const groundBeamMesh = new THREE.Mesh(groundBeamGeo, groundBeamMat);
+                        groundBeamMesh.position.set(0, 0.14, frontZ - 21);
+                        groundBeamMesh.name = "HEADLIGHT_GROUND_BEAM";
+                        groundBeamMesh.visible = isNight;
+                        lightsGroup.add(groundBeamMesh);
+
+                        // 4. Pilotos traseros rojos difuminados y cálidos (visibles desde la cámara de persecución)
+                        const redFlareTex = getSoftLightGlowTexture(255, 35, 15);
+                        const tailGlowMat = new THREE.SpriteMaterial({
+                            map: redFlareTex,
+                            color: 0xff2a15,
+                            transparent: true,
+                            opacity: isNight ? 0.72 : 0.0,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
                         tailGlowMat.name = "GLOW_TAIL";
-                        
-                        const hg1 = new THREE.Mesh(glowGeo, headGlowMat); hg1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, -finalSize.z * 0.45); lightsGroup.add(hg1);
-                        const hg2 = new THREE.Mesh(glowGeo, headGlowMat); hg2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, -finalSize.z * 0.45); lightsGroup.add(hg2);
-                        
-                        const tg1 = new THREE.Mesh(glowGeo, tailGlowMat); tg1.position.set(finalSize.x * 0.35, finalSize.y * 0.35, finalSize.z * 0.48); lightsGroup.add(tg1);
-                        const tg2 = new THREE.Mesh(glowGeo, tailGlowMat); tg2.position.set(-finalSize.x * 0.35, finalSize.y * 0.35, finalSize.z * 0.48); lightsGroup.add(tg2);
+
+                        const tgL = new THREE.Sprite(tailGlowMat);
+                        tgL.scale.set(2.1, 1.45, 1);
+                        tgL.position.set(finalSize.x * 0.30, lightY + 0.05, rearZ + 0.25);
+                        lightsGroup.add(tgL);
+
+                        const tgR = new THREE.Sprite(tailGlowMat);
+                        tgR.scale.set(2.1, 1.45, 1);
+                        tgR.position.set(-finalSize.x * 0.30, lightY + 0.05, rearZ + 0.25);
+                        lightsGroup.add(tgR);
+
+                        // 5. Reflejo rojo difuso sobre el asfalto justo detrás del parachoques trasero
+                        const tailGroundGeo = new THREE.PlaneGeometry(finalSize.x * 1.9, 6.5);
+                        tailGroundGeo.rotateX(-Math.PI / 2);
+                        const tailGroundMat = new THREE.MeshBasicMaterial({
+                            map: redFlareTex,
+                            color: 0xff1e00,
+                            transparent: true,
+                            opacity: isNight ? 0.32 : 0.0,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        });
+                        const tailGroundMesh = new THREE.Mesh(tailGroundGeo, tailGroundMat);
+                        tailGroundMesh.position.set(0, 0.14, rearZ + 2.2);
+                        tailGroundMesh.name = "TAILLIGHT_GROUND_GLOW";
+                        tailGroundMesh.visible = isNight;
+                        lightsGroup.add(tailGroundMesh);
+
+                        // Punto de luz rojo suave para iluminar la zaga del coche
+                        const tlLight = new THREE.PointLight(0xff2200, tlIntensity, 10, 1.8);
+                        tlLight.position.set(0, lightY + 0.2, rearZ + 0.6);
+                        tlLight.name = "TAILLIGHT";
+                        lightsGroup.add(tlLight);
+
+                        container.userData.tailMat = tailGlowMat;
+                        container.userData.tailGroundMat = tailGroundMat;
+                        container.userData.tailLight = tlLight;
 
                         templateGroup.add(lightsGroup);
                     }
@@ -4194,8 +4640,33 @@
                                 </div>
                             </div>
 
-                            {/* Recorrido Físico del Gatillo con Muelle */}
-                            <div className="relative w-full h-20 bg-gradient-to-r from-red-950/40 via-black/80 to-black/80 rounded-xl border border-white/15 shadow-inner overflow-hidden flex items-center group cursor-grab active:cursor-grabbing touch-none">
+                            {/* Recorrido Físico del Gatillo con Muelle (Superficie táctil directa sin lag de input range) */}
+                            <div
+                                ref={throttleInputRef}
+                                onPointerDown={(e) => {
+                                    e.currentTarget.setPointerCapture(e.pointerId);
+                                    isHoldingTriggerRef.current = true;
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                                    targetThrottleRef.current = pct;
+                                }}
+                                onPointerMove={(e) => {
+                                    if (!isHoldingTriggerRef.current) return;
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                                    targetThrottleRef.current = pct;
+                                }}
+                                onPointerUp={(e) => {
+                                    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch(err){}
+                                    isHoldingTriggerRef.current = false;
+                                    targetThrottleRef.current = 0;
+                                }}
+                                onPointerCancel={() => {
+                                    isHoldingTriggerRef.current = false;
+                                    targetThrottleRef.current = 0;
+                                }}
+                                className="relative w-full h-20 bg-gradient-to-r from-red-950/40 via-black/80 to-black/80 rounded-xl border border-white/15 shadow-inner overflow-hidden flex items-center group cursor-grab active:cursor-grabbing touch-none select-none"
+                            >
                                 {/* Marcas de devanado / contactos de resistencia de mando de Slot */}
                                 <div className="absolute inset-0 opacity-25 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 12px, rgba(255,255,255,0.12) 12px, rgba(255,255,255,0.12) 14px)'}}></div>
                                 
@@ -4211,35 +4682,6 @@
                                     <div className="w-1 h-2 bg-black/40 rounded-full"></div>
                                     <div className="w-1 h-2 bg-black/40 rounded-full"></div>
                                 </div>
-
-                                {/* Input interactivo táctil / ratón con retorno automático al soltar */}
-                                <input
-                                    ref={throttleInputRef}
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    defaultValue="0"
-                                    onPointerDown={(e) => {
-                                        isHoldingTriggerRef.current = true;
-                                        targetThrottleRef.current = parseFloat(e.currentTarget.value);
-                                    }}
-                                    onTouchStart={(e) => {
-                                        isHoldingTriggerRef.current = true;
-                                    }}
-                                    onInput={(e) => {
-                                        isHoldingTriggerRef.current = true;
-                                        targetThrottleRef.current = parseFloat(e.target.value);
-                                    }}
-                                    onPointerUp={() => {
-                                        isHoldingTriggerRef.current = false;
-                                        targetThrottleRef.current = 0;
-                                    }}
-                                    onTouchEnd={() => {
-                                        isHoldingTriggerRef.current = false;
-                                        targetThrottleRef.current = 0;
-                                    }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-grab active:cursor-grabbing z-30 touch-none"
-                                />
                                 
                                 <div className="relative z-20 flex justify-between items-center w-full px-6 pointer-events-none">
                                     <span ref={throttleLabelRef} className="text-[12px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-white/40">{t.controller}</span>
