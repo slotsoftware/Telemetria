@@ -30,33 +30,64 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        /* ESTILOS GLOBALES */
+        /* ESTILOS GLOBALES (ESTILO MACOS) */
         script { display: none !important; }
-        body { background-color: #0a0a0a; color: white; margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; user-select: none; touch-action: none; }
+        body { background-color: #0d1117; color: #f5f5f7; margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; user-select: none; touch-action: none; -webkit-font-smoothing: antialiased; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .animate-in { animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        /* PANTALLA DE CARGA */
-        #loading-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; padding: 20px; transition: opacity 0.8s ease-out; }
-        .loader-title { font-size: 3rem; font-weight: 900; color: #39ff14; text-transform: uppercase; letter-spacing: -2px; margin-bottom: 2rem; text-shadow: 0 0 15px rgba(57, 255, 20, 0.8); animation: pulse-neon 2s infinite alternate; }
-        .loader-bar-bg { width: 300px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; position: relative; margin-bottom: 1rem; }
-        .loader-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; width: 40%; background: #39ff14; box-shadow: 0 0 10px #39ff14; animation: load-scan 1s linear infinite; }
-        .loader-subtitle { font-size: 0.8rem; color: #94a3b8; letter-spacing: 2px; font-weight: bold; }
-        @keyframes pulse-neon { 0% { text-shadow: 0 0 15px rgba(57, 255, 20, 0.8); opacity: 0.9; transform: scale(1); } 100% { text-shadow: 0 0 30px rgba(57, 255, 20, 1); opacity: 1; transform: scale(1.02); } }
-        @keyframes load-scan { 0% { left: -40%; } 100% { left: 100%; } }
+        /* UTILIDADES VENTANAS Y DOCK MACOS */
+        .mac-window {
+            background: rgba(28, 28, 30, 0.84) !important;
+            backdrop-filter: blur(28px) saturate(190%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.16) !important;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+            border-radius: 16px !important;
+        }
+        .mac-titlebar {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .mac-dock {
+            background: rgba(28, 28, 30, 0.8) !important;
+            backdrop-filter: blur(30px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+            border-radius: 20px !important;
+        }
+        .mac-pill {
+            background: rgba(36, 36, 38, 0.82) !important;
+            backdrop-filter: blur(24px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.16) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+            border-radius: 14px !important;
+        }
+        .mac-dots { display: none !important; }
         
-        /* BLOQUEO DE ORIENTACIÓN (Solo visible en móviles verticales) */
+        /* PANTALLA DE CARGA ESTILO APPLE */
+        #loading-screen { position: fixed; inset: 0; background: radial-gradient(circle at 50% 30%, #1c1c1e 0%, #000000 100%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; padding: 20px; transition: opacity 0.8s ease-out; }
+        .loader-title { font-size: 2.6rem; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin-bottom: 1.8rem; text-shadow: 0 4px 24px rgba(10, 132, 255, 0.5); }
+        .loader-bar-bg { width: 240px; height: 5px; background: rgba(255,255,255,0.14); border-radius: 999px; overflow: hidden; position: relative; margin-bottom: 1rem; }
+        .loader-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; width: 45%; background: #0a84ff; border-radius: 999px; box-shadow: 0 0 12px #0a84ff; animation: load-scan 1.1s ease-in-out infinite; }
+        .loader-subtitle { font-size: 0.75rem; color: #86868b; letter-spacing: 1.5px; font-weight: 600; }
+        @keyframes pulse-neon { 0% { opacity: 0.85; transform: scale(1); } 100% { opacity: 1; transform: scale(1.01); } }
+        @keyframes load-scan { 0% { left: -45%; } 100% { left: 100%; } }
+        
+        /* BLOQUEO DE ORIENTACIÓN (Solo visible en móviles verticales pequeños) */
         #orientation-warning { display: none; }
-        @media (orientation: portrait) {
+        @media (max-width: 640px) and (orientation: portrait) {
             #orientation-warning {
                 display: flex; position: fixed; inset: 0; z-index: 10000;
-                background: #020617; color: #39ff14;
+                background: #000000; color: #0a84ff;
                 flex-direction: column; align-items: center; justify-content: center;
                 text-align: center; padding: 2rem;
             }
-            #root { display: none; } /* Ocultar la app en vertical */
+            #root { display: none; }
             .rotate-icon { animation: rotate-phone 2s infinite ease-in-out; margin-bottom: 2rem; }
         }
         @keyframes rotate-phone { 0%, 10% { transform: rotate(0deg); } 40%, 60% { transform: rotate(90deg); } 90%, 100% { transform: rotate(90deg); } }
@@ -144,13 +175,16 @@
 
         /* --- 1. DATOS ESTÁTICOS (TRACK DEFINITIONS) --- */
         const TRACK_DEFINITIONS = {
-          NINCO: { name: 'NINCO', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#000000', railColor: '#dcdcdc', slotColor: '#000000', width: 18.0, laneSpacing: 9.0, connectionBoxColor: '#ef4444' },
-          SCX_ANALOG: { name: 'SCALEXTRIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#333333', railColor: '#d0d0d0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
-          SCX_CLASSIC: { name: 'SCX CLASSIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#000000', railColor: '#d0d0d0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
-          SCX_ADVANCE: { name: 'SCX ADVANCE', themeColor: 'blue', neonColor: '#3b82f6', uiClass: 'border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:bg-blue-950/30', activeClass: 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] border-blue-400 font-bold', trackColor: '#333333', railColor: '#d0d0d0', slotColor: '#1a1a1a', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
-          CARRERA: { name: 'CARRERA', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#000000', railColor: '#e0e0e0', slotColor: '#000000', width: 19.8, laneSpacing: 9.9, connectionBoxColor: '#ef4444' },
-          POLICAR: { name: 'POLICAR', themeColor: 'orange', neonColor: '#f97316', uiClass: 'border-orange-500/50 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:bg-orange-950/30', activeClass: 'bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] border-orange-500 font-bold', trackColor: '#000000', railColor: '#dcdcdc', slotColor: '#000000', width: 17.9, laneSpacing: 9.0, connectionBoxColor: '#333' },
-          SCALEAUTO: { name: 'SCALEAUTO', themeColor: 'lime', neonColor: '#84cc16', uiClass: 'border-lime-500/50 text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.3)] hover:bg-lime-950/30', activeClass: 'bg-lime-500 text-black shadow-[0_0_20px_rgba(132,204,22,0.6)] border-lime-400 font-bold', trackColor: '#333333', railColor: '#e0e0e0', slotColor: '#111111', width: 20.0, laneSpacing: 10.0, connectionBoxColor: '#9ca3af' },
+          NINCO: { name: 'NINCO', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#121212', railColor: '#dcdcdc', slotColor: '#000000', width: 18.0, laneSpacing: 9.0, connectionBoxColor: '#ef4444' },
+          SCX_ANALOG: { name: 'SCALEXTRIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#5a5a5a', railColor: '#d0d0d0', slotColor: '#1a1a1a', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
+          SCX_CLASSIC: { name: 'SCX CLASSIC', themeColor: 'yellow', neonColor: '#facc15', uiClass: 'border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:bg-yellow-950/30', activeClass: 'bg-yellow-500 text-black shadow-[0_0_20px_rgba(250,204,21,0.6)] border-yellow-400 font-bold', trackColor: '#141414', railColor: '#a0a0a0', slotColor: '#000000', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
+          SCX_ADVANCE: { name: 'SCX ADVANCE', themeColor: 'blue', neonColor: '#3b82f6', uiClass: 'border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:bg-blue-950/30', activeClass: 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] border-blue-400 font-bold', trackColor: '#5a5a5a', railColor: '#d0d0d0', slotColor: '#1a1a1a', width: 15.6, laneSpacing: 7.7, connectionBoxColor: '#ef4444' },
+          SCALEXTRIC_UK: { name: 'SCALEXTRIC UK', themeColor: 'green', neonColor: '#22c55e', uiClass: 'border-green-500/50 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-950/30', activeClass: 'bg-green-600 text-white shadow-[0_0_20px_rgba(34,197,94,0.6)] border-green-500 font-bold', trackColor: '#121212', railColor: '#dcdcdc', slotColor: '#000000', width: 15.6, laneSpacing: 7.8, connectionBoxColor: '#22c55e' },
+          SCX_UK: { name: 'SCALEXTRIC UK', themeColor: 'green', neonColor: '#22c55e', uiClass: 'border-green-500/50 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-950/30', activeClass: 'bg-green-600 text-white shadow-[0_0_20px_rgba(34,197,94,0.6)] border-green-500 font-bold', trackColor: '#121212', railColor: '#dcdcdc', slotColor: '#000000', width: 15.6, laneSpacing: 7.8, connectionBoxColor: '#22c55e' },
+          HORNBY: { name: 'SCALEXTRIC UK', themeColor: 'green', neonColor: '#22c55e', uiClass: 'border-green-500/50 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-950/30', activeClass: 'bg-green-600 text-white shadow-[0_0_20px_rgba(34,197,94,0.6)] border-green-500 font-bold', trackColor: '#121212', railColor: '#dcdcdc', slotColor: '#000000', width: 15.6, laneSpacing: 7.8, connectionBoxColor: '#22c55e' },
+          CARRERA: { name: 'CARRERA', themeColor: 'red', neonColor: '#ef4444', uiClass: 'border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:bg-red-950/30', activeClass: 'bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500', trackColor: '#121212', railColor: '#e0e0e0', slotColor: '#000000', width: 19.8, laneSpacing: 9.9, connectionBoxColor: '#ef4444' },
+          POLICAR: { name: 'POLICAR', themeColor: 'orange', neonColor: '#f97316', uiClass: 'border-orange-500/50 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:bg-orange-950/30', activeClass: 'bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] border-orange-500 font-bold', trackColor: '#121212', railColor: '#dcdcdc', slotColor: '#000000', width: 17.9, laneSpacing: 9.0, connectionBoxColor: '#333' },
+          SCALEAUTO: { name: 'SCALEAUTO', themeColor: 'lime', neonColor: '#84cc16', uiClass: 'border-lime-500/50 text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.3)] hover:bg-lime-950/30', activeClass: 'bg-lime-500 text-black shadow-[0_0_20px_rgba(132,204,22,0.6)] border-lime-400 font-bold', trackColor: '#5a5a5a', railColor: '#e0e0e0', slotColor: '#111111', width: 20.0, laneSpacing: 10.0, connectionBoxColor: '#9ca3af' },
           ADAPTER: { trackColor: '#2a2a2a' }
         };
 
@@ -244,8 +278,87 @@
                 importRestore: "Importar piezas (Restaurar)",
                 restoreSuccess: "✅ Piezas personalizadas restauradas correctamente.",
                 restoreError: "❌ Error al restaurar el archivo de piezas."
-        }
-    };
+            },
+            en: {
+                lobbyTitle: "SELECT SOURCE",
+                lobbySub: "Load a file or return to the designer",
+                btnLoad: "LOAD JSON (.JSON)",
+                btn2D: "GO TO 2D DESIGNER",
+                clearCache: "Clear browser cache",
+                prep: "SETUP",
+                practice: "PRACTICE",
+                rally: "RALLY STAGE",
+                analog: "ANALOG",
+                digital: "DIGITAL",
+                back: "BACK",
+                start: "START",
+                pause: "PAUSE",
+                resume: "RESUME",
+                menu: "MENU",
+                laps: "LAPS",
+                total: "TOTAL",
+                pilots: "DRIVERS",
+                pilot: "DRIVER",
+                speed: "SPEED",
+                lastLap: "LAST LAP",
+                bestLap: "BEST LAP",
+                telemetry: "TELEMETRY",
+                winner: "WINNER!",
+                continue: "CONTINUE",
+                freePractice: "FREE PRACTICE",
+                powertrain: "POWERTRAIN",
+                tireManagement: "TIRE MANAGEMENT",
+                workshopSettings: "WORKSHOP SETTINGS",
+                motorPower: "MOTOR & POWER",
+                compounds: "COMPOUNDS",
+                gears: "CROWN GEARS",
+                pinions: "PINIONS",
+                digitalScale: "DIGITAL SCALE",
+                powerSupply: "DS-3 POWER",
+                save: "SAVE",
+                open: "OPEN",
+                car: "CAR",
+                motor: "MOTOR",
+                tires: "TIRES",
+                gearRatio: "RATIO",
+                testingMonitor: "TESTING MONITOR",
+                lap: "LAP",
+                last: "LAST",
+                sector: "SECTOR",
+                activeConfig: "ACTIVE SETUP",
+                controller: "CONTROLLER",
+                manualControl: "Manual Control",
+                slide: "SLIDE",
+                slideTitle: "Slide up to accelerate your car",
+                laneChange1: "LANE",
+                laneChange2: "CHANGE",
+                pitEntry1: "PIT",
+                pitEntry2: "ENTRY",
+                voice: "VOICE",
+                polarity: "POLARITY",
+                voiceOn: "Enable Announcer",
+                voiceOff: "Mute Announcer",
+                polarityChange: "Reverse Polarity",
+                alertPolarity: "You can only change direction before the race starts or in free practice.",
+                manualDrivingTypes: "MANUAL DRIVING MODES",
+                garage: "GARAGE",
+                garage3d: "3D GARAGE",
+                forest: "FOREST",
+                camera: "CAMERA",
+                camRace: "RACE",
+                camChase: "CHASE",
+                camPilot: "COCKPIT",
+                camHood: "HOOD",
+                camFront: "FRONT",
+                customParts: "CUSTOM PARTS:",
+                backup: "BACKUP",
+                restore: "RESTORE",
+                exportBackup: "Export all custom parts (Backup)",
+                importRestore: "Import custom parts (Restore)",
+                restoreSuccess: "✅ Custom parts successfully restored.",
+                restoreError: "❌ Error restoring the parts file."
+            }
+        };
 
     const LanguageContext = React.createContext({ lang: 'es', t: (key) => key, handleLangChange: () => {} });
     const useTranslation = () => React.useContext(LanguageContext);
@@ -669,47 +782,66 @@
         const triggerFileSelect = () => { if (inputRef.current) inputRef.current.click(); }; 
         
         return ( 
-            <div className="w-[380px] h-[400px] bg-[#0f172a] border-2 border-[#39ff14] rounded-xl shadow-[0_0_40px_rgba(57,255,20,0.2)] flex flex-col overflow-hidden animate-in z-50 pointer-events-auto relative">
-                <div className="bg-[#39ff14]/10 p-2 flex flex-col border-b border-[#39ff14]/30 gap-1.5 shrink-0">
+            <div className="w-[400px] h-[430px] mac-window flex flex-col overflow-hidden animate-in z-50 pointer-events-auto relative">
+                <div className="mac-titlebar p-3 flex flex-col gap-2 shrink-0">
                     <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-1.5 shrink-0"><span className="w-2 h-2 bg-[#39ff14] rounded-full animate-pulse"></span><h3 className="text-[10px] font-black text-white tracking-[0.1em]">{t('garage3d')}</h3></div> 
-                        <div className="relative"><button onClick={() => setShowCarMenu(!showCarMenu)} className="flex items-center gap-1 bg-black/60 border border-[#39ff14]/30 hover:border-[#39ff14] rounded px-2 py-1 transition-all group" ><span className="text-[8px] font-bold text-gray-400 group-hover:text-gray-300">ASIGNAR:</span><span className="text-[10px] font-mono font-bold text-[#39ff14] group-hover:text-white">C{targetCarId}</span><ChevronDown size={12} className="text-[#39ff14] opacity-50 group-hover:opacity-100 transition-transform duration-300" style={{ transform: showCarMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}/></button> 
-                            {showCarMenu && ( <div className="absolute top-full left-0 mt-1 w-28 bg-[#0a0a0a] border border-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.2)] z-[100] flex flex-col max-h-40 overflow-y-auto hide-scrollbar rounded-md animate-in origin-top"> {[1,2,3,4,5,6,7,8].map(id => ( <button key={id} onClick={() => { setTargetCarId(id); setShowCarMenu(false); }} className={`px-2 py-1.5 text-[10px] font-mono text-left transition-all border-b border-[#39ff14]/10 flex justify-between items-center ${targetCarId === id ? 'bg-[#39ff14] text-black font-black' : 'text-[#39ff14] hover:bg-[#39ff14]/20 hover:pl-3'}`} ><span>COCHE {id}</span> {targetCarId === id && <span className="w-1.5 h-1.5 bg-black rounded-full"></span>} </button> ))} </div> )} 
+                        <div className="flex items-center gap-2 shrink-0">
+                            <h3 className="text-xs font-bold text-white/90 tracking-wide">{t('garage3d')}</h3>
+                        </div> 
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <button onClick={() => setShowCarMenu(!showCarMenu)} className="flex items-center gap-1.5 bg-white/10 border border-white/15 hover:border-white/30 rounded-lg px-3 py-1.5 transition-all group" >
+                                    <span className="text-[10px] font-semibold text-gray-300">ASIGNAR:</span>
+                                    <span className="text-xs font-mono font-bold text-[#0a84ff] group-hover:text-white">C{targetCarId}</span>
+                                    <ChevronDown size={14} className="text-gray-300 transition-transform duration-300" style={{ transform: showCarMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}/>
+                                </button> 
+                                {showCarMenu && ( 
+                                    <div className="absolute top-full right-0 mt-1 w-32 mac-window z-[100] flex flex-col max-h-44 overflow-y-auto hide-scrollbar rounded-lg animate-in origin-top p-1"> 
+                                        {[1,2,3,4,5,6,7,8].map(id => ( 
+                                            <button key={id} onClick={() => { setTargetCarId(id); setShowCarMenu(false); }} className={`px-3 py-2 text-xs font-medium rounded-md text-left transition-all flex justify-between items-center ${targetCarId === id ? 'bg-[#0a84ff] text-white font-bold' : 'text-gray-200 hover:bg-white/10'}`} >
+                                                <span>COCHE {id}</span> {targetCarId === id && <span className="w-2 h-2 bg-white rounded-full"></span>} 
+                                            </button> 
+                                        ))} 
+                                    </div> 
+                                )} 
+                            </div>
+                            <button onClick={onClose} className="bg-white/10 hover:bg-[#ff453a] text-gray-300 hover:text-white p-1.5 rounded-lg transition-colors" title="Cerrar">
+                                <X size={16} />
+                            </button>
                         </div>
-                        <button onClick={onClose} className="text-[#39ff14] hover:text-white transition hover:scale-125 bg-black/20 p-1 rounded-full ml-auto"><X size={14} /></button>
                     </div>
 
                     {/* CAMBIO DE NOMBRE DE PILOTO EN TIEMPO REAL */}
                     {carSetups && onNameChange && (
-                        <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded border border-[#39ff14]/20 mt-0.5">
-                            <User size={10} className="text-[#39ff14]" />
-                            <span className="text-[8px] text-gray-400 font-bold tracking-wider">PILOTO:</span>
+                        <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10">
+                            <User size={12} className="text-[#0a84ff]" />
+                            <span className="text-[10px] text-gray-300 font-bold tracking-wider">PILOTO:</span>
                             <input 
                                 type="text" 
                                 value={carSetups[targetCarId]?.name || ''} 
                                 onChange={(e) => onNameChange(targetCarId, e.target.value.toUpperCase())}
                                 maxLength={15}
                                 placeholder={`PILOTO ${targetCarId}`}
-                                className="flex-1 bg-transparent border-b border-gray-600 focus:border-[#39ff14] px-1 text-[10px] text-[#39ff14] outline-none font-bold transition-colors uppercase"
+                                className="flex-1 bg-transparent border-b border-gray-600 focus:border-[#0a84ff] px-1 text-xs text-white outline-none font-bold transition-colors uppercase"
                             />
                         </div>
                     )}
                     
                     {/* BARRA DE HERRAMIENTAS MEJORADA CON TEXTOS */}
-                    <div className="flex items-center gap-1 w-full justify-between mt-0.5"> 
-                        <div className="flex gap-0.5 items-center bg-black/40 p-1 rounded border border-[#39ff14]/20">
-                            <button onClick={() => rotate90(-1)} className="hover:bg-[#39ff14] text-[#39ff14] hover:text-black px-1 py-0.5 rounded transition flex items-center gap-0.5" title="-90 Grados"><RotateCcw size={10}/><span className="text-[7px] font-mono font-bold">-90º</span></button>
-                            <button onClick={() => rotate90(1)} className="hover:bg-[#39ff14] text-[#39ff14] hover:text-black px-1 py-0.5 rounded transition flex items-center gap-0.5" title="+90 Grados"><span className="text-[7px] font-mono font-bold">+90º</span><RotateCw size={10}/></button>
+                    <div className="flex items-center gap-1.5 w-full justify-between"> 
+                        <div className="flex gap-1 items-center bg-black/40 p-1 rounded-lg border border-white/10">
+                            <button onClick={() => rotate90(-1)} className="hover:bg-[#0a84ff] text-gray-200 hover:text-white px-2 py-1 rounded-md transition flex items-center gap-1" title="-90 Grados"><RotateCcw size={12}/><span className="text-[10px] font-mono font-bold">-90º</span></button>
+                            <button onClick={() => rotate90(1)} className="hover:bg-[#0a84ff] text-gray-200 hover:text-white px-2 py-1 rounded-md transition flex items-center gap-1" title="+90 Grados"><span className="text-[10px] font-mono font-bold">+90º</span><RotateCw size={12}/></button>
                         </div>
 
-                        <div className="flex gap-0.5 items-center bg-black/40 p-1 rounded border border-[#39ff14]/20">
-                            <button onClick={() => adjustHeight(1)} className="hover:bg-[#39ff14] text-[#39ff14] hover:text-black px-1 py-0.5 rounded transition flex items-center gap-0.5" title="Subir altura"><ArrowUp size={10}/><span className="text-[7px] font-bold">SUBIR</span></button>
-                            <button onClick={() => adjustHeight(-1)} className="hover:bg-[#39ff14] text-[#39ff14] hover:text-black px-1 py-0.5 rounded transition flex items-center gap-0.5" title="Bajar altura"><ArrowDown size={10}/><span className="text-[7px] font-bold">BAJAR</span></button>
+                        <div className="flex gap-1 items-center bg-black/40 p-1 rounded-lg border border-white/10">
+                            <button onClick={() => adjustHeight(1)} className="hover:bg-[#0a84ff] text-gray-200 hover:text-white px-2 py-1 rounded-md transition flex items-center gap-1" title="Subir altura"><ArrowUp size={12}/><span className="text-[10px] font-bold">SUBIR</span></button>
+                            <button onClick={() => adjustHeight(-1)} className="hover:bg-[#0a84ff] text-gray-200 hover:text-white px-2 py-1 rounded-md transition flex items-center gap-1" title="Bajar altura"><ArrowDown size={12}/><span className="text-[10px] font-bold">BAJAR</span></button>
                         </div>
                         
-                        <div className="flex gap-1 ml-auto">
-                            <button onClick={() => setShowFileMenu(!showFileMenu)} className="bg-[#3b82f6]/20 hover:bg-[#3b82f6] text-[#3b82f6] hover:text-white px-1.5 py-0.5 rounded text-[7px] font-bold transition border border-[#3b82f6]/50 flex items-center gap-0.5" title="Cargar desde GitHub"><CloudDownload size={9} /><span>NUBE</span></button>
-                            <button onClick={triggerFileSelect} className="bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black px-1.5 py-0.5 rounded text-[7px] font-bold transition border border-[#39ff14]/50 flex items-center gap-0.5" title="Local"><FolderOpen size={9} /><span>PC</span></button>
+                        <div className="flex gap-1.5 ml-auto">
+                            <button onClick={() => setShowFileMenu(!showFileMenu)} className="bg-[#0a84ff]/20 hover:bg-[#0a84ff] text-[#0a84ff] hover:text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition border border-[#0a84ff]/50 flex items-center gap-1" title="Cargar desde GitHub"><CloudDownload size={12} /><span>NUBE</span></button>
+                            <button onClick={triggerFileSelect} className="bg-[#30d158]/20 hover:bg-[#30d158] text-[#30d158] hover:text-black px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition border border-[#30d158]/50 flex items-center gap-1" title="Local"><FolderOpen size={12} /><span>PC</span></button>
                         </div>
 
                         {/* MENU GITHUB FLOTANTE */}
@@ -872,17 +1004,17 @@
                 { id: 4, label: 'ULTRA', color: 'bg-fuchsia-500', shadow: 'shadow-[0_0_20px_rgba(217,70,239,0.8)]' }
             ];
             return (
-                <div className="flex flex-col gap-1 items-center pointer-events-auto">
-                    <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm">
-                        <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('manualDrivingTypes')}</span>
-                        <div className="flex gap-1">
+                <div className="flex flex-col gap-1.5 items-center pointer-events-auto">
+                    <div className="flex flex-col items-center mac-pill px-3.5 py-2">
+                        <span className="text-[10px] text-gray-200 font-semibold tracking-wider uppercase mb-1.5">{t('manualDrivingTypes')}</span>
+                        <div className="flex gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10">
                             {styles.map(s => {
                                 const isActive = profile === s.id;
                                 return (
                                     <button 
                                         key={s.id} 
                                         onClick={(e) => { e.stopPropagation(); setProfile(s.id); }}
-                                        className={`px-1.5 h-4 rounded flex items-center justify-center text-[8px] font-black border transition-all duration-300 hover:scale-110 active:scale-95 ${isActive ? `${s.color} border-transparent text-black ${s.shadow}` : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}
+                                        className={`px-3 py-1 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${isActive ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
                                     >
                                         {s.label}
                                     </button>
@@ -890,15 +1022,15 @@
                             })}
                         </div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1.5">
                         <button 
                             onClick={(e) => { e.stopPropagation(); setShowDunlop(!showDunlop); }}
-                            className={`px-2 py-1 rounded text-[7px] font-black tracking-widest uppercase shadow-[0_0_10px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all border ${showDunlop ? 'bg-[#39ff14] text-black border-[#39ff14]' : 'bg-black/80 text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-white hover:border-[#39ff14]'}`}>
+                            className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border ${showDunlop ? 'bg-[#0a84ff] text-white border-[#0a84ff] shadow-sm' : 'mac-pill text-gray-200 hover:text-white'}`}>
                             DUNLOP {showDunlop ? 'ON' : 'OFF'}
                         </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setShowFences(!showFences); }}
-                            className={`px-2 py-1 rounded text-[7px] font-black tracking-widest uppercase shadow-[0_0_10px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all border ${showFences ? 'bg-[#39ff14] text-black border-[#39ff14]' : 'bg-black/80 text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-white hover:border-[#39ff14]'}`}>
+                            className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border ${showFences ? 'bg-[#0a84ff] text-white border-[#0a84ff] shadow-sm' : 'mac-pill text-gray-200 hover:text-white'}`}>
                             VALLAS {showFences ? 'ON' : 'OFF'}
                         </button>
                     </div>
@@ -908,23 +1040,22 @@
 
         const AiLevelSelector = memo(({ aiLevel, setAiLevel }) => {
             return (
-                <div className="flex flex-col items-center bg-black/80 px-4 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm pointer-events-auto">
-                    <span className="text-[7px] text-[#39ff14] font-black tracking-[0.3em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">NIVEL I.A.</span>
-                    <div className="flex gap-1.5">
+                <div className="flex flex-col items-center mac-pill px-4 py-2 pointer-events-auto">
+                    <span className="text-[10px] text-gray-200 font-semibold tracking-wider uppercase mb-1.5">NIVEL I.A.</span>
+                    <div className="flex gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10">
                         {[1, 2, 3, 4, 5].map(lvl => {
                             const isActive = aiLevel >= lvl;
-                            let colorClass = 'bg-gray-900 border-gray-800 text-gray-600 hover:bg-gray-800';
-                            let shadowClass = '';
+                            let colorClass = 'text-gray-400 hover:text-white hover:bg-white/10';
                             if (isActive) {
-                                if (lvl <= 2) { colorClass = 'bg-[#39ff14] border-[#39ff14] text-black'; shadowClass = 'shadow-[0_0_10px_rgba(57,255,20,0.4)]'; }
-                                else if (lvl <= 4) { colorClass = 'bg-yellow-400 border-yellow-400 text-black'; shadowClass = 'shadow-[0_0_10px_rgba(250,204,21,0.4)]'; }
-                                else { colorClass = 'bg-red-500 border-red-500 text-white'; shadowClass = 'shadow-[0_0_15px_rgba(239,68,68,0.6)]'; }
+                                if (lvl <= 2) { colorClass = 'bg-[#30d158] text-black shadow-sm'; }
+                                else if (lvl <= 4) { colorClass = 'bg-[#ffd60a] text-black shadow-sm'; }
+                                else { colorClass = 'bg-[#ff453a] text-white shadow-sm'; }
                             }
                             return (
                                 <button 
                                     key={lvl} 
                                     onClick={(e) => { e.stopPropagation(); setAiLevel(lvl); }}
-                                    className={`w-8 h-4 rounded flex items-center justify-center text-[9px] font-black border transition-all duration-300 hover:scale-110 active:scale-95 ${colorClass} ${shadowClass}`}
+                                    className={`w-8 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${colorClass}`}
                                 >
                                     {lvl}
                                 </button>
@@ -938,9 +1069,9 @@
         const TreeToggle = memo(({ showTrees, setShowTrees }) => {
             const { t } = useTranslation();
             return (
-                <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm pointer-events-auto cursor-pointer transition-all hover:border-[#39ff14]/50" onClick={(e) => { e.stopPropagation(); setShowTrees(!showTrees); }}>
-                    <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('forest')}</span>
-                    <button className={`px-3 h-4 rounded flex items-center justify-center text-[8px] font-black border transition-all duration-300 ${showTrees ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                <div className="flex flex-col items-center mac-pill px-3.5 py-2 pointer-events-auto cursor-pointer transition-all hover:border-white/30" onClick={(e) => { e.stopPropagation(); setShowTrees(!showTrees); }}>
+                    <span className="text-[10px] text-gray-200 font-semibold tracking-wider uppercase mb-1.5">{t('forest')}</span>
+                    <button className={`px-4 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${showTrees ? 'bg-[#30d158] text-black shadow-sm' : 'bg-black/40 text-gray-300 hover:text-white'}`}>
                         {showTrees ? 'ON' : 'OFF'}
                     </button>
                 </div>
@@ -950,9 +1081,9 @@
         const GarageToggle = memo(({ showGarage, setShowGarage }) => {
             const { t } = useTranslation();
             return (
-                <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm pointer-events-auto cursor-pointer transition-all hover:border-[#39ff14]/50" onClick={(e) => { e.stopPropagation(); setShowGarage(!showGarage); }}>
-                    <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('garage')}</span>
-                    <button className={`px-3 h-4 rounded flex items-center justify-center text-[8px] font-black border transition-all duration-300 ${showGarage ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                <div className="flex flex-col items-center mac-pill px-3.5 py-2 pointer-events-auto cursor-pointer transition-all hover:border-white/30" onClick={(e) => { e.stopPropagation(); setShowGarage(!showGarage); }}>
+                    <span className="text-[10px] text-gray-200 font-semibold tracking-wider uppercase mb-1.5">{t('garage')}</span>
+                    <button className={`px-4 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${showGarage ? 'bg-[#0a84ff] text-white shadow-sm' : 'bg-black/40 text-gray-300 hover:text-white'}`}>
                         {showGarage ? 'ON' : 'OFF'}
                     </button>
                 </div>
@@ -962,22 +1093,22 @@
         const CameraSelector = memo(({ mode, setMode }) => {
             const { t } = useTranslation();
             return (
-                <div className="flex flex-col items-center bg-black/80 px-3 py-1.5 rounded-xl border border-gray-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm pointer-events-auto">
-                    <span className="text-[7px] text-[#39ff14] font-black tracking-[0.2em] uppercase mb-1.5 drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('camera')}</span>
-                    <div className="flex flex-wrap justify-center gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); setMode('race'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'race' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                <div className="flex flex-col items-center mac-pill px-3.5 py-2 pointer-events-auto">
+                    <span className="text-[10px] text-gray-200 font-semibold tracking-wider uppercase mb-1.5">{t('camera')}</span>
+                    <div className="flex flex-wrap justify-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10">
+                        <button onClick={(e) => { e.stopPropagation(); setMode('race'); }} className={`px-3 py-1 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${mode === 'race' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
                             {t('camRace')}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setMode('chase'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'chase' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setMode('chase'); }} className={`px-3 py-1 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${mode === 'chase' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
                             {t('camChase')}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setMode('pilot'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'pilot' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setMode('pilot'); }} className={`px-3 py-1 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${mode === 'pilot' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
                             {t('camPilot')}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setMode('hood'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'hood' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setMode('hood'); }} className={`px-3 py-1 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${mode === 'hood' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
                             {t('camHood')}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setMode('front'); }} className={`px-2 h-4 rounded flex items-center justify-center text-[7px] font-black border transition-all duration-300 ${mode === 'front' ? 'bg-[#39ff14] border-[#39ff14] text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setMode('front'); }} className={`px-3 py-1 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${mode === 'front' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
                             {t('camFront')}
                         </button>
                     </div>
@@ -999,13 +1130,13 @@
                 const shadowGlow = isRally ? 'rgba(250,204,21,0.2)' : 'rgba(57,255,20,0.2)';
                 
                 return (
-                    <div className="w-72 bg-[#050a05]/95 border-2 rounded-xl overflow-hidden backdrop-blur-xl animate-in" style={{borderColor: borderColor, boxShadow: `0 0 40px ${shadowGlow}`}}>
-                        <div className="text-black px-3 py-1.5 flex justify-between items-center" style={{backgroundColor: borderColor}}>
-                            <div className="flex items-center gap-1.5">
-                                <Activity size={14} className="animate-pulse"/>
-                                <h2 className="font-black text-[10px] tracking-[0.2em] uppercase">{t('telemetry')}</h2>
+                    <div className="w-72 mac-window overflow-hidden animate-in">
+                        <div className="mac-titlebar px-3 py-2 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <Activity size={13} style={{color: borderColor}} />
+                                <h2 className="font-bold text-xs tracking-wider uppercase text-white/90">{t('telemetry')}</h2>
                             </div>
-                            <span className="font-mono font-bold text-[9px] bg-black/20 px-2 py-0.5 rounded">P{data.position}</span>
+                            <span className="font-mono font-bold text-[11px] text-white px-2.5 py-0.5 rounded-md" style={{backgroundColor: borderColor}}>P{data.position}</span>
                         </div>
                         
                         <div className="p-3 grid grid-cols-2 gap-3 relative">
@@ -1058,16 +1189,16 @@
                         {renderPanel(telemetry.find(t => t.id === 1), carSetups[1])}
                         
                         {/* SEGUIMIENTO DE CARRERA (LEADERBOARD COMPLETO - DISEÑO VERTICAL) */}
-                        <div className="w-72 bg-[#0f172a]/95 border border-gray-700 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md">
-                            <div className="bg-gray-900/90 px-3 py-2 flex justify-between items-center border-b border-gray-700">
+                        <div className="w-72 mac-window overflow-hidden">
+                            <div className="mac-titlebar px-3 py-2 flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                    <Activity size={12} style={{ color: neonColor }}/>
-                                    <span className="text-[10px] font-bold text-white tracking-widest uppercase">TIMING TOWER</span>
+                                    <Trophy size={13} style={{ color: neonColor }}/>
+                                    <span className="text-xs font-bold text-white/90 tracking-wider uppercase">TIMING TOWER</span>
                                 </div>
-                                <span className="text-[10px] font-mono font-bold text-black px-2 py-0.5 rounded" style={{ backgroundColor: neonColor }}>{isPractice ? t('freePractice') : `LAP ${leader ? Math.min(targetLaps, (targetLaps - leader.laps) + 1) : 0}/${targetLaps}`}</span>
+                                <span className="text-xs font-mono font-bold text-black px-2 py-0.5 rounded-md" style={{ backgroundColor: neonColor }}>{isPractice ? t('freePractice') : `LAP ${leader ? Math.min(targetLaps, (targetLaps - leader.laps) + 1) : 0}/${targetLaps}`}</span>
                             </div>
                             
-                            <div className="divide-y divide-gray-800/50">
+                            <div className="divide-y divide-white/10">
                                 {sortedTelemetry.map((pilot, idx) => {
                                     const config = carSetups[pilot.id];
                                     const isLeader = idx === 0;
@@ -1128,7 +1259,7 @@
                         </div>
                         
                         {/* SEMÁFORO Y CRONÓMETRO COMBINADOS (Minimalista) */}
-                        <div className="flex items-center gap-4 mt-1 bg-black/80 px-5 py-2.5 rounded-full border border-[#39ff14]/30 shadow-[0_0_30px_rgba(57,255,20,0.2)] backdrop-blur-md">
+                        <div className="flex items-center gap-4 mt-1 mac-dock px-5 py-2.5">
                             <div className="flex gap-2.5">
                                 {[1, 2, 3, 4, 5].map(n => { 
                                     const isRed = raceState === 'countdown' && activeLights >= n; 
@@ -1176,13 +1307,13 @@
                 const borderColor = setup.color || '#39ff14';
                 
                 return (
-                    <div key={data.id} className="w-[175px] bg-[#050a05]/95 border rounded-lg overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-in" style={{borderColor: borderColor}}>
-                        <div className="text-black px-2 py-1 flex justify-between items-center" style={{backgroundColor: borderColor}}>
-                            <div className="flex items-center gap-1">
-                                <Activity size={10} className="animate-pulse"/>
-                                <h2 className="font-black text-[7px] tracking-[0.2em] uppercase leading-none">{t('telemetry')}</h2>
+                    <div key={data.id} className="w-[175px] mac-window overflow-hidden animate-in">
+                        <div className="mac-titlebar px-2.5 py-1.5 flex justify-between items-center">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full" style={{backgroundColor: borderColor}}></span>
+                                <h2 className="font-bold text-[8px] tracking-wider uppercase text-white/90 leading-none">{t('telemetry')}</h2>
                             </div>
-                            <span className="font-mono font-bold text-[7px] bg-black/20 px-1.5 py-0.5 rounded leading-none">P{data.position}</span>
+                            <span className="font-mono font-bold text-[7px] text-black px-1.5 py-0.5 rounded leading-none" style={{backgroundColor: borderColor}}>P{data.position}</span>
                         </div>
                         
                         <div className="p-2 grid grid-cols-2 gap-2 relative">
@@ -1267,7 +1398,7 @@
                             <CameraSelector mode={cameraMode} setMode={setCameraMode} />
                         </div>
                         
-                        <div className="flex items-center gap-4 mt-1 bg-black/80 px-5 py-2.5 rounded-full border border-[#39ff14]/30 shadow-[0_0_30px_rgba(57,255,20,0.2)] backdrop-blur-md">
+                        <div className="flex items-center gap-4 mt-1 mac-dock px-5 py-2.5">
                             <div className="flex gap-2.5">
                                 {[1, 2, 3, 4, 5].map(n => { 
                                     const isRed = raceState === 'countdown' && activeLights >= n; 
@@ -1288,16 +1419,16 @@
                     
                     {/* DERECHA: TIMING TOWER */}
                     <div className="flex flex-col gap-2 animate-in slide-in-right duration-700 pointer-events-auto">
-                        <div className="w-72 bg-[#0f172a]/95 border border-gray-700 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md">
-                            <div className="bg-gray-900/90 px-3 py-2 flex justify-between items-center border-b border-gray-700">
+                        <div className="w-72 mac-window overflow-hidden">
+                            <div className="mac-titlebar px-3 py-2 flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                    <Activity size={12} className="text-[#39ff14]"/>
-                                    <span className="text-[10px] font-bold text-white tracking-widest uppercase">TIMING TOWER (DIGITAL)</span>
+                                    <Trophy size={13} className="text-[#0a84ff]"/>
+                                    <span className="text-xs font-bold text-white/90 tracking-wider uppercase">TIMING TOWER</span>
                                 </div>
-                                <span className="text-[10px] font-mono font-bold text-black bg-[#39ff14] px-2 py-0.5 rounded">{isPractice ? t('freePractice') : `LAP ${leader ? Math.min(targetLaps, (targetLaps - leader.laps) + 1) : 0}/${targetLaps}`}</span>
+                                <span className="text-xs font-mono font-bold text-white bg-[#0a84ff] px-2 py-0.5 rounded-md">{isPractice ? t('freePractice') : `LAP ${leader ? Math.min(targetLaps, (targetLaps - leader.laps) + 1) : 0}/${targetLaps}`}</span>
                             </div>
                             
-                            <div className="divide-y divide-gray-800/50">
+                            <div className="divide-y divide-white/10">
                                 {sortedTelemetry.map((pilot, idx) => {
                                     const config = carSetups[pilot.id];
                                     const isLeader = idx === 0;
@@ -1401,12 +1532,12 @@
                     <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14] pointer-events-none"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14] pointer-events-none"></div>
                     
                     <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
-                        <div className="flex items-center gap-2"> <Zap className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('motorPower')}</h2> </div>
+                        <div className="flex items-center gap-2"> <Zap className="text-[#39ff14]" size={14} /> <h2 className="text-[11px] font-black text-white tracking-wider uppercase">{t('motorPower')}</h2> </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Motor Personalizado"><Plus size={10}/> NUEVO</button>
-                            <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span></div>
-                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1 rounded transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-gray-800 hover:bg-[#39ff14] text-gray-400 hover:text-black'}`} title="Zoom">
-                                {isExpanded ? <Minimize size={10} /> : <Maximize size={10} />}
+                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2.5 py-1 bg-[#0a84ff] hover:bg-[#0070e0] text-white rounded-md flex items-center justify-center gap-1 transition-colors text-[10px] font-bold" title="Añadir Motor Personalizado"><Plus size={12}/> NUEVO</button>
+                            <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[10px] text-[#39ff14] font-mono font-bold">C{selectedCarId}</span></div>
+                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1.5 rounded-md transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-white/10 hover:bg-[#0a84ff] text-gray-200 hover:text-white'}`} title="Zoom">
+                                {isExpanded ? <Minimize size={12} /> : <Maximize size={12} />}
                             </button>
                         </div>
                     </div>
@@ -1527,12 +1658,12 @@
                     <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#39ff14] pointer-events-none"></div><div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#39ff14] pointer-events-none"></div><div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#39ff14] pointer-events-none"></div><div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[#39ff14] pointer-events-none"></div><div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: 'linear-gradient(#39ff14 1px, transparent 1px), linear-gradient(90deg, #39ff14 1px, transparent 1px)', backgroundSize: '20px 20px'}}></div>
                     
                     <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0 relative z-10">
-                        <div className="flex items-center gap-2"> <RotateCw className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_5px_rgba(57,255,20,0.8)]">{t('compounds')}</h2> </div>
+                        <div className="flex items-center gap-2"> <RotateCw className="text-[#39ff14]" size={14} /> <h2 className="text-[11px] font-black text-white tracking-wider uppercase">{t('compounds')}</h2> </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Neumático Personalizado"><Plus size={10}/> NUEVO</button>
-                            <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[8px] text-[#39ff14]/70 font-mono">C{selectedCarId}</span></div>
-                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1 rounded transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-gray-800 hover:bg-[#39ff14] text-gray-400 hover:text-black'}`} title="Zoom">
-                                {isExpanded ? <Minimize size={10} /> : <Maximize size={10} />}
+                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2.5 py-1 bg-[#0a84ff] hover:bg-[#0070e0] text-white rounded-md flex items-center justify-center gap-1 transition-colors text-[10px] font-bold" title="Añadir Neumático Personalizado"><Plus size={12}/> NUEVO</button>
+                            <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#39ff14] animate-pulse"></div><span className="text-[10px] text-[#39ff14] font-mono font-bold">C{selectedCarId}</span></div>
+                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1.5 rounded-md transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-white/10 hover:bg-[#0a84ff] text-gray-200 hover:text-white'}`} title="Zoom">
+                                {isExpanded ? <Minimize size={12} /> : <Maximize size={12} />}
                             </button>
                         </div>
                     </div>
@@ -1644,12 +1775,11 @@
                     <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14] pointer-events-none"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14] pointer-events-none"></div>
                     
                     <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('gears')}</h2> </div>
+                        <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[11px] font-black text-white tracking-wider uppercase">{t('gears')}</h2> </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[8px] text-[#39ff14]/70 font-mono">EJES</span>
-                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Corona Personalizada"><Plus size={10}/> NUEVA</button>
-                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1 rounded transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-gray-800 hover:bg-[#39ff14] text-gray-400 hover:text-black'}`} title="Zoom">
-                                {isExpanded ? <Minimize size={10} /> : <Maximize size={10} />}
+                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2.5 py-1 bg-[#0a84ff] hover:bg-[#0070e0] text-white rounded-md flex items-center justify-center gap-1 transition-colors text-[10px] font-bold" title="Añadir Corona Personalizada"><Plus size={12}/> NUEVA</button>
+                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1.5 rounded-md transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-white/10 hover:bg-[#0a84ff] text-gray-200 hover:text-white'}`} title="Zoom">
+                                {isExpanded ? <Minimize size={12} /> : <Maximize size={12} />}
                             </button>
                         </div>
                     </div>
@@ -1761,12 +1891,11 @@
                     <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#39ff14] pointer-events-none"></div><div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#39ff14] pointer-events-none"></div>
                     
                     <div className="p-2 border-b border-[#39ff14]/20 bg-[#39ff14]/5 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{t('pinions')}</h2> </div>
+                        <div className="flex items-center gap-2"> <Settings className="text-[#39ff14]" size={14} /> <h2 className="text-[11px] font-black text-white tracking-wider uppercase">{t('pinions')}</h2> </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[8px] text-[#39ff14]/70 font-mono">MOTORES</span>
-                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2 py-1 bg-[#39ff14]/20 hover:bg-[#39ff14] text-[#39ff14] hover:text-black rounded flex items-center justify-center gap-1 transition-colors text-[8px] font-black tracking-widest" title="Añadir Piñón Personalizado"><Plus size={10}/> NUEVO</button>
-                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1 rounded transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-gray-800 hover:bg-[#39ff14] text-gray-400 hover:text-black'}`} title="Zoom">
-                                {isExpanded ? <Minimize size={10} /> : <Maximize size={10} />}
+                            <button onClick={(e)=>{e.stopPropagation(); setIsAdding(true);}} className="px-2.5 py-1 bg-[#0a84ff] hover:bg-[#0070e0] text-white rounded-md flex items-center justify-center gap-1 transition-colors text-[10px] font-bold" title="Añadir Piñón Personalizado"><Plus size={12}/> NUEVO</button>
+                            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`p-1.5 rounded-md transition-colors ${isExpanded ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-white/10 hover:bg-[#0a84ff] text-gray-200 hover:text-white'}`} title="Zoom">
+                                {isExpanded ? <Minimize size={12} /> : <Maximize size={12} />}
                             </button>
                         </div>
                     </div>
@@ -1905,11 +2034,11 @@
                             <span className="absolute top-0.5 right-1 text-[6px] text-[#39ff14]/50 font-mono">LOAD MONITOR</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); setVoltage(Math.max(10, voltage - 0.5)); }} className="w-8 h-6 rounded bg-gray-900 border border-gray-700 hover:border-[#39ff14] hover:bg-[#39ff14]/20 text-gray-400 hover:text-[#39ff14] flex items-center justify-center transition-all active:scale-95"><Minus size={12}/></button>
-                            <div className="flex-1 h-1.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700 relative group-hover:border-[#39ff14]/30 transition-colors">
+                            <button onClick={(e) => { e.stopPropagation(); setVoltage(Math.max(10, voltage - 0.5)); }} className="w-9 h-7 rounded-lg bg-white/10 border border-white/20 hover:bg-[#0a84ff] text-white flex items-center justify-center transition-all active:scale-95"><Minus size={14}/></button>
+                            <div className="flex-1 h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-700 relative group-hover:border-[#39ff14]/30 transition-colors">
                                 <div className="h-full bg-gradient-to-r from-[#39ff14]/40 to-[#39ff14] shadow-[0_0_10px_#39ff14] relative transition-all duration-300" style={{width: `${((voltage - 10) / 10) * 100}%`}}></div>
                             </div>
-                            <button onClick={(e) => { e.stopPropagation(); setVoltage(Math.min(20, voltage + 0.5)); }} className="w-8 h-6 rounded bg-gray-900 border border-gray-700 hover:border-[#39ff14] hover:bg-[#39ff14]/20 text-gray-400 hover:text-[#39ff14] flex items-center justify-center transition-all active:scale-95"><Plus size={12}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); setVoltage(Math.min(20, voltage + 0.5)); }} className="w-9 h-7 rounded-lg bg-white/10 border border-white/20 hover:bg-[#0a84ff] text-white flex items-center justify-center transition-all active:scale-95"><Plus size={14}/></button>
                         </div>
                     </div>
                 </div>
@@ -1984,9 +2113,9 @@
                         <div className="flex-1 flex flex-col justify-between pr-1 border-r border-[#39ff14]/10">
                             {Object.entries(weightLabels).map(([id, label], i) => (
                                 <div key={i} className="flex items-center justify-between group/row">
-                                    <span className="text-[7px] text-gray-400 font-bold uppercase tracking-tighter group-hover/row:text-white transition-colors">{label}</span>
-                                    <div className="flex items-center gap-0.5">
-                                        <button onClick={(e) => { e.stopPropagation(); adjustWeight(id, -0.5); }} className="w-3.5 h-3.5 flex items-center justify-center bg-black/60 border border-gray-700 hover:border-[#39ff14] text-gray-400 hover:text-[#39ff14] rounded-sm transition-all active:scale-90"><Minus size={10}/></button>
+                                    <span className="text-[8px] text-gray-300 font-bold uppercase tracking-tighter group-hover/row:text-white transition-colors">{label}</span>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={(e) => { e.stopPropagation(); adjustWeight(id, -0.5); }} className="w-5 h-5 flex items-center justify-center bg-white/10 border border-white/20 hover:bg-[#0a84ff] text-white rounded transition-all active:scale-90"><Minus size={11}/></button>
                                         <input 
                                             type="number"
                                             step="0.1"
@@ -1994,9 +2123,9 @@
                                             value={currentWeights[id] === 0 ? '' : currentWeights[id]}
                                             onChange={(e) => handleWeightChange(id, e.target.value)}
                                             onClick={(e) => e.stopPropagation()}
-                                            className="w-7 bg-transparent border-none text-center text-[9px] font-mono text-[#39ff14] outline-none px-0 hide-scrollbar transition-colors"
+                                            className="w-8 bg-transparent border-none text-center text-[10px] font-mono font-bold text-[#39ff14] outline-none px-0 hide-scrollbar transition-colors"
                                         />
-                                        <button onClick={(e) => { e.stopPropagation(); adjustWeight(id, 0.5); }} className="w-3.5 h-3.5 flex items-center justify-center bg-black/60 border border-gray-700 hover:border-[#39ff14] text-gray-400 hover:text-[#39ff14] rounded-sm transition-all active:scale-90"><Plus size={10}/></button>
+                                        <button onClick={(e) => { e.stopPropagation(); adjustWeight(id, 0.5); }} className="w-5 h-5 flex items-center justify-center bg-white/10 border border-white/20 hover:bg-[#0a84ff] text-white rounded transition-all active:scale-90"><Plus size={11}/></button>
                                     </div>
                                 </div>
                             ))}
@@ -2384,32 +2513,32 @@
             return (
                 <div 
                     style={{ left: pos.x, top: pos.y, position: 'absolute', zIndex: 99999 }}
-                    className="w-[360px] sm:w-[420px] bg-[#050505]/95 backdrop-blur-xl border border-orange-500 rounded-2xl shadow-[0_0_50px_rgba(255,69,0,0.3)] flex flex-col overflow-hidden animate-in zoom-in-95 pointer-events-auto relative"
+                    className="w-[360px] sm:w-[420px] mac-window flex flex-col overflow-hidden animate-in zoom-in-95 pointer-events-auto relative"
                 >
-                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(#ff4500 1px, transparent 1px)', backgroundSize: '15px 15px'}}></div>
-                    
-                    {/* Header (Arrastrable) */}
+                    {/* Header (Arrastrable estilo macOS) */}
                     <div 
                         onMouseDown={handleWindowDown}
                         onTouchStart={handleWindowDown}
-                        className="bg-gradient-to-r from-orange-600/30 via-orange-900/10 to-transparent p-3 flex justify-between items-center cursor-move shrink-0 border-b border-orange-500/40 relative z-10"
+                        className="mac-titlebar p-3 flex justify-between items-center cursor-move shrink-0 relative z-10"
                     >
-                        <div className="flex items-center gap-2 pointer-events-none">
-                            <Crosshair size={16} className="text-orange-500 animate-[spin_4s_linear_infinite]" />
-                            <span className="text-[14px] font-black text-white tracking-[0.3em] drop-shadow-[0_0_8px_rgba(255,69,0,0.8)]">KRONO<span className="text-orange-500">LITE</span></span>
+                        <div className="flex items-center gap-2">
+                            <Crosshair size={16} className="text-orange-400 animate-[spin_4s_linear_infinite] pointer-events-none" />
+                            <span className="text-sm font-bold text-white/90 tracking-widest pointer-events-none">KRONO<span className="text-orange-400">LITE</span></span>
                         </div>
-                        <button type="button" onClick={onClose} className="no-drag text-red-500 hover:text-white bg-red-900/30 p-2 rounded-full transition-colors hover:bg-red-500 hover:shadow-[0_0_15px_red]" title="Cerrar Krono"><X size={18}/></button>
+                        <button type="button" onClick={onClose} className="no-drag bg-white/10 hover:bg-[#ff453a] text-gray-200 hover:text-white p-1.5 rounded-lg transition-colors" title="Cerrar Krono">
+                            <X size={16} />
+                        </button>
                     </div>
                     
                     {/* Contenido */}
                     <div className="flex-1 p-3 flex flex-col gap-3 no-drag relative z-10">
                         {/* Controles Cámara */}
-                        <div className="flex justify-between items-center bg-black/60 rounded-xl p-2 border border-orange-500/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]">
+                        <div className="flex justify-between items-center bg-black/60 rounded-xl p-2.5 border border-orange-500/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]">
                             <div className="flex gap-2">
-                                <button type="button" onClick={toggleCamera} disabled={isCamLoading} className={`px-3 py-1.5 text-[9px] font-bold uppercase rounded-lg flex items-center gap-1.5 transition-all border ${isCamLoading ? 'bg-orange-500/20 text-orange-500 border-orange-500/50 cursor-wait' : (hasCamera ? 'bg-red-900/40 text-red-500 border-red-500/50 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_red]' : 'bg-orange-500/20 text-orange-400 border-orange-500/50 hover:bg-orange-500 hover:text-black hover:shadow-[0_0_15px_#ff4500]')}`}>
+                                <button type="button" onClick={toggleCamera} disabled={isCamLoading} className={`px-3.5 py-2 text-xs font-bold uppercase rounded-lg flex items-center gap-1.5 transition-all border ${isCamLoading ? 'bg-orange-500/20 text-orange-500 border-orange-500/50 cursor-wait' : (hasCamera ? 'bg-red-600 text-white border-red-500 hover:bg-red-500' : 'bg-orange-500 text-black border-orange-400 hover:bg-orange-400')}`}>
                                     {isCamLoading ? 'INICIANDO...' : (hasCamera ? 'DETENER CÁMARA' : 'ENCENDER CÁMARA')}
                                 </button>
-                                <button type="button" onClick={calibrate} disabled={!hasCamera || isCamLoading} className="px-3 py-1.5 text-[9px] font-bold uppercase rounded-lg bg-black text-gray-300 border border-gray-600 hover:border-orange-500 hover:text-orange-500 transition-all disabled:opacity-30 disabled:hover:border-gray-600 disabled:hover:text-gray-300">
+                                <button type="button" onClick={calibrate} disabled={!hasCamera || isCamLoading} className="px-3.5 py-2 text-xs font-bold uppercase rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all disabled:opacity-30">
                                     CALIBRAR
                                 </button>
                             </div>
@@ -2467,11 +2596,11 @@
                         {/* Controles Inferiores */}
                         <div className="grid grid-cols-5 gap-2">
                             <div className="col-span-3 bg-black/60 p-2.5 rounded-xl border border-orange-500/20 flex flex-col justify-center shadow-inner">
-                                <label className="text-[8px] text-orange-500/80 font-bold uppercase tracking-wider mb-1.5 flex justify-between">Sensibilidad <span className="text-orange-400 font-mono bg-orange-900/30 px-1 rounded">{threshold}</span></label>
-                                <input type="range" min="5" max="100" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                                <label className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1.5 flex justify-between">Sensibilidad <span className="text-white font-mono bg-orange-900/40 px-1.5 rounded">{threshold}</span></label>
+                                <input type="range" min="5" max="100" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-orange-500" />
                             </div>
                             
-                            <button type="button" onClick={() => { setLaps({count: 0, last: 0, best: Infinity}); lapStartRef.current = 0; }} className="col-span-2 bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.8)]">
+                            <button type="button" onClick={() => { setLaps({count: 0, last: 0, best: Infinity}); lapStartRef.current = 0; }} className="col-span-2 bg-red-600/30 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center">
                                 RESET DATOS
                             </button>
                         </div>
@@ -2550,18 +2679,58 @@
                     style={style}
                     onMouseDown={onMouseDown}
                     onTouchStart={onTouchStart}
-                    className={`absolute w-60 bg-[#050a05]/95 border-2 ${th.border} rounded-xl ${th.shadow} backdrop-blur-xl animate-in z-[60] cursor-move select-none origin-bottom-left flex flex-col`}
+                    className="absolute w-72 mac-window animate-in z-[60] cursor-move select-none origin-bottom-left flex flex-col overflow-hidden"
                 >
+                    <div className="mac-titlebar px-3.5 py-2.5 flex justify-between items-center pointer-events-auto relative">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <Activity size={14} className="text-[#0a84ff]" />
+                            <h2 className="font-bold text-xs tracking-wider uppercase text-white/90">{t('telemetry')}</h2>
+                        </div>
+                        <div className="relative">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                className="font-mono font-bold text-xs bg-[#0a84ff] hover:bg-[#0070e0] text-white px-3 py-1 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                                title="Cambiar coche seleccionado"
+                            >
+                                {t('car')} {carId} <ChevronDown size={14} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showMenu && (
+                                <>
+                                    <div className="fixed inset-0 z-[90]" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}></div>
+                                    <div className="absolute top-full right-0 mt-1 w-32 mac-window z-[100] max-h-44 overflow-y-auto hide-scrollbar flex flex-col animate-in p-1">
+                                        {[1,2,3,4,5,6,7,8].map(id => (
+                                            <button
+                                                key={id}
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                onTouchStart={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if(onCarSelect) onCarSelect(id);
+                                                    setShowMenu(false);
+                                                }}
+                                                className={`text-xs font-medium rounded-md text-left px-3 py-2 transition-colors ${carId === id ? 'bg-[#0a84ff] text-white font-bold' : 'text-gray-200 hover:bg-white/10'}`}
+                                            >
+                                                {t('car')} {id}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
                     {(onSave || onLoad) && (
-                        <div className={`bg-black/80 p-1 border-b ${th.border30} flex gap-1 rounded-t-lg`}>
+                        <div className="bg-black/30 px-3 py-2 border-b border-white/10 flex gap-2">
                             {onSave && (
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onSave(); }}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onTouchStart={(e) => e.stopPropagation()}
-                                    className={`flex-1 ${th.bg20} ${th.hoverBg} ${th.text} hover:text-black border ${th.border} rounded px-2 py-1 text-[8px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1 group`}
+                                    className="flex-1 bg-white/10 hover:bg-[#30d158] text-white hover:text-black border border-white/15 rounded-lg px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 group"
                                 >
-                                    <Save size={10} className="group-hover:scale-110 transition-transform"/> {t('save')}
+                                    <Save size={14} className="group-hover:scale-110 transition-transform"/> {t('save')}
                                 </button>
                             )}
                             {onLoad && (
@@ -2570,9 +2739,9 @@
                                         onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onTouchStart={(e) => e.stopPropagation()}
-                                        className="flex-1 bg-blue-500/20 hover:bg-blue-500 text-blue-400 hover:text-white border border-blue-500/50 rounded px-2 py-1 text-[8px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1 group"
+                                        className="flex-1 bg-[#0a84ff]/25 hover:bg-[#0a84ff] text-white border border-[#0a84ff]/50 rounded-lg px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 group"
                                     >
-                                        <FolderOpen size={10} className="group-hover:scale-110 transition-transform"/> {t('open')}
+                                        <FolderOpen size={14} className="group-hover:scale-110 transition-transform"/> {t('open')}
                                     </button>
                                     <input 
                                         type="file" 
@@ -2591,46 +2760,6 @@
                             )}
                         </div>
                     )}
-
-                    <div className={`${th.bg} text-black px-3 py-1.5 flex justify-between items-center pointer-events-auto relative ${!(onSave || onLoad) ? 'rounded-t-lg' : ''}`}>
-                        <div className="flex items-center gap-1.5 pointer-events-none">
-                            <Activity size={14} className="animate-pulse"/>
-                            <h2 className="font-black text-[10px] tracking-[0.2em] uppercase">{t('telemetry')}</h2>
-                        </div>
-                        <div className="relative">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onTouchStart={(e) => e.stopPropagation()}
-                                className="font-mono font-bold text-[9px] bg-black/20 hover:bg-black/40 px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer"
-                                title="Cambiar coche seleccionado"
-                            >
-                                {t('car')} {carId} <ChevronDown size={10} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
-                            </button>
-                            {showMenu && (
-                                <>
-                                    <div className="fixed inset-0 z-[90]" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}></div>
-                                    <div className={`absolute top-full right-0 mt-1 w-24 bg-[#0a0a0a] border ${th.border} rounded ${th.shadowMenu} z-[100] max-h-32 overflow-y-auto hide-scrollbar flex flex-col animate-in`}>
-                                        {[1,2,3,4,5,6,7,8].map(id => (
-                                            <button
-                                                key={id}
-                                                onMouseDown={(e) => e.stopPropagation()}
-                                                onTouchStart={(e) => e.stopPropagation()}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if(onCarSelect) onCarSelect(id);
-                                                    setShowMenu(false);
-                                                }}
-                                                className={`text-[9px] font-mono text-left px-3 py-2 transition-colors border-b ${th.border20} last:border-0 ${carId === id ? `${th.bg} text-black font-black` : `${th.text} ${th.hoverBg}/20`}`}
-                                            >
-                                                {t('car')} {id}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
                     
                     <div className="p-3 grid grid-cols-2 gap-3 relative pointer-events-none overflow-hidden rounded-b-lg">
                         <div className="absolute inset-0 opacity-10" style={{backgroundImage: `linear-gradient(transparent 9px, ${th.hex} 1px), linear-gradient(90deg, transparent 9px, ${th.hex} 1px)`, backgroundSize: '20px 20px'}}></div>
@@ -3162,7 +3291,7 @@
                     pdf.save(`setup-report-${new Date().toISOString().slice(0,10)}.pdf`);
                 } catch (e) {
                     console.error("PDF Error:", e);
-                    alert("Error al generar PDF");
+                    showValidationError("❌ Error al generar el archivo PDF");
                 } finally {
                     setIsGeneratingPDF(false);
                 }
@@ -3196,7 +3325,7 @@
             const saveCurrentSetup = () => {
                 const setup = carSetups[selectedCarId];
                 if (!setup) return;
-                const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(setup, null, 2))}`;
+                const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(setup, null, 2))}`;
                 const link = document.createElement("a");
                 link.href = jsonString;
                 link.download = `${setup.name.replace(/\s+/g, '_')}_setup.json`;
@@ -3664,7 +3793,7 @@
 
             const handleDigitalMode = () => { 
                 const allPieces = getAllPieces();
-                const digitalTypes = ['digital_x', 'change_right', 'change_left', 'change_curve_r', 'pit_entry', 'pit_parallel_double_x', 'digital_console'];
+                const digitalTypes = ['digital_x', 'change_right', 'change_left', 'change_curve_r', 'pit_entry', 'pit_parallel_double_x', 'digital_console', 'y_merge_in', 'y_merge_out', 'single_lane_s'];
                 const hasDigitalPieces = allPieces.some(p => digitalTypes.includes(p.subtype) || digitalTypes.includes(p.type)); 
                 
                 if (!hasDigitalPieces) { 
@@ -3746,14 +3875,15 @@
                     const cv = document.createElement('canvas'); 
                     cv.width = 256; cv.height = 256; 
                     const cx = cv.getContext('2d'); 
-                    cx.fillStyle = bc || '#080808'; 
+                    cx.fillStyle = bc || '#121212'; 
                     cx.fillRect(0, 0, 256, 256); 
-                    for (let i = 0; i < 8000; i++) { // Reducido de 15.000 a 8.000 para cargar más rápido
+                    for (let i = 0; i < 6000; i++) {
                         const v = Math.random() > 0.5 ? 255 : 0; 
-                        cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.04)`; 
+                        cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.025)`; 
                         cx.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5); 
                     } 
                     const t = new THREE.CanvasTexture(cv); 
+                    t.encoding = THREE.sRGBEncoding;
                     t.wrapS = THREE.RepeatWrapping; 
                     t.wrapT = THREE.RepeatWrapping; 
                     if(r && r.capabilities && r.capabilities.getMaxAnisotropy) {
@@ -4027,6 +4157,30 @@
                     
                     const trackGroup = new THREE.Group(); 
                     
+                    const getBrandColors = (brandKey) => {
+                        if (brandKey === 'SCX_CLASSIC_YELLOW') {
+                            return {
+                                trackColor: '#eab308',
+                                railColor: '#a0a0a0',
+                                slotColor: '#000000'
+                            };
+                        }
+                        const key = (brandKey || 'NINCO').toUpperCase();
+                        const def = TRACK_DEFINITIONS[key] || TRACK_DEFINITIONS.NINCO;
+                        const isGreyBrand = ['SCX_ANALOG', 'SCX_ADVANCE', 'SCALEAUTO'].includes(key);
+                        const isBlackBrand = ['NINCO', 'SCX_CLASSIC', 'SCALEXTRIC_UK', 'SCX_UK', 'HORNBY', 'POLICAR', 'CARRERA'].includes(key);
+                        
+                        let finalTrackColor = def.trackColor;
+                        if (isGreyBrand) finalTrackColor = '#5a5a5a';
+                        else if (isBlackBrand) finalTrackColor = '#141414';
+
+                        return {
+                            trackColor: finalTrackColor,
+                            railColor: def.railColor || '#dcdcdc',
+                            slotColor: def.slotColor || '#000000'
+                        };
+                    };
+
                     // GESTIÓN MULTI-TEXTURAS PARA ADAPTADORES DE MARCA
                     const asphaltGeometries = [];
                     let currentGeoData = null;
@@ -4034,7 +4188,8 @@
 
                     const startNewAsphaltSegment = (brand) => {
                         if (!brandTextures[brand]) {
-                            brandTextures[brand] = createAsphaltTexture(renderer, (TRACK_DEFINITIONS[brand] || TRACK_DEFINITIONS.NINCO).trackColor);
+                            const bCols = getBrandColors(brand);
+                            brandTextures[brand] = createAsphaltTexture(renderer, bCols.trackColor);
                         }
                         currentGeoData = {
                             brand: brand,
@@ -4114,14 +4269,7 @@
                         if (p.subtype === 'rotonda') {
                             const steps = 40; const r = p.radius || 14.5; const loopCenterX = r * 1.3; const laneOffVal = laneSpacing / 2; const startX = curX; const startZ = curZ; const startAngle = curAngle; const straightLen = 10.0;
                             const rotVertexIndex = rails.lanes[0].length;
-                            
-                            // FIX: Añadido visualLanes.push(null) para cortar la malla y evitar raíles cruzando la pista
-                            for(let i=0; i<numLanes; i++) { 
-                                rails.lanes[i].push(null); 
-                                rails.visualLanes[i].push(null); 
-                            } 
-                            rails.pit.push(null); 
-                            vertexDistances.push(accumulatedDist);
+                            for(let i=0; i<numLanes; i++) { rails.lanes[i].push(null); rails.visualLanes[i].push(null); } rails.pit.push(null); vertexDistances.push(accumulatedDist);
                             
                             const loopRailPoints = []; 
                             const loopArcLength = Math.PI * r; 
@@ -4258,12 +4406,16 @@
                                         stdHalfL = halfAsphalt;
                                         stdHalfR = halfAsphalt;
                                     }
-                                    currentOffsets = [...tL];
+                                    const isChicaneCont = ['chicane_middle', 'chicane_curve', 'chicane_exit', 'chicane3_middle', 'chicane3_exit', 'single_lane_s', 'y_merge_in'].includes(p.subtype) || p.id === 'adv_chicane_mid' || p.id === 'adv_desvio_out';
+                                    if (!isChicaneCont) {
+                                        currentOffsets = [...tL];
+                                    }
                                 }
                             }
                         }
                         
-                        let pieceBrand = currentBrandKey;
+                        const isSqueeze = p.subtype === 'squeeze' || p.id === 'c_pt54_2';
+                        let pieceBrand = isSqueeze ? 'SCX_CLASSIC_YELLOW' : currentBrandKey;
                         let brandChangedLocal = false;
                         if (currentGeoData && currentGeoData.brand !== pieceBrand) {
                             brandChangedLocal = true;
@@ -4273,10 +4425,12 @@
                         const isPitEntry = p.type === 'pit_entry' || p.subtype === 'pit_entry';
                         const isPitExit = p.type === 'pit_exit' || p.subtype === 'pit_exit';
                         const isChicaneEntry = p.subtype === 'chicane_entry' || p.subtype === 'chicane3_entry';
+                        const isChicaneMiddle = p.subtype === 'chicane_middle' || p.subtype === 'chicane3_middle' || p.subtype === 'chicane_curve';
                         const isChicaneExit = p.subtype === 'chicane_exit' || p.subtype === 'chicane3_exit';
-                        const isAdvChicaneIn = p.id === 'adv_desvio_in' || (p.brandKey === 'SCX_ADVANCE' && p.subtype === 'y_merge_out');
-                        const isAdvChicaneMid = p.id === 'adv_chicane_mid' || (p.brandKey === 'SCX_ADVANCE' && p.subtype === 'single_lane_s');
-                        const isAdvChicaneOut = p.id === 'adv_desvio_out' || (p.brandKey === 'SCX_ADVANCE' && p.subtype === 'y_merge_in');
+                        const isFullChicane = p.subtype === 'full_chicane';
+                        const isAdvChicaneIn = p.id === 'adv_desvio_in' || (pieceBrand === 'SCX_ADVANCE' && p.subtype === 'y_merge_out');
+                        const isAdvChicaneMid = p.id === 'adv_chicane_mid' || (pieceBrand === 'SCX_ADVANCE' && p.subtype === 'single_lane_s');
+                        const isAdvChicaneOut = p.id === 'adv_desvio_out' || (pieceBrand === 'SCX_ADVANCE' && p.subtype === 'y_merge_in');
                         const pitSide = p.invert ? 'left' : 'right';
                         const pitDir = pitSide === 'right' ? 1 : -1;
                         
@@ -4352,9 +4506,9 @@
                             currentOffsets = [...tL];
                         }
                         else if (isCrossing) { tL.reverse(); currentOffsets = [...tL]; } 
-                        else if (isChicaneEntry) { tL = sL.map(off => off * 0.2); currentOffsets = [...tL]; } 
+                        else if (isChicaneEntry) { tL = sL.map(off => off * 0.25); currentOffsets = [...tL]; } 
+                        else if (isChicaneMiddle) { tL = [...sL]; }
                         else if (isChicaneExit) { 
-                            // FIX: Mantener la polaridad actual para evitar que los carriles se crucen en la salida
                             tL = sL.map((val, i) => {
                                 const magnitude = Math.abs(standardOffsets[i]);
                                 return val === 0 ? 0 : Math.sign(val) * magnitude;
@@ -4367,8 +4521,8 @@
                             currentOffsets = [...tL];
                         }
                         else if (isAdvChicaneMid) {
-                            const isRight = Math.abs(sL[0] - standardOffsets[0]) < 0.1;
-                            const tgt = isRight ? standardOffsets[numLanes - 1] : standardOffsets[0];
+                            const isAtFirst = Math.abs(sL[0] - standardOffsets[0]) < 0.1;
+                            const tgt = isAtFirst ? standardOffsets[numLanes - 1] : standardOffsets[0];
                             tL = sL.map(() => tgt);
                             currentOffsets = [...tL];
                         }
@@ -4376,6 +4530,9 @@
                             tL = [...standardOffsets];
                             if (p.invert) tL.reverse();
                             currentOffsets = [...tL];
+                        }
+                        else if (isSqueeze) {
+                            tL = [...sL];
                         }
                         
                         const d12 = [], d21 = [];
@@ -4398,7 +4555,18 @@
 
                         // Cerrar hueco visual al cambiar de marca o adaptador
                         if (brandChangedLocal) {
-                            addAsphaltSlice(curX, curZ, curAngle, startHalfL, startHalfR, accumulatedDist, pieceBrand);
+                            let initHalfL = startHalfL, initHalfR = startHalfR;
+                            let initShift = 0;
+                            if (isAdvChicaneMid) {
+                                initHalfL = stdHalfL * 0.52;
+                                initHalfR = stdHalfR * 0.52;
+                                initShift = sL[0];
+                            } else if (isAdvChicaneOut) {
+                                if (sL[0] < 0) initHalfR = 0.2;
+                                else initHalfL = 0.2;
+                            }
+                            const px0 = Math.cos(curAngle + Math.PI/2), pz0 = Math.sin(curAngle + Math.PI/2);
+                            addAsphaltSlice(curX + px0 * initShift, curZ + pz0 * initShift, curAngle, initHalfL, initHalfR, accumulatedDist, pieceBrand);
                         }
 
                         for (let i = 1; i <= steps; i++) {
@@ -4410,9 +4578,59 @@
                                 cL.push(sL[j] + (tL[j] - sL[j]) * mixT);
                             }
 
+                            if (isSqueeze) {
+                                const squeezeProfile = Math.sin(t * Math.PI);
+                                const narrowRatio = 1.0 - 0.78 * (squeezeProfile * squeezeProfile);
+                                cL = sL.map(off => off * narrowRatio);
+                            }
+
                             const pcd = (currentLaneSpacing / 2) + currentLaneSpacing;
                             const poe = pcd + (currentTrackWidth / 2 + 1) / 2;
                             let cPit = null, cTWL = startHalfL + (endHalfL - startHalfL)*mixT, cTWR = startHalfR + (endHalfR - startHalfR)*mixT;
+                            let asphShift = 0;
+
+                            if (isFullChicane) {
+                                const shiftDir = p.invert ? 1 : -1;
+                                const maxShift = (currentLaneSpacing * 0.5) * shiftDir;
+                                let narrowFactor = 0.0;
+
+                                if (t <= 0.3333) {
+                                    const lt = easeSine(t / 0.3333);
+                                    asphShift = lt * maxShift;
+                                    narrowFactor = lt;
+                                } else if (t <= 0.6667) {
+                                    const lt = easeSine((t - 0.3333) / 0.3334);
+                                    asphShift = maxShift - lt * (maxShift * 2.0);
+                                    narrowFactor = 1.0;
+                                } else {
+                                    const lt = easeSine((t - 0.6667) / 0.3333);
+                                    asphShift = -maxShift + lt * maxShift;
+                                    narrowFactor = 1.0 - lt;
+                                }
+
+                                // CRÍTICO: Usar sL (que respeta si los carriles vienen invertidos tras un Cruce en X) en lugar de standardOffsets
+                                cL = sL.map(off => off * (1.0 - 0.65 * narrowFactor) + asphShift);
+                                cTWL = stdHalfL * (1.0 - 0.42 * narrowFactor);
+                                cTWR = stdHalfR * (1.0 - 0.42 * narrowFactor);
+                            } else if (isAdvChicaneIn) {
+                                const tgt = tL[0];
+                                if (tgt < 0) {
+                                    cTWR = stdHalfR * (1.0 - mixT) + 0.2 * mixT;
+                                } else {
+                                    cTWL = stdHalfL * (1.0 - mixT) + 0.2 * mixT;
+                                }
+                            } else if (isAdvChicaneMid) {
+                                asphShift = cL[0];
+                                cTWL = stdHalfL * 0.52;
+                                cTWR = stdHalfR * 0.52;
+                            } else if (isAdvChicaneOut) {
+                                const startOff = sL[0];
+                                if (startOff < 0) {
+                                    cTWR = 0.2 * (1.0 - mixT) + stdHalfR * mixT;
+                                } else {
+                                    cTWL = 0.2 * (1.0 - mixT) + stdHalfL * mixT;
+                                }
+                            }
                             
                             if (isPitEntry) { const sp = pitDir * (currentLaneSpacing/2), ep = pitDir * pcd, e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = endHalfR + (poe-endHalfR)*e; else cTWL = endHalfL + (poe-endHalfL)*e; }
                             else if (isPitExit) { const sp = pitDir * pcd, ep = pitDir * (currentLaneSpacing/2), e = t*t*(3-2*t); cPit = sp + (ep-sp)*e; if(pitSide==='right') cTWR = poe - (poe-endHalfR)*e; else cTWL = poe - (poe-endHalfL)*e; }
@@ -4421,20 +4639,19 @@
                             let curL_Vis = [...cL];
                             if (p.subtype === 'single_lane_1') { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); cTWR = 0; }
                             if (p.subtype === 'single_lane_2') { curL_Vis = curL_Vis.map((v, idx) => idx === 1 ? v : null); cTWL = 0; }
-                            if (isAdvChicaneMid) { curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); } // Dibuja solo 1 raíl en el centro de la chicane SCX Advance
+                            if (isAdvChicaneMid) { 
+                                curL_Vis = curL_Vis.map((v, idx) => idx === 0 ? v : null); 
+                            }
 
                             let railX = curX;
                             let railZ = curZ;
                             let sShapeOffset = 0;
 
                             if (p.subtype === 'chicane3_entry') {
-                                // Fase 1: Suavemente hacia un lado. Inicia paralelo al asfalto (0) y termina paralelo en el borde
                                 sShapeOffset = easeSine(t) * (currentLaneSpacing * 0.5);
                             } else if (p.subtype === 'chicane3_middle') {
-                                // Fase 2: Cruza de un borde al otro. Inicia paralelo y termina paralelo en el otro extremo
                                 sShapeOffset = (currentLaneSpacing * 0.5) - (easeSine(t) * currentLaneSpacing);
                             } else if (p.subtype === 'chicane3_exit') {
-                                // Fase 3: Retorna al centro. Inicia paralelo en el borde y termina paralelo en el centro (0)
                                 sShapeOffset = -(currentLaneSpacing * 0.5) + (easeSine(t) * (currentLaneSpacing * 0.5));
                             }
 
@@ -4445,8 +4662,17 @@
                                 railZ += pz * sShapeOffset;
                             }
 
+                            let asphX = curX;
+                            let asphZ = curZ;
+                            if (asphShift !== 0) {
+                                const px = Math.cos(curAngle + Math.PI/2);
+                                const pz = Math.sin(curAngle + Math.PI/2);
+                                asphX += px * asphShift;
+                                asphZ += pz * asphShift;
+                            }
+
                             addRailPoint(railX, railZ, curAngle, cL, curL_Vis, cPit, stepPhysDist, pieceBrand); 
-                            addAsphaltSlice(curX, curZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
+                            addAsphaltSlice(asphX, asphZ, curAngle, cTWL, cTWR, accumulatedDist, pieceBrand);
                             
                             if (['digital_x', 'change_right', 'change_left', 'pit_parallel_double_x'].includes(p.subtype) && numLanes >= 2) { 
                                 const ct = easeSine(t), o12 = sL[0] + (sL[1]-sL[0])*ct, o21 = sL[1] + (sL[0]-sL[1])*ct, px = Math.cos(curAngle+Math.PI/2), pz = Math.sin(curAngle+Math.PI/2); 
@@ -5081,24 +5307,20 @@
 
                         // 2. CURVAS, ROTONDAS, CHICANES Y PITLANE
                         if (piece.subtype === 'rotonda' || piece.type === 'rotonda') {
-                            needsFenceL[s] = true; // Por la topología de bucle simple, L es el borde exterior real de la rotonda.
+                            needsFenceL[s] = true; 
                         } else if (piece.type === 'curve' || (piece.subtype && piece.subtype.toLowerCase().includes('curve'))) {
-                            // IA INFALIBLE BASADA EN GEOMETRÍA (100% FÍSICA): 
-                            // Calcula la distancia real que recorre el borde izquierdo y derecho del asfalto en este segmento.
-                            // En cualquier curva, el radio EXTERIOR siempre dibuja una línea más larga.
                             const distL = Math.hypot(asphaltVerts[(s+1)*6] - asphaltVerts[(s-1)*6], asphaltVerts[(s+1)*6+2] - asphaltVerts[(s-1)*6+2]);
                             const distR = Math.hypot(asphaltVerts[(s+1)*6+3] - asphaltVerts[(s-1)*6+3], asphaltVerts[(s+1)*6+5] - asphaltVerts[(s-1)*6+5]);
-                            
                             if (distR > distL + 0.001) {
-                                needsFenceR[s] = true; // El lado derecho es más largo -> Exterior = Derecha
+                                needsFenceR[s] = true;
                             } else if (distL > distR + 0.001) {
-                                needsFenceL[s] = true; // El lado izquierdo es más largo -> Exterior = Izquierda
+                                needsFenceL[s] = true;
                             }
-                        } else if (piece.type === 'chicane' || (piece.subtype && piece.subtype.includes('chicane'))) {
+                        } else if (piece.type === 'chicane' || (piece.subtype && (piece.subtype.includes('chicane') || piece.subtype.includes('merge') || piece.subtype === 'single_lane_s'))) {
                             needsFenceL[s] = true; 
                             needsFenceR[s] = true;
                         } else if (piece.type === 'pit_entry' || piece.type === 'pit_exit' || (piece.subtype && piece.subtype.includes('pit'))) {
-                            needsFenceL[s] = true; // Toda la zona de Pitlane lleva vallas en el exterior
+                            needsFenceL[s] = true; // Toda la zona de Pitlane lleva vallas
                             needsFenceR[s] = true;
                         }
                     }
@@ -5112,7 +5334,6 @@
                     }
 
                     // EXTENSIÓN DE SEGURIDAD MÁXIMA PARA CURVAS (LEAD-IN / LEAD-OUT):
-                    // Ampliamos 6 segmentos para proteger las entradas de frenada y salidas de aceleración
                     let expandedL = [...needsFenceL];
                     let expandedR = [...needsFenceR];
                     const expansion = 6; 
@@ -5127,25 +5348,17 @@
                     needsFenceL = expandedL;
                     needsFenceR = expandedR;
 
-                    // POST-PROCESO ESTRICTO DE ANIQUILACIÓN: Limpieza milimétrica de interiores
-                    // Garantiza por fuerza bruta que NINGUNA valla (ni siquiera las expansiones) pise el interior
                     for (let s = 1; s < aspVertCount - 1; s++) {
                         const dist = asphaltDists[s];
                         const piece = pieceMapRef.current.find(p => dist >= p.distStart && dist <= p.distEnd + 0.1);
                         if (!piece) continue;
-                        
                         if (piece.subtype === 'rotonda' || piece.type === 'rotonda') {
-                            needsFenceR[s] = false; // INTERIOR de la rotonda borrado obligatoriamente
+                            needsFenceR[s] = false;
                         } else if (piece.type === 'curve' || (piece.subtype && piece.subtype.toLowerCase().includes('curve'))) {
                             const distL = Math.hypot(asphaltVerts[(s+1)*6] - asphaltVerts[(s-1)*6], asphaltVerts[(s+1)*6+2] - asphaltVerts[(s-1)*6+2]);
                             const distR = Math.hypot(asphaltVerts[(s+1)*6+3] - asphaltVerts[(s-1)*6+3], asphaltVerts[(s+1)*6+5] - asphaltVerts[(s-1)*6+5]);
-                            
-                            // Si el derecho es más largo (es el exterior), eliminamos el izquierdo (interior) sea como sea.
-                            if (distR > distL + 0.001) {
-                                needsFenceL[s] = false; 
-                            } else if (distL > distR + 0.001) {
-                                needsFenceR[s] = false;
-                            }
+                            if (distR > distL + 0.001) needsFenceL[s] = false;
+                            else if (distL > distR + 0.001) needsFenceR[s] = false;
                         }
                     }
 
@@ -5397,9 +5610,9 @@
                         const gS = new THREE.TubeGeometry(pathS, segments, w/2.2, 3, false);
 
                         // OPTIMIZACIÓN MATERIALES COLORIDOS POR MARCA
-                        const bDef = TRACK_DEFINITIONS[brand] || TRACK_DEFINITIONS.NINCO;
-                        const rCol = parseInt((bDef.railColor || '#dcdcdc').replace('#', '0x'));
-                        const sCol = parseInt((bDef.slotColor || '#000000').replace('#', '0x'));
+                        const bCols = getBrandColors(brand);
+                        const rCol = parseInt((bCols.railColor || '#dcdcdc').replace('#', '0x'));
+                        const sCol = parseInt((bCols.slotColor || '#000000').replace('#', '0x'));
 
                         const mMetal = new THREE.MeshPhongMaterial({ color: rCol, shininess: 50 });
                         const mSlot = new THREE.MeshLambertMaterial({ color: sCol });
@@ -5696,8 +5909,8 @@
                         const boardW = size.x + boardMargin;
                         const boardD = size.z + boardMargin;
                         
-                        // Tablero con textura estilo asfalto Ninco pero en verde oscuro
-                        const boardTopTex = createAsphaltTexture(renderer, '#081a0c'); 
+                        // Tablero con textura verde césped maqueta bien iluminado
+                        const boardTopTex = createAsphaltTexture(renderer, '#194522'); 
                         boardTopTex.repeat.set(boardW / 50, boardD / 50); // Mayor densidad de grano para que se vea bien
                         const woodTex = createWoodTexture();
                         woodTex.repeat.set(Math.max(boardW, boardD) / 50, 1);
@@ -5706,7 +5919,7 @@
                         // OPTIMIZACIÓN: Material Lambert en lugar de Standard
                         const topMat = new THREE.MeshLambertMaterial({ 
                             map: boardTopTex,
-                            color: 0xcccccc
+                            color: 0xffffff
                         }); 
                         const sideMat = new THREE.MeshLambertMaterial({ map: woodTex }); 
                         const bottomMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
@@ -6998,24 +7211,24 @@
                     )}
 
                     {activeButton !== 'ANALOG' && activeButton !== 'DIGITAL' && activeButton !== 'PRACTICE' && (
-                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[70] flex items-start gap-8 pointer-events-none w-full justify-center px-4">
-                            <div className="flex gap-4 items-center mt-2">
-                                <div className="flex flex-row items-center bg-black/80 border border-gray-600 rounded-xl p-1 pointer-events-auto shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-sm">
-                                    <button onClick={() => handleLangChange('es')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black transition-all ${lang === 'es' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
-                                        <span className="text-xs leading-none">🇪🇸</span> ES
+                        <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-[70] flex items-start gap-5 pointer-events-none w-full justify-center px-4">
+                            <div className="flex gap-3 items-center mt-1">
+                                <div className="flex flex-row items-center mac-pill p-1.5 gap-1 pointer-events-auto">
+                                    <button onClick={() => handleLangChange('es')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${lang === 'es' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
+                                        <span className="text-sm leading-none">🇪🇸</span> ES
                                     </button>
-                                    <button onClick={() => handleLangChange('en')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black transition-all ${lang === 'en' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
-                                        <span className="text-xs leading-none">🇬🇧</span> EN
+                                    <button onClick={() => handleLangChange('en')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${lang === 'en' ? 'bg-[#0a84ff] text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
+                                        <span className="text-sm leading-none">🇬🇧</span> EN
                                     </button>
                                 </div>
                                 <div className="flex flex-col gap-2 pointer-events-auto animate-in items-center transition-opacity duration-300">
-                                    <button onClick={enterGridMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'GRID' ? 'bg-[#22d3ee] border-[#22d3ee] text-black shadow-[0_0_30px_rgba(34,211,238,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('prep')}</button>
-                                    <button onClick={startPracticeMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'PRACTICE' ? 'bg-[#a3e635] border-[#a3e635] text-black shadow-[0_0_30px_rgba(163,230,53,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{hasRotonda ? t('rally') : t('practice')}</button>
+                                    <button onClick={enterGridMode} className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider border uppercase transition-all duration-200 w-44 ${activeButton === 'GRID' ? 'bg-[#0a84ff] border-[#0a84ff] text-white shadow-[0_4px_20px_rgba(10,132,255,0.5)]' : 'mac-pill text-gray-200 hover:text-white'}`}>{t('prep')}</button>
+                                    <button onClick={startPracticeMode} className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider border uppercase transition-all duration-200 w-44 ${activeButton === 'PRACTICE' ? 'bg-[#30d158] border-[#30d158] text-black shadow-[0_4px_20px_rgba(48,209,88,0.5)]' : 'mac-pill text-gray-200 hover:text-white'}`}>{hasRotonda ? t('rally') : t('practice')}</button>
                                 </div>
                             </div>
                             
-                            <div className="flex flex-col items-center mt-2 shrink-0 pointer-events-auto">
-                                <div className="flex gap-4 items-end mb-1">
+                            <div className="flex flex-col items-center mt-1 shrink-0 pointer-events-auto">
+                                <div className="flex gap-3 items-end mb-1.5">
                                         <DrivingStyleSelector profile={throttleProfile} setProfile={setThrottleProfile} showDunlop={showDunlop} setShowDunlop={setShowDunlop} showFences={showFences} setShowFences={setShowFences} />
                                         <AiLevelSelector aiLevel={aiLevel} setAiLevel={setAiLevel} />
                                         <TreeToggle showTrees={showTrees} setShowTrees={setShowTrees} />
@@ -7023,51 +7236,51 @@
                                         <CameraSelector mode={cameraMode} setMode={setCameraMode} />
                                     </div>
                                     
-                                    {/* SEMÁFORO Y CRONÓMETRO COMBINADOS (Minimalista) */}
-                                    <div className="flex items-center gap-4 mt-1 bg-black/80 px-5 py-2.5 rounded-full border border-[#39ff14]/30 shadow-[0_0_30px_rgba(57,255,20,0.2)] backdrop-blur-md">
+                                    {/* SEMÁFORO Y CRONÓMETRO COMBINADOS (macOS Center Pill) */}
+                                    <div className="flex items-center gap-4 mt-1 mac-dock px-5 py-2.5">
                                         <div className="flex gap-2.5">
                                             {[1, 2, 3, 4, 5].map(n => {
                                                 const isRed = raceState === 'countdown' && activeLights >= n, isGreen = raceState === 'racing';
-                                                let bg = 'bg-[#111]'; 
-                                                let shadow = 'border-gray-800 opacity-50'; 
+                                                let bg = 'bg-black/50'; 
+                                                let shadow = 'border-white/15 opacity-50'; 
                                                 if (isGreen) { 
-                                                    bg = 'bg-[#39ff14]'; 
-                                                    shadow = 'shadow-[0_0_15px_#39ff14] border-[#39ff14] scale-110 opacity-100'; 
+                                                    bg = 'bg-[#30d158]'; 
+                                                    shadow = 'shadow-[0_0_15px_#30d158] border-[#30d158] scale-110 opacity-100'; 
                                                 } else if (isRed) { 
-                                                    bg = 'bg-[#ff0000]'; 
-                                                    shadow = 'shadow-[0_0_15px_#ff0000] border-[#ff0000] scale-110 opacity-100'; 
+                                                    bg = 'bg-[#ff453a]'; 
+                                                    shadow = 'shadow-[0_0_15px_#ff453a] border-[#ff453a] scale-110 opacity-100'; 
                                                 } 
-                                                return <div key={n} className={`w-6 h-6 rounded-full border-2 ${bg} ${shadow} transition-all duration-100`}></div>
+                                                return <div key={n} className={`w-5 h-5 rounded-full border ${bg} ${shadow} transition-all duration-100`}></div>
                                             })}
                                         </div>
                                         
-                                        <div className="w-px h-8 bg-gray-700"></div>
+                                        <div className="w-px h-7 bg-white/15"></div>
                                         
-                                        <div className="min-w-[150px]">
-                                            <span className="text-white font-normal text-3xl tracking-widest drop-shadow-[0_0_8px_rgba(57,255,20,0.5)] font-timer tabular-nums text-center w-full block leading-none">{formatRaceTime(elapsedTime)}</span>
+                                        <div className="min-w-[140px]">
+                                            <span className="text-white font-normal text-2xl tracking-widest font-timer tabular-nums text-center w-full block leading-none">{formatRaceTime(elapsedTime)}</span>
                                         </div>
                                     </div>
                                 </div>
                             
-                            <div className="flex flex-col gap-2 mt-2 pointer-events-auto animate-in items-center transition-opacity duration-300">
+                            <div className="flex flex-col gap-2 mt-1 pointer-events-auto animate-in items-center transition-opacity duration-300">
                                 {!hasRotonda && (
                                     <>
                                         <div className="relative flex justify-center items-center w-full">
-                                            <button onClick={handleAnalogMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'ANALOG' ? 'bg-[#fbbf24] border-[#fbbf24] text-black shadow-[0_0_30px_rgba(251,191,36,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('analog')}</button>
-                                            <button onClick={toggleFullscreen} className="absolute -right-14 w-10 h-10 flex items-center justify-center rounded-lg bg-black/60 hover:bg-white text-gray-400 hover:text-black border border-white/20 hover:border-white transition-all duration-300 backdrop-blur-sm" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
-                                                {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
+                                            <button onClick={handleAnalogMode} className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider border uppercase transition-all duration-200 w-44 ${activeButton === 'ANALOG' ? 'bg-[#ffd60a] border-[#ffd60a] text-black shadow-[0_4px_20px_rgba(255,214,10,0.5)]' : 'mac-pill text-gray-200 hover:text-white'}`}>{t('analog')}</button>
+                                            <button onClick={toggleFullscreen} className="absolute -right-14 w-11 h-11 flex items-center justify-center rounded-xl mac-pill text-gray-200 hover:text-white transition-all duration-200" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
+                                                {isFullscreen ? <Minimize size={20}/> : <Maximize size={20}/>}
                                             </button>
                                         </div>
-                                        <button onClick={handleDigitalMode} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 uppercase transition-all duration-300 w-36 ${activeButton === 'DIGITAL' ? 'bg-[#d946ef] border-[#d946ef] text-black shadow-[0_0_30px_rgba(217,70,239,0.8)]' : 'bg-gray-900/80 border-gray-700 text-gray-400'}`}>{t('digital')}</button>
+                                        <button onClick={handleDigitalMode} className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider border uppercase transition-all duration-200 w-44 ${activeButton === 'DIGITAL' ? 'bg-[#bf5af2] border-[#bf5af2] text-white shadow-[0_4px_20px_rgba(191,90,242,0.5)]' : 'mac-pill text-gray-200 hover:text-white'}`}>{t('digital')}</button>
                                     </>
                                 )}
                                 {hasRotonda && (
                                     <div className="relative flex justify-center items-center w-full">
-                                        <div className="px-4 py-2 rounded-lg text-[10px] font-black tracking-[0.2em] border-2 border-[#facc15] bg-[#facc15]/10 text-[#facc15] shadow-[0_0_20px_rgba(250,204,21,0.3)] w-36 text-center animate-pulse">
+                                        <div className="px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider border border-[#ffd60a] bg-[#ffd60a]/20 text-[#ffd60a] w-44 text-center">
                                             MODO RALLY
                                         </div>
-                                        <button onClick={toggleFullscreen} className="absolute -right-14 w-10 h-10 flex items-center justify-center rounded-lg bg-black/60 hover:bg-white text-gray-400 hover:text-black border border-white/20 hover:border-white transition-all duration-300 backdrop-blur-sm" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
-                                            {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
+                                        <button onClick={toggleFullscreen} className="absolute -right-14 w-11 h-11 flex items-center justify-center rounded-xl mac-pill text-gray-200 hover:text-white transition-all duration-200" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
+                                            {isFullscreen ? <Minimize size={20}/> : <Maximize size={20}/>}
                                         </button>
                                     </div>
                                 )}
@@ -7075,46 +7288,48 @@
                         </div>
                     )}
 
-                    {/* MANDO MANUAL FLOTANTE (Visible en todos los modos para calentamiento) */}
+                    {/* MANDO MANUAL FLOTANTE (Estilo macOS Widget) */}
                     <div 
                         style={{ left: ctrlPos.x, top: ctrlPos.y, position: 'absolute', zIndex: 85, cursor: isDraggingCtrl ? 'grabbing' : 'grab' }}
                         onMouseDown={handleCtrlDown}
                         onTouchStart={handleCtrlDown}
-                        className="bg-[#0f172a]/95 backdrop-blur-xl border-2 border-gray-700 rounded-[2rem] p-3 shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col gap-3 w-[100px] pointer-events-auto touch-none select-none animate-in fade-in"
+                        className="mac-window p-3.5 flex flex-col gap-3 w-[124px] pointer-events-auto touch-none select-none animate-in fade-in"
                     >
+                        <div className="flex items-center justify-center border-b border-white/10 pb-1.5 pointer-events-none">
+                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{t('controller')}</span>
+                        </div>
                             {/* Controles Digitales (LC/BOX) si aplica */}
                             {activeButton === 'DIGITAL' && (
                                 <>
                                     <div className="w-full bg-black/60 rounded-xl p-1.5 border border-gray-800 flex justify-between items-center shadow-inner overflow-hidden relative z-30">
-                                        <button onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onClick={() => setSelectedCarId(prev => Math.max(1, prev - 1))} className="w-6 h-8 flex items-center justify-center bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"><ArrowLeft size={10}/></button>
-                                        <div className="flex flex-col items-center leading-none z-10 pointer-events-none"><span className="text-[6px] text-gray-500 font-bold">ID</span><span className="text-xl font-black text-[#39ff14] font-digital">{selectedCarId}</span></div>
-                                        <button onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onClick={() => setSelectedCarId(prev => Math.min(numCars, prev + 1))} className="w-6 h-8 flex items-center justify-center bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"><ArrowRight size={10}/></button>
+                                        <button onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onClick={() => setSelectedCarId(prev => Math.max(1, prev - 1))} className="w-8 h-9 flex items-center justify-center bg-gray-800 rounded-lg text-gray-300 hover:text-white transition-colors"><ArrowLeft size={14}/></button>
+                                        <div className="flex flex-col items-center leading-none z-10 pointer-events-none"><span className="text-[8px] text-gray-400 font-bold">ID</span><span className="text-xl font-black text-[#39ff14] font-digital">{selectedCarId}</span></div>
+                                        <button onMouseDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onClick={() => setSelectedCarId(prev => Math.min(numCars, prev + 1))} className="w-8 h-9 flex items-center justify-center bg-gray-800 rounded-lg text-gray-300 hover:text-white transition-colors"><ArrowRight size={14}/></button>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-1.5 w-full relative z-30">
+                                    <div className="grid grid-cols-1 gap-2 w-full relative z-30">
                                         <button 
                                             onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setLaneChangePressed(true); }} 
                                             onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); setLaneChangePressed(false); }} 
                                             onPointerLeave={(e) => { e.stopPropagation(); setLaneChangePressed(false); }}
-                                            className={`h-12 w-full rounded-xl flex items-center justify-center gap-1.5 border transition-all active:scale-95 touch-none select-none ${laneChangePressed?'bg-[#39ff14] text-black border-white shadow-[0_0_15px_#39ff14]':'bg-gray-800 text-gray-300 border-gray-600'}`}
+                                            className={`h-12 w-full rounded-xl flex items-center justify-center gap-1.5 border transition-all active:scale-95 touch-none select-none ${laneChangePressed?'bg-[#30d158] text-black border-white shadow-[0_0_15px_#30d158]':'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
                                         >
-                                            <GitCommit size={16} className="rotate-90 shrink-0"/><span className="font-black text-[7px] leading-tight text-center">{t('laneChange1')}<br/>{t('laneChange2')}</span>
+                                            <GitCommit size={18} className="rotate-90 shrink-0"/><span className="font-bold text-[10px] leading-tight text-center">{t('laneChange1')}<br/>{t('laneChange2')}</span>
                                         </button>
                                         <button 
                                             onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setPitPressed(true); }} 
                                             onPointerUp={(e) => { e.preventDefault(); e.stopPropagation(); setPitPressed(false); }}
                                             onPointerLeave={(e) => { e.stopPropagation(); setPitPressed(false); }}
-                                            className={`h-10 w-full rounded-xl flex items-center justify-center gap-1.5 border transition-all active:scale-95 touch-none select-none ${pitPressed?'bg-blue-600 text-white shadow-[0_0_15px_blue]':'bg-gray-800 text-gray-400 border-gray-600'}`}
+                                            className={`h-11 w-full rounded-xl flex items-center justify-center gap-1.5 border transition-all active:scale-95 touch-none select-none ${pitPressed?'bg-[#0a84ff] text-white shadow-[0_0_15px_#0a84ff]':'bg-white/10 text-gray-200 border-white/20 hover:bg-white/20'}`}
                                         >
-                                            <Fuel size={14} className="shrink-0"/><span className="font-bold text-[7px] leading-tight text-center">{t('pitEntry1')}<br/>{t('pitEntry2')}</span>
+                                            <Fuel size={16} className="shrink-0"/><span className="font-bold text-[10px] leading-tight text-center">{t('pitEntry1')}<br/>{t('pitEntry2')}</span>
                                         </button>
                                     </div>
                                 </>
                             )}
                         
                         {/* Acelerador Manual */}
-                        <div className="flex flex-col w-full items-center gap-0.5 mb-0.5 pointer-events-none">
-                            <span className="text-[9px] font-black text-[#39ff14] tracking-widest uppercase bg-[#39ff14]/10 border border-[#39ff14]/30 px-2 py-0.5 rounded-full w-full text-center drop-shadow-[0_0_5px_rgba(57,255,20,0.5)]">{t('controller')}</span>
-                            <span className="text-[6px] text-gray-400 font-bold uppercase tracking-wider">{t('manualControl')}</span>
+                        <div className="flex flex-col w-full items-center gap-0.5 pointer-events-none">
+                            <span className="text-[9px] text-gray-300 font-semibold uppercase tracking-wider">{t('manualControl')}</span>
                         </div>
                         <div className="relative w-full h-[240px] bg-black/80 rounded-2xl overflow-hidden border border-gray-600 shadow-[inset_0_0_20px_rgba(0,0,0,1)] z-10 group pointer-events-auto">
                             {kronoSyncActive ? (
@@ -7182,38 +7397,42 @@
 
                     {activeButton === 'GRID' && (
                         <>
-                            {/* PANEL IZQUIERDO: POTENCIA Y AGARRE */}
-                            <div className="absolute top-28 left-10 z-[60] flex flex-col gap-4 pointer-events-auto animate-in slide-in-left duration-500 scale-90 origin-top-left">
+                            {/* PANEL IZQUIERDO: POTENCIA Y AGARRE (Ventana macOS) */}
+                            <div className="absolute top-32 left-8 z-[60] flex flex-col gap-3 pointer-events-auto animate-in slide-in-left duration-500 scale-95 origin-top-left">
                                 
-                                <div className="bg-black/40 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
-                                    {/* PANEL DE BACKUP / RESTORE DE PIEZAS CUSTOM ENGANCHADO AL DE MOTORES */}
-                                    <div className="flex items-center justify-between border-b border-[#39ff14]/30 pb-2 mb-3">
-                                        <span className="text-[9px] text-[#39ff14] font-bold tracking-widest uppercase ml-1 opacity-80">{t('customParts')}</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={handleBackupParts} title={t('exportBackup')} className="bg-gray-800 hover:bg-[#39ff14] text-gray-400 hover:text-black px-2 py-1 rounded flex items-center gap-1 transition-colors text-[8px] font-bold"><CloudUpload size={10}/> {t('backup')}</button>
-                                            <button onClick={() => restorePartsRef.current?.click()} title={t('importRestore')} className="bg-gray-800 hover:bg-blue-500 text-gray-400 hover:text-white px-2 py-1 rounded flex items-center gap-1 transition-colors text-[8px] font-bold"><CloudDownload size={10}/> {t('restore')}</button>
+                                <div className="mac-window overflow-hidden">
+                                    <div className="mac-titlebar px-3.5 py-2.5 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-white/90 font-bold tracking-wider uppercase">{t('powertrain')}</span>
+                                        </div>
+                                        <div className="flex gap-1.5">
+                                            <button onClick={handleBackupParts} title={t('exportBackup')} className="bg-white/10 hover:bg-[#0a84ff] text-white px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors text-[10px] font-bold"><CloudUpload size={12}/> {t('backup')}</button>
+                                            <button onClick={() => restorePartsRef.current?.click()} title={t('importRestore')} className="bg-white/10 hover:bg-[#0a84ff] text-white px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors text-[10px] font-bold"><CloudDownload size={12}/> {t('restore')}</button>
                                             <input type="file" ref={restorePartsRef} accept=".json" className="hidden" onChange={handleRestoreParts} />
                                         </div>
                                     </div>
-
-                                    <div>
-                                        <div className="text-[10px] text-[#39ff14] font-bold mb-2 tracking-widest uppercase ml-1 opacity-80">{t('powertrain')}</div>
+                                    <div className="p-2.5">
                                         <MotorShowcase key={`motor-${refreshPartsKey}`} selectedCarId={selectedCarId} currentConfig={carSetups[selectedCarId]} onUpdate={handleUpdateConfig} />
                                     </div>
                                 </div>
-                                <div className="bg-black/40 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
-                                    <div className="text-[10px] text-[#39ff14] font-bold mb-2 tracking-widest uppercase ml-1 opacity-80">{t('tireManagement')}</div>
-                                    <TireShowcase key={`tire-${refreshPartsKey}`} selectedCarId={selectedCarId} currentConfig={carSetups[selectedCarId]} onUpdate={handleUpdateConfig} />
+
+                                <div className="mac-window overflow-hidden">
+                                    <div className="mac-titlebar px-3.5 py-2.5 flex items-center gap-2">
+                                        <span className="text-xs text-white/90 font-bold tracking-wider uppercase">{t('tireManagement')}</span>
+                                    </div>
+                                    <div className="p-2.5">
+                                        <TireShowcase key={`tire-${refreshPartsKey}`} selectedCarId={selectedCarId} currentConfig={carSetups[selectedCarId]} onUpdate={handleUpdateConfig} />
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* PANEL DERECHO: MECÁNICA Y FÍSICA */}
-                            <div className="absolute top-28 right-10 z-[60] flex flex-col gap-4 pointer-events-auto animate-in slide-in-right duration-500 scale-90 origin-top-right">
-                                <div className="bg-black/40 p-4 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
-                                    <div className="flex justify-end items-center border-b border-[#39ff14]/30 pb-2 mb-3">
-                                        <div className="text-[10px] text-[#39ff14] font-bold tracking-widest uppercase text-right opacity-80">{t('workshopSettings')}</div>
+                            {/* PANEL DERECHO: MECÁNICA Y FÍSICA (Ventana macOS) */}
+                            <div className="absolute top-32 right-8 z-[60] flex flex-col gap-3 pointer-events-auto animate-in slide-in-right duration-500 scale-95 origin-top-right">
+                                <div className="mac-window overflow-hidden">
+                                    <div className="mac-titlebar px-3.5 py-2.5 flex justify-between items-center">
+                                        <div className="text-xs text-white/90 font-bold tracking-wider uppercase">{t('workshopSettings')}</div>
                                     </div>
-                                    <div className="flex flex-col gap-4">
+                                    <div className="p-3 flex flex-col gap-3">
                                         <GearShowcase key={`gear-${refreshPartsKey}`} selectedCarId={selectedCarId} currentConfig={carSetups[selectedCarId]} onUpdate={handleUpdateConfig} />
                                         <PinionShowcase key={`pinion-${refreshPartsKey}`} selectedCarId={selectedCarId} currentConfig={carSetups[selectedCarId]} onUpdate={handleUpdateConfig} />
                                         <WeightShowcase selectedCarId={selectedCarId} currentConfig={carSetups[selectedCarId]} onUpdate={handleUpdateConfig} />
@@ -7236,9 +7455,7 @@
                                 left: telemetryPos.x, 
                                 top: telemetryPos.y,
                                 position: 'absolute',
-                                zIndex: 60,
-                                transform: 'scale(0.85)',
-                                transformOrigin: 'bottom left'
+                                zIndex: 60
                             }}
                             onMouseDown={handleTelDown}
                             onTouchStart={handleTelDown}
@@ -7368,23 +7585,23 @@
                         </div>
                     )}
 
-                    {/* BARRA DE CONTROL INFERIOR - CENTRADA */}
-                    <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 pointer-events-auto z-[70] flex items-end gap-4 max-w-[95vw]">
-                        <div className="flex flex-col gap-2 shrink-0">
-                            <button onClick={() => window.location.href = 'circuitos.html'} className="flex items-center justify-center gap-2 bg-blue-600/90 hover:bg-blue-500 text-white border border-blue-400 px-6 py-3 rounded-full font-bold text-sm h-12 transition shadow-lg w-full">
-                                <Layers size={20}/> 2D
+                    {/* BARRA DE CONTROL INFERIOR - DOCK MACOS */}
+                    <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 pointer-events-auto z-[70] flex items-center gap-3 max-w-[98vw]">
+                        <div className="flex gap-2.5 shrink-0 mac-dock p-2">
+                            <button onClick={() => window.location.href = 'circuitos.html'} className="flex items-center justify-center gap-2 bg-[#0a84ff] hover:bg-[#0070e0] text-white px-5 py-2.5 rounded-xl font-bold text-sm h-11 transition shadow-sm">
+                                <Layers size={18}/> 2D
                             </button>
-                            <button onClick={onClose} className="flex items-center justify-center gap-2 bg-red-600/90 hover:bg-red-500 text-white border border-red-400 px-6 py-3 rounded-full font-bold text-sm h-12 transition shadow-lg w-full">
-                                <X size={20}/> {t('back')}
+                            <button onClick={onClose} className="flex items-center justify-center gap-2 bg-[#ff453a] hover:bg-[#e0352b] text-white px-5 py-2.5 rounded-xl font-bold text-sm h-11 transition shadow-sm">
+                                <X size={18}/> {t('back')}
                             </button>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto hide-scrollbar items-center bg-black/80 px-5 py-2 rounded-full border border-white/10 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] h-12 shrink-0">
+                        <div className="flex gap-3.5 overflow-x-auto hide-scrollbar items-center mac-dock px-5 py-2 h-[60px] shrink-0">
                             {/* BOTÓN LOCUTORA */}
-                            <button onClick={() => setAnnouncerEnabled(!announcerEnabled)} className={`w-[95px] shrink-0 px-2 py-1.5 rounded-full font-black text-[10px] uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 border-2 ${announcerEnabled ? 'bg-[#39ff14]/20 text-[#39ff14] border-[#39ff14] shadow-[0_0_15px_rgba(57,255,20,0.4)] scale-105' : 'bg-gray-800 text-gray-500 border-gray-600 hover:text-white hover:border-gray-500'}`} title={announcerEnabled ? t('voiceOff') : t('voiceOn')}>
-                                {announcerEnabled ? <Volume2 size={14} className="animate-pulse shrink-0"/> : <VolumeX size={14} className="shrink-0"/>}
-                                <span className="truncate">{t('voice')} {announcerEnabled ? 'ON' : 'OFF'}</span>
+                            <button onClick={() => setAnnouncerEnabled(!announcerEnabled)} className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shrink-0 ${announcerEnabled ? 'bg-[#30d158] text-black shadow-sm' : 'bg-white/10 text-gray-200 hover:bg-white/20 hover:text-white'}`} title={announcerEnabled ? t('voiceOff') : t('voiceOn')}>
+                                {announcerEnabled ? <Volume2 size={16} className="animate-pulse shrink-0"/> : <VolumeX size={16} className="shrink-0"/>}
+                                <span>{t('voice')} {announcerEnabled ? 'ON' : 'OFF'}</span>
                             </button>
-                            <div className="w-px h-6 bg-white/20 shrink-0"></div>
+                            <div className="w-px h-7 bg-white/15 shrink-0"></div>
 
                             {/* BOTÓN KRONO CAM */}
                             <button onClick={() => {
@@ -7392,48 +7609,48 @@
                                 if (!showKrono) {
                                     setAnnouncerEnabled(true);
                                 }
-                            }} className={`w-[95px] shrink-0 px-2 py-1.5 rounded-full font-black text-[10px] uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 border-2 ${showKrono ? 'bg-orange-500/20 text-orange-500 border-orange-500 shadow-[0_0_15px_rgba(255,69,0,0.4)] scale-105' : 'bg-gray-800 text-gray-500 border-gray-600 hover:text-white hover:border-gray-500'}`} title="KRONO CAM">
-                                <Crosshair size={14} className={showKrono ? "animate-[spin_4s_linear_infinite] shrink-0" : "shrink-0"}/>
-                                <span className="truncate">KRONO</span>
+                            }} className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shrink-0 ${showKrono ? 'bg-[#ff9f0a] text-black shadow-sm' : 'bg-white/10 text-gray-200 hover:bg-white/20 hover:text-white'}`} title="KRONO CAM">
+                                <Crosshair size={16} className={showKrono ? "animate-[spin_4s_linear_infinite] shrink-0" : "shrink-0"}/>
+                                <span>KRONO</span>
                             </button>
-                            <div className="w-px h-6 bg-white/20 shrink-0"></div>
+                            <div className="w-px h-7 bg-white/15 shrink-0"></div>
                             
                             <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex flex-col items-end mr-1"><span className="text-[8px] text-gray-500 font-bold uppercase leading-none">{t('total')}</span><span className="text-[8px] text-[#39ff14] font-bold uppercase leading-none">{t('laps')}</span></div>
-                                <button onClick={() => setTargetLaps(Math.max(1, targetLaps - 1))} className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-900 border border-gray-600 transition-all"><Minus size={10} /></button>
-                                <div className="bg-black border border-[#39ff14]/30 rounded px-2 w-10 text-center"><span className="font-digital text-lg text-[#39ff14]">{targetLaps}</span></div>
-                                <button onClick={() => setTargetLaps(targetLaps + 1)} className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-900 border border-gray-600 transition-all"><Plus size={10} /></button>
+                                <div className="flex flex-col items-end mr-1"><span className="text-[9px] text-gray-400 font-semibold uppercase leading-none">{t('total')}</span><span className="text-[10px] text-white font-bold uppercase leading-none mt-0.5">{t('laps')}</span></div>
+                                <button onClick={() => setTargetLaps(Math.max(1, targetLaps - 1))} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/25 text-white transition-all"><Minus size={14} /></button>
+                                <div className="bg-black/50 border border-white/15 rounded-xl px-2.5 py-1 w-12 text-center"><span className="font-digital text-lg text-[#0a84ff]">{targetLaps}</span></div>
+                                <button onClick={() => setTargetLaps(targetLaps + 1)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/25 text-white transition-all"><Plus size={14} /></button>
                             </div>
-                            <div className="w-px h-6 bg-white/20"></div>
+                            <div className="w-px h-7 bg-white/15"></div>
                             
-                            <div className="flex gap-2">
-                                <button onClick={() => { if (raceState === 'grid') startRaceSequence(); else if (paused) togglePause(); }} className="px-5 py-1.5 rounded-full font-black text-[10px] tracking-widest border border-[#39ff14] bg-[#39ff14]/10 text-[#39ff14] hover:bg-[#39ff14] hover:text-black transition-all flex items-center gap-2"><Play size={12} fill="currentColor"/> {t('start')}</button>
-                                <button onClick={togglePause} className="px-5 py-1.5 rounded-full font-black text-[10px] tracking-widest border border-yellow-500 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-black transition-all flex items-center gap-2"><Pause size={12} fill="currentColor"/> {paused ? t('resume') : t('pause')}</button>
+                            <div className="flex gap-2.5 shrink-0">
+                                <button onClick={() => { if (raceState === 'grid') startRaceSequence(); else if (paused) togglePause(); }} className="px-5 py-2.5 rounded-xl font-bold text-xs tracking-wider bg-[#30d158] text-black hover:brightness-110 transition-all flex items-center gap-2 shadow-sm"><Play size={15} fill="currentColor"/> {t('start')}</button>
+                                <button onClick={togglePause} className="px-5 py-2.5 rounded-xl font-bold text-xs tracking-wider bg-[#ffd60a] text-black hover:brightness-110 transition-all flex items-center gap-2 shadow-sm"><Pause size={15} fill="currentColor"/> {paused ? t('resume') : t('pause')}</button>
                             </div>
                             
-                            <div className="w-px h-6 bg-white/20"></div>
-                            <div className="flex items-center gap-2">
-                                <div className="flex flex-col items-end mr-1"><span className="text-[8px] text-gray-500 font-bold uppercase leading-none">{t('total')}</span><span className="text-[8px] text-[#39ff14] font-bold uppercase leading-none">{t('pilots')}</span></div>
-                                <button onClick={() => setNumCars(Math.max(1, numCars - 1))} className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-900 border border-gray-600 transition-all"><Minus size={10} /></button>
-                                <div className="bg-black border border-[#39ff14]/30 rounded px-2 w-10 text-center"><span className="font-digital text-lg text-[#39ff14]">{numCars}</span></div>
-                                <button onClick={() => setNumCars(Math.min(8, numCars + 1))} className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-900 border border-gray-600 transition-all"><Plus size={10} /></button>
+                            <div className="w-px h-7 bg-white/15"></div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex flex-col items-end mr-1"><span className="text-[9px] text-gray-400 font-semibold uppercase leading-none">{t('total')}</span><span className="text-[10px] text-white font-bold uppercase leading-none mt-0.5">{t('pilots')}</span></div>
+                                <button onClick={() => setNumCars(Math.max(1, numCars - 1))} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/25 text-white transition-all"><Minus size={14} /></button>
+                                <div className="bg-black/50 border border-white/15 rounded-xl px-2.5 py-1 w-12 text-center"><span className="font-digital text-lg text-[#0a84ff]">{numCars}</span></div>
+                                <button onClick={() => setNumCars(Math.min(8, numCars + 1))} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/25 text-white transition-all"><Plus size={14} /></button>
                             </div>
-                            <div className="w-px h-6 bg-white/20"></div>
+                            <div className="w-px h-7 bg-white/15"></div>
 
-                            {/* BOTÓN MENÚ CON ANCHO FIJO */}
-                            <button onClick={enterGridMode} className="w-[115px] flex items-center justify-center px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase bg-gray-800 text-gray-400 hover:text-white transition-all">{t('menu')}</button>
-                            <div className="w-px h-6 bg-white/20"></div>
+                            {/* BOTÓN MENÚ */}
+                            <button onClick={enterGridMode} className="px-5 py-2.5 rounded-xl font-bold text-xs tracking-wider uppercase bg-white/10 text-gray-200 hover:bg-white/20 hover:text-white transition-all shrink-0">{t('menu')}</button>
+                            <div className="w-px h-7 bg-white/15"></div>
                             
-                            {/* BOTÓN POLARIDAD CON ANCHO FIJO */}
+                            {/* BOTÓN POLARIDAD */}
                             <button onClick={() => {
                                 if (raceState === 'grid' || raceState === 'idle') {
                                     setIsReversed(!isReversed);
                                 } else {
                                     showValidationError(t('alertPolarity'));
                                 }
-                            }} className={`w-[115px] px-2 py-1.5 rounded-full font-black text-[10px] uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 border-2 ${isReversed ? 'bg-[#39ff14] text-black border-[#39ff14] shadow-[0_0_40px_#39ff14] scale-105' : 'bg-[#39ff14]/20 text-[#39ff14] border-[#39ff14] shadow-[0_0_20px_rgba(57,255,20,0.6),inset_0_0_10px_rgba(57,255,20,0.3)] [text-shadow:0_0_8px_#39ff14] hover:bg-[#39ff14]/40 hover:shadow-[0_0_35px_#39ff14]'}`} title={t('polarityChange')}>
-                                <Repeat size={12} className={`shrink-0 ${isReversed ? "animate-[spin_4s_linear_infinite]" : ""}`} /> 
-                                <span className="truncate">{t('polarity')} {isReversed ? 'I' : 'N'}</span>
+                            }} className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shrink-0 ${isReversed ? 'bg-[#0a84ff] text-white shadow-sm' : 'bg-white/10 text-gray-200 hover:bg-white/20'}`} title={t('polarityChange')}>
+                                <Repeat size={15} className={`shrink-0 ${isReversed ? "animate-[spin_4s_linear_infinite]" : ""}`} /> 
+                                <span>{t('polarity')} {isReversed ? 'I' : 'N'}</span>
                             </button>
                         </div>
                     </div>
@@ -7663,9 +7880,9 @@
                 try { 
                     const d = JSON.parse(ev.target.result); 
                     if (d.brand && d.pieces) { 
-                        setCircuitData({ brand: d.brand, pieces: d.pieces }); 
+                        setCircuitData(d); 
                         // 2. GUARDAR EN MEMORIA AL CARGAR MANUALMENTE
-                        localStorage.setItem('slot_last_circuit', JSON.stringify({ brand: d.brand, pieces: d.pieces }));
+                        localStorage.setItem('slot_last_circuit', JSON.stringify(d));
                     } else {
                         console.error("Formato de circuito inválido");
                     }
@@ -7692,61 +7909,68 @@
 
           return (
             <LanguageContext.Provider value={{ lang, t, handleLangChange }}>
-                <div className="flex flex-col h-[100dvh] w-full bg-[#0a0a0a] overflow-hidden font-sans select-none text-gray-200 justify-center items-center relative">
+                <div className="flex flex-col h-[100dvh] w-full overflow-hidden font-sans select-none text-gray-100 justify-center items-center relative" style={{ background: 'radial-gradient(circle at 20% 20%, #1e3a8a 0%, #0f172a 45%, #020617 100%)' }}>
                     
-                    {/* BANDERAS DE IDIOMA */}
-                    <div className="absolute top-6 right-6 z-50 flex flex-row items-center bg-black/60 border border-gray-600 rounded-2xl p-1 shadow-[0_0_20px_rgba(0,0,0,0.5)] backdrop-blur-md">
-                        <button onClick={() => handleLangChange('es')} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${lang === 'es' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
-                            <span className="text-lg leading-none">🇪🇸</span> ES
-                        </button>
-                        <button onClick={() => handleLangChange('en')} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${lang === 'en' ? 'bg-[#39ff14] text-black shadow-[0_0_10px_#39ff14]' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
-                            <span className="text-lg leading-none">🇬🇧</span> EN
-                        </button>
-                    </div>
-
-                    {/* LOBBY SCREEN */}
-                    <div className="absolute inset-0 opacity-20 pointer-events-none" style={{backgroundImage: 'radial-gradient(#39ff14 1px, transparent 1px)', backgroundSize: '40px 40px'}}></div>
-                    <div className="z-10 flex flex-col items-center gap-8 animate-in w-full max-w-4xl px-4">
-                        <div className="text-center">
-                            <Activity size={80} className="text-[#39ff14] mx-auto mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(57,255,20,0.6)]"/>
-                            <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase drop-shadow-xl">TRACKS & TELEMETRY</h1>
-                            <p className="text-[#39ff14] font-mono text-xl tracking-[0.5em] mt-2 font-bold">3D PLAYER</p>
+                    {/* BARRA DE MENÚ SUPERIOR ESTILO MACOS */}
+                    <div className="absolute top-0 left-0 right-0 h-8 bg-black/40 backdrop-blur-xl border-b border-white/10 px-4 flex items-center justify-between z-50 text-xs">
+                        <div className="flex items-center gap-4">
+                            <span className="font-black tracking-tight text-white flex items-center gap-1.5">🍎 Slot 3D Player</span>
+                            <span className="text-gray-300 font-medium hidden sm:inline">Archivo</span>
+                            <span className="text-gray-300 font-medium hidden sm:inline">Edición</span>
+                            <span className="text-gray-300 font-medium hidden sm:inline">Visualización</span>
+                            <span className="text-gray-300 font-medium hidden sm:inline">Ventana</span>
                         </div>
-
-                        <div className="bg-black/50 p-10 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6 w-full">
-                            <div className="text-center space-y-2 mb-4">
-                                <h2 className="text-2xl font-bold text-white">{t('lobbyTitle')}</h2>
-                                <p className="text-gray-400 text-sm">{t('lobbySub')}</p>
-                            </div>
-                            
-                            <div className="flex flex-col md:flex-row gap-6 w-full justify-center">
-                                {/* BOTÓN CARGAR ARCHIVO JSON */}
-                                <label className="group relative cursor-pointer flex-1 max-w-xs">
-                                    <div className="absolute -inset-1 bg-gradient-to-r from-[#39ff14] to-emerald-600 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                                    <div className="relative px-6 py-8 bg-gray-900 ring-1 ring-gray-900/5 rounded-xl leading-none flex flex-col items-center justify-center gap-4 h-full hover:bg-gray-800 transition-colors">
-                                        <CloudUpload className="w-12 h-12 text-[#39ff14] group-hover:scale-110 transition-transform duration-300" />
-                                        <span className="text-gray-300 group-hover:text-white transition-colors font-bold uppercase tracking-wider text-center text-sm">{t('btnLoad')}</span>
-                                    </div>
-                                    <input type="file" accept=".json" onChange={loadCircuit} className="hidden" />
-                                </label>
-
-                                {/* BOTÓN IR AL DISEÑADOR 2D */}
-                                <button onClick={() => window.location.href = 'circuitos.html'} className="group relative flex-1 max-w-xs">
-                                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                                    <div className="relative px-6 py-8 bg-gray-900 ring-1 ring-gray-900/5 rounded-xl leading-none flex flex-col items-center justify-center gap-4 h-full hover:bg-gray-800 transition-colors">
-                                        <PenTool className="w-12 h-12 text-cyan-400 group-hover:scale-110 transition-transform duration-300" />
-                                        <span className="text-gray-300 group-hover:text-white transition-colors font-bold uppercase tracking-wider text-center text-sm">{t('btn2D')}</span>
-                                    </div>
-                                </button>
-                            </div>
-                            
-                            {/* Botón opcional para borrar memoria */}
-                            <button onClick={() => { localStorage.removeItem('slot_last_circuit'); sessionStorage.removeItem('slot_last_circuit'); console.log("Memoria de circuito borrada."); }} className="text-[10px] text-gray-600 hover:text-red-400 mt-6 uppercase tracking-widest transition-colors border-b border-transparent hover:border-red-400/50 pb-0.5">
-                                {t('clearCache')}
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => handleLangChange('es')} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold transition-all ${lang === 'es' ? 'bg-[#0a84ff] text-white' : 'text-gray-300 hover:bg-white/10'}`}>
+                                <span>🇪🇸</span> ES
+                            </button>
+                            <button onClick={() => handleLangChange('en')} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold transition-all ${lang === 'en' ? 'bg-[#0a84ff] text-white' : 'text-gray-300 hover:bg-white/10'}`}>
+                                <span>🇬🇧</span> EN
                             </button>
                         </div>
+                    </div>
 
-                        <div className="text-[10px] text-gray-600 font-mono absolute bottom-4">V.2.0 PLAYER - POWERED BY REACT & THREE.JS</div>
+                    {/* LOBBY WINDOW ESTILO MACOS */}
+                    <div className="z-10 flex flex-col items-center gap-6 animate-in w-full max-w-2xl px-4">
+                        <div className="mac-window w-full overflow-hidden">
+                            <div className="mac-titlebar px-4 py-3 flex items-center justify-center">
+                                <span className="text-xs font-semibold text-gray-300 tracking-wide">Tracks & Telemetry — 3D Player</span>
+                            </div>
+
+                            <div className="p-8 sm:p-10 flex flex-col items-center gap-6">
+                                <div className="text-center">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0a84ff] to-[#5e5ce6] flex items-center justify-center mx-auto mb-3 shadow-lg border border-white/20">
+                                        <Activity size={36} className="text-white"/>
+                                    </div>
+                                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Slot Circuit 3D</h1>
+                                    <p className="text-gray-400 text-xs mt-1">{t('lobbySub')}</p>
+                                </div>
+                                
+                                <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-2">
+                                    {/* BOTÓN CARGAR ARCHIVO JSON */}
+                                    <label className="group cursor-pointer flex-1">
+                                        <div className="px-6 py-7 bg-white/10 hover:bg-[#0a84ff]/25 border border-white/15 hover:border-[#0a84ff] rounded-2xl flex flex-col items-center justify-center gap-3 h-full transition-all">
+                                            <CloudUpload className="w-11 h-11 text-[#0a84ff] group-hover:scale-110 transition-transform duration-200" />
+                                            <span className="text-white font-bold text-center text-sm tracking-wide">{t('btnLoad')}</span>
+                                        </div>
+                                        <input type="file" accept=".json" onChange={loadCircuit} className="hidden" />
+                                    </label>
+
+                                    {/* BOTÓN IR AL DISEÑADOR 2D */}
+                                    <button onClick={() => window.location.href = 'circuitos.html'} className="group flex-1">
+                                        <div className="px-6 py-7 bg-white/10 hover:bg-[#30d158]/25 border border-white/15 hover:border-[#30d158] rounded-2xl flex flex-col items-center justify-center gap-3 h-full transition-all">
+                                            <PenTool className="w-11 h-11 text-[#30d158] group-hover:scale-110 transition-transform duration-200" />
+                                            <span className="text-white font-bold text-center text-sm tracking-wide">{t('btn2D')}</span>
+                                        </div>
+                                    </button>
+                                </div>
+                                
+                                {/* Botón para borrar memoria */}
+                                <button onClick={() => { localStorage.removeItem('slot_last_circuit'); sessionStorage.removeItem('slot_last_circuit'); console.log("Memoria de circuito borrada."); }} className="text-xs font-semibold text-gray-300 hover:text-[#ff453a] mt-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                    {t('clearCache')}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </LanguageContext.Provider>
