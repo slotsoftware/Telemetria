@@ -432,17 +432,14 @@
         const GearSVG = memo(({ teeth, color, material }) => (<svg viewBox="0 0 60 60" className="w-full h-full transform transition-transform hover:rotate-90 duration-500"><path d="M30,2 L32,6 L36,6 L38,2 L42,4 L42,8 L46,10 L48,6 L52,9 L50,14 L54,16 L58,14 L58,19 L54,22 L56,26 L60,28 L58,32 L54,34 L56,38 L58,41 L54,44 L50,42 L48,46 L52,50 L48,54 L44,52 L42,56 L38,58 L36,54 L32,54 L30,58 L26,56 L24,52 L20,54 L16,50 L20,46 L18,42 L14,44 L10,41 L12,37 L8,34 L4,32 L2,28 L6,26 L8,22 L4,19 L4,14 L8,16 L12,14 L10,9 L14,6 L16,10 L20,8 L20,4 L24,2 L26,6 L30,6 Z" fill={color} stroke="#000" strokeWidth="0.5"/><circle cx="30" cy="30" r="10" fill={material==='Bronce'?'#92400e':(material==='Dural'?'#94a3b8':'#e2e8f0')} stroke="#000" strokeWidth="1"/><circle cx="30" cy="30" r="3" fill="#000"/></svg>));
         const PinionSVG = memo(({ teeth, material, diameter }) => (<svg viewBox="0 0 40 40" className="w-full h-full transform transition-transform hover:rotate-180 duration-500"><circle cx="20" cy="20" r="18" fill="none" stroke="#666" strokeWidth="2" strokeDasharray="3,1"/><path d="M20,2 L23,5 L28,5 L30,8 L35,10 L35,15 L32,18 L35,22 L35,28 L30,32 L25,32 L22,35 L18,35 L15,32 L10,32 L5,28 L5,22 L8,18 L5,15 L5,10 L10,8 L12,5 L17,5 Z" fill={material==='Latón'?'#fbbf24':(material==='Nylon'?'#fff':'#94a3b8')} stroke="#000" strokeWidth="0.5"/><circle cx="20" cy="20" r="4" fill="#000"/></svg>));
         
-        const MacTrafficLights = ({ onClose }) => (
-            <div className="mac-dots shrink-0">
-                {onClose ? (
-                    <button onClick={onClose} className="mac-dot mac-dot-red hover:brightness-110 transition-all cursor-pointer" title="Cerrar"></button>
-                ) : (
-                    <span className="mac-dot mac-dot-red"></span>
-                )}
-                <span className="mac-dot mac-dot-yellow"></span>
-                <span className="mac-dot mac-dot-green"></span>
-            </div>
-        );
+        const MacTrafficLights = ({ onClose }) => {
+            if (!onClose) return null;
+            return (
+                <button onClick={onClose} className="text-gray-400 hover:text-white bg-white/10 hover:bg-white/20 p-1 rounded-full transition-all cursor-pointer shrink-0" title="Cerrar">
+                    <X size={12} />
+                </button>
+            );
+        };
 
         /* --- COMPONENTE GLB VIEWER (HOMO) --- */
         const GLBViewer = ({ onClose, onLoad, onTransform, carAssets, carNames, onNameChange }) => { 
@@ -1610,7 +1607,7 @@
             useEffect(() => { cameraModeRef.current = cameraMode; }, [cameraMode]);
 
             // --- NUEVO: ESTADO DE PUENTES ---
-            const bridgeMode = 'Básico'; // Optimizado para máximo rendimiento
+            const bridgeMode = 'Medio'; // Mayor altura y realismo en puentes y pasos inferiores
             
             // --- NUEVO: ESTADO SENTIDO INVERTIDO ---
             const [isReversed, setIsReversed] = useState(false);
@@ -2352,8 +2349,49 @@
                 const onTouchEnd = () => { isDragging = false; };
 
                 const createCar = (id, color) => { const pg = new THREE.Group(), vg = new THREE.Group(); pg.add(vg); const bm = new THREE.MeshLambertMaterial({ color }), bg = new THREE.BoxGeometry(4.5, 1.2, 9), b = new THREE.Mesh(bg, bm); b.position.y = 0.8; b.castShadow = true; vg.add(b); const cg = new THREE.BoxGeometry(3.5, 0.8, 4), cm = new THREE.MeshLambertMaterial({ color: 0x111111 }), c = new THREE.Mesh(cg, cm); c.position.y = 1.8; vg.add(c); const wg = new THREE.CylinderGeometry(1.2, 1.2, 0.8, 16); wg.rotateZ(Math.PI/2); const wm = new THREE.MeshLambertMaterial({ color: 0x222222 }); [[-2.5, 3], [2.5, 3], [-2.5, -3], [2.5, -3]].forEach(p => { const w = new THREE.Mesh(wg, wm); w.position.set(p[0], 1.2, p[1]); vg.add(w); }); return pg; };
-                const createAsphaltTexture = (r, bc) => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const cx = cv.getContext('2d'); cx.fillStyle = bc || '#080808'; cx.fillRect(0, 0, 512, 512); for (let i = 0; i < 30000; i++) { const v = 15 + Math.floor(Math.random() * 30); cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.2)`; cx.fillRect(Math.random() * 512, Math.random() * 512, 1.5, 1.5); } const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; return t; };
-                const createStoneTexture = () => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const cx = cv.getContext('2d'); cx.fillStyle = '#333333'; cx.fillRect(0, 0, 512, 512); const rows = 12; const cols = 6; const bh = 512 / rows; const bw = 512 / cols; for (let r = 0; r < rows; r++) { const offset = (r % 2 === 0) ? 0 : bw / 2; for (let c = -1; c < cols + 1; c++) { const x = c * bw + offset; const y = r * bh; const shade = 70 + Math.random() * 40; cx.fillStyle = `rgb(${shade}, ${shade-5}, ${shade-10})`; cx.fillRect(x + 2, y + 2, bw - 4, bh - 4); for(let i=0; i<40; i++){ cx.fillStyle = 'rgba(0,0,0,0.15)'; cx.fillRect(x + Math.random()*bw, y + Math.random()*bh, 2, 2); } } } const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; return t; };
+                const createAsphaltTexture = (r, bc) => { 
+                    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; 
+                    const cx = cv.getContext('2d'); 
+                    cx.fillStyle = bc || '#18181b'; cx.fillRect(0, 0, 512, 512); 
+                    // Grano mineral asfáltico realista
+                    for (let i = 0; i < 45000; i++) { 
+                        const v = 10 + Math.floor(Math.random() * 45); 
+                        cx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.28)`; 
+                        cx.fillRect(Math.random() * 512, Math.random() * 512, 1.5, 1.5); 
+                    }
+                    // Marcas sutiles longitudinales de goma de neumáticos y desgaste
+                    cx.fillStyle = 'rgba(5, 5, 5, 0.18)';
+                    for (let k = 0; k < 12; k++) {
+                        const xPos = 60 + Math.random() * 392;
+                        cx.fillRect(xPos, 0, 6 + Math.random() * 14, 512);
+                    }
+                    // Líneas blancas pintadas en los bordes del asfalto
+                    cx.fillStyle = 'rgba(240, 240, 240, 0.85)';
+                    cx.fillRect(6, 0, 8, 512);
+                    cx.fillRect(498, 0, 8, 512);
+
+                    const t = new THREE.CanvasTexture(cv); 
+                    t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; 
+                    if (r && r.capabilities) t.anisotropy = Math.min(8, r.capabilities.getMaxAnisotropy());
+                    return t; 
+                };
+                const createCurbTexture = (r) => {
+                    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 256;
+                    const cx = cv.getContext('2d');
+                    // Mitad roja, mitad blanca estilo piano FIA
+                    cx.fillStyle = '#dc2626'; cx.fillRect(0, 0, 64, 128);
+                    cx.fillStyle = '#f8fafc'; cx.fillRect(0, 128, 64, 128);
+                    // Textura de desgaste y suciedad
+                    for (let i = 0; i < 1500; i++) {
+                        cx.fillStyle = 'rgba(0,0,0,0.12)';
+                        cx.fillRect(Math.random() * 64, Math.random() * 256, 2, 2);
+                    }
+                    const t = new THREE.CanvasTexture(cv);
+                    t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping;
+                    if (r && r.capabilities) t.anisotropy = Math.min(4, r.capabilities.getMaxAnisotropy());
+                    return t;
+                };
+                const createStoneTexture = () => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const cx = cv.getContext('2d'); cx.fillStyle = '#27272a'; cx.fillRect(0, 0, 512, 512); const rows = 12; const cols = 6; const bh = 512 / rows; const bw = 512 / cols; for (let r = 0; r < rows; r++) { const offset = (r % 2 === 0) ? 0 : bw / 2; for (let c = -1; c < cols + 1; c++) { const x = c * bw + offset; const y = r * bh; const shade = 65 + Math.random() * 45; cx.fillStyle = `rgb(${shade}, ${shade-3}, ${shade-8})`; cx.fillRect(x + 2, y + 2, bw - 4, bh - 4); for(let i=0; i<45; i++){ cx.fillStyle = 'rgba(0,0,0,0.18)'; cx.fillRect(x + Math.random()*bw, y + Math.random()*bh, 2, 2); } } } const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; return t; };
 
                 const init3D = () => {
                     // --- POOL DE MEMORIA (GC OPTIMIZATION) ---
@@ -2465,45 +2503,47 @@
                     // --- GENERACIÓN DINÁMICA DE CARRILES (SOPORTA 2, 4, 6, 8... CARRILES) ---
                     const rails = { lanes: Array.from({length: numLanes}, () => []), pit: [], changes: [] }, vertexDistances = [0]; let accumulatedDist = 0;
                     
-                    scene = new THREE.Scene(); scene.background = new THREE.Color(0x3b5f7d); scene.fog = new THREE.Fog(0x3b5f7d, 500, 3000); 
+                    scene = new THREE.Scene(); scene.background = new THREE.Color(0x1e293b); scene.fog = new THREE.FogExp2(0x1e293b, 0.00045); 
                     
-                    const gridHelper = new THREE.GridHelper(10000, 200, 0x39ff14, 0x39ff14);
+                    const gridHelper = new THREE.GridHelper(10000, 200, 0x38bdf8, 0x334155);
                     gridHelper.position.y = -10.0; // Bajado para dejar espacio al nuevo tablero
                     gridHelper.material.transparent = true;
-                    gridHelper.material.opacity = 0.1; 
+                    gridHelper.material.opacity = 0.08; 
                     scene.add(gridHelper);
 
                     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 5000); 
-                    renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" }); // Desactivado antialias para max FPS
+                    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
                     renderer.setSize(window.innerWidth, window.innerHeight); 
-                    renderer.setPixelRatio(1.0); // OPTIMIZACIÓN EXTREMA: Forzar a 1 para evitar asfixiar gráficas móviles o Retina
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
                     renderer.shadowMap.enabled = true;
-                    renderer.shadowMap.type = THREE.BasicShadowMap; // Sombras básicas sin difuminado suave (libera muchísimo cálculo)
+                    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Sombras suaves de alta calidad para puentes y coches
                     
                     // MEJORA DE COLOR Y CONTRASTE PARA MODELOS 3D
                     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                    renderer.toneMappingExposure = 1.1;
+                    renderer.toneMappingExposure = 1.15;
                     renderer.outputEncoding = THREE.sRGBEncoding;
 
                     while(containerRef.current.firstChild) containerRef.current.removeChild(containerRef.current.firstChild); containerRef.current.appendChild(renderer.domElement);
                     
-                    // LUZ HEMISFÉRICA: Da volumen (cielo claro, suelo oscuro) en vez de luz ambiental plana
-                    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+                    // LUZ HEMISFÉRICA: Cielo cálido/azulado y rebote de césped oscuro
+                    const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x14281d, 0.65);
                     scene.add(hemiLight);
                     
-                    // LUZ PRINCIPAL (SOL)
-                    const dl = new THREE.DirectionalLight(0xffffff, 1.8); 
-                    dl.position.set(150, 300, 100); 
+                    // LUZ PRINCIPAL (SOL CON SOMBRAS REALISTAS DE PUENTES)
+                    const dl = new THREE.DirectionalLight(0xfffbeb, 2.1); 
+                    dl.position.set(180, 340, 140); 
                     dl.castShadow = true; 
-                    dl.shadow.mapSize.width = 1024; // Sombra más definida
-                    dl.shadow.mapSize.height = 1024;
-                    dl.shadow.camera.left = -300; dl.shadow.camera.right = 300; dl.shadow.camera.top = 300; dl.shadow.camera.bottom = -300; dl.shadow.camera.far = 1500;
-                    dl.shadow.bias = -0.0005; // Eliminar artifacts
+                    dl.shadow.mapSize.width = 2048; // Alta resolución para sombras nítidas bajo los puentes
+                    dl.shadow.mapSize.height = 2048;
+                    dl.shadow.camera.near = 10;
+                    dl.shadow.camera.far = 1600;
+                    dl.shadow.bias = -0.0006;
+                    dl.shadow.normalBias = 0.04;
                     scene.add(dl);
                     
-                    // LUZ DE RELLENO: Ilumina los laterales oscuros
-                    const fillLight = new THREE.DirectionalLight(0x90b0d0, 0.5); 
-                    fillLight.position.set(-150, 100, -100); 
+                    // LUZ DE RELLENO SUAVE
+                    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.45); 
+                    fillLight.position.set(-180, 120, -140); 
                     scene.add(fillLight);
                     
                     // Cálculo de Ancho de Asfalto y Offsets Dinámicos
@@ -3016,15 +3056,22 @@
                         }
                     }
 
-                    // --- AUTO-GENERACIÓN DE MUROS REALISTAS Y TÚNELES ---
+                    // --- AUTO-GENERACIÓN DE MUROS REALISTAS, PIANOS Y TÚNELES DE PUENTES ---
                     const wallVerts = []; const wallIndices = []; const wallUVs = [];
                     const bottomVerts = []; const bottomIndices = []; const bottomUVs = [];
+                    const curbVerts = []; const curbIndices = []; const curbUVs = [];
+                    const guardrailPosts = new THREE.Group();
+                    const postGeo = new THREE.BoxGeometry(0.45, 2.2, 0.45);
+                    const postMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4, metalness: 0.7 });
+                    const railBarrierVerts = []; const railBarrierIndices = [];
                     
                     const totalTrackWidth = stdHalfL + stdHalfR;
                     let tunnelRadius = (totalTrackWidth / 2) + 8.0; 
                     let tunnelClearance = 9.0; 
-                    let depthOffset = 1.5; 
-                    const floorY = -1.0; // <-- SOLUCIÓN: Bajamos la raíz de los muros para que penetren en el nuevo tablero y no floten
+                    let depthOffset = 1.6; 
+                    const floorY = -1.0; // Raíz de los muros dentro del tablero
+                    const curbWidth = 1.65;
+                    const curbHeight = 0.14;
                     
                     const getTunnelBottomY = (x, z, currentY, currentDist) => {
                         let bottomY = floorY; 
@@ -3059,26 +3106,76 @@
                         const xR = asphaltVerts[s * 6 + 3], yR = asphaltVerts[s * 6 + 4], zR = asphaltVerts[s * 6 + 5];
                         const dist = asphaltDists[s];
                         
-                        let bottomL = yL > 0.5 ? getTunnelBottomY(xL, zL, yL, dist) : floorY;
-                        let bottomR = yR > 0.5 ? getTunnelBottomY(xR, zR, yR, dist) : floorY;
+                        // Vector lateral normalizado de la pista
+                        const dx = xR - xL, dz = zR - zL;
+                        const len = Math.hypot(dx, dz) || 1;
+                        const nx = dx / len, nz = dz / len;
+
+                        // Posiciones exteriores para pianos (bordillos rojo/blanco)
+                        const oxL = xL - nx * curbWidth, ozL = zL - nz * curbWidth;
+                        const oxR = xR + nx * curbWidth, ozR = zR + nz * curbWidth;
+
+                        curbVerts.push(
+                            oxL, yL + 0.02, ozL,
+                            xL, yL + curbHeight, zL,
+                            xR, yR + curbHeight, zR,
+                            oxR, yR + 0.02, ozR
+                        );
+                        const uV = dist * 0.12;
+                        curbUVs.push(0, uV, 1, uV, 0, uV, 1, uV);
+
+                        // Barreras protectoras metálicas en los puentes (tramos elevados)
+                        const isBridgeSlice = (yL > 1.8 || yR > 1.8);
+                        const barrierH = 1.6;
+                        railBarrierVerts.push(
+                            oxL, isBridgeSlice ? yL + barrierH : yL - 0.5, ozL,
+                            oxL, isBridgeSlice ? yL + 0.3 : yL - 0.5, ozL,
+                            oxR, isBridgeSlice ? yR + barrierH : yR - 0.5, ozR,
+                            oxR, isBridgeSlice ? yR + 0.3 : yR - 0.5, ozR
+                        );
+
+                        if (isBridgeSlice && s % 6 === 0) {
+                            const postL = new THREE.Mesh(postGeo, postMat);
+                            postL.position.set(oxL, yL + 0.9, ozL);
+                            postL.castShadow = true; postL.receiveShadow = true;
+                            guardrailPosts.add(postL);
+
+                            const postR = new THREE.Mesh(postGeo, postMat);
+                            postR.position.set(oxR, yR + 0.9, ozR);
+                            postR.castShadow = true; postR.receiveShadow = true;
+                            guardrailPosts.add(postR);
+                        }
+
+                        let bottomL = yL > 0.35 ? getTunnelBottomY(oxL, ozL, yL, dist) : floorY;
+                        let bottomR = yR > 0.35 ? getTunnelBottomY(oxR, ozR, yR, dist) : floorY;
                         
                         bottomL = Math.max(floorY, bottomL);
                         bottomR = Math.max(floorY, bottomR);
                         
-                        wallVerts.push(xL, yL, zL); wallVerts.push(xL, bottomL, zL); 
-                        wallUVs.push(dist * 0.1, yL * 0.1); wallUVs.push(dist * 0.1, bottomL * 0.1);
+                        wallVerts.push(oxL, yL + 0.02, ozL); wallVerts.push(oxL, bottomL, ozL); 
+                        wallUVs.push(dist * 0.08, yL * 0.08); wallUVs.push(dist * 0.08, bottomL * 0.08);
                         
-                        wallVerts.push(xR, yR, zR); wallVerts.push(xR, bottomR, zR);
-                        wallUVs.push(dist * 0.1, yR * 0.1); wallUVs.push(dist * 0.1, bottomR * 0.1);
+                        wallVerts.push(oxR, yR + 0.02, ozR); wallVerts.push(oxR, bottomR, ozR);
+                        wallUVs.push(dist * 0.08, yR * 0.08); wallUVs.push(dist * 0.08, bottomR * 0.08);
                         
-                        bottomVerts.push(xL, bottomL, zL); bottomVerts.push(xR, bottomR, zR);
-                        const bottomIndices = []; const bottomUVs = [];
+                        bottomVerts.push(oxL, bottomL, ozL); bottomVerts.push(oxR, bottomR, ozR);
+                        bottomUVs.push(0, dist * 0.08, 1, dist * 0.08);
                         
                         if (s > 0) {
                             const cur = s * 4, prev = (s - 1) * 4;
                             wallIndices.push(prev, prev + 1, cur); wallIndices.push(prev + 1, cur + 1, cur);
                             wallIndices.push(prev + 2, cur + 2, prev + 3); wallIndices.push(prev + 3, cur + 2, cur + 3);
                             
+                            // Índices de pianos izquierdo y derecho
+                            curbIndices.push(prev, cur, prev + 1); curbIndices.push(prev + 1, cur, cur + 1);
+                            curbIndices.push(prev + 2, cur + 2, prev + 3); curbIndices.push(prev + 3, cur + 2, cur + 3);
+
+                            // Índices de vallas de puente si este segmento está elevado
+                            if (isBridgeSlice) {
+                                railBarrierIndices.push(prev, prev + 1, cur); railBarrierIndices.push(prev + 1, cur + 1, cur);
+                                railBarrierIndices.push(prev + 2, cur + 2, prev + 3); railBarrierIndices.push(prev + 3, cur + 2, cur + 3);
+                            }
+
                             const curB = s * 2, prevB = (s - 1) * 2;
                             bottomIndices.push(prevB, curB, prevB + 1);
                             bottomIndices.push(prevB + 1, curB, curB + 1);
@@ -3096,16 +3193,42 @@
                     bottomGeom.setAttribute('uv', new THREE.Float32BufferAttribute(bottomUVs, 2));
                     bottomGeom.setIndex(bottomIndices);
                     bottomGeom.computeVertexNormals();
+
+                    const curbGeom = new THREE.BufferGeometry();
+                    curbGeom.setAttribute('position', new THREE.Float32BufferAttribute(curbVerts, 3));
+                    curbGeom.setAttribute('uv', new THREE.Float32BufferAttribute(curbUVs, 2));
+                    curbGeom.setIndex(curbIndices);
+                    curbGeom.computeVertexNormals();
                     
                     const stoneTexture = createStoneTexture();
                     stoneTexture.repeat.set(0.5, 0.5);
-                    const structMat = new THREE.MeshLambertMaterial({ map: stoneTexture, side: THREE.DoubleSide });
+                    const structMat = new THREE.MeshStandardMaterial({ map: stoneTexture, roughness: 0.85, metalness: 0.1, side: THREE.DoubleSide });
                     const wallMesh = new THREE.Mesh(wallGeom, structMat);
-                    wallMesh.receiveShadow = false; wallMesh.castShadow = false; // PREVENCIÓN LAG: Desactivar sombras de muros estáticos
+                    // ACTIVACIÓN DE SOMBRAS REALES EN PUENTES Y MUROS
+                    wallMesh.receiveShadow = true; wallMesh.castShadow = true; 
                     trackGroup.add(wallMesh);
+
                     const bottomMesh = new THREE.Mesh(bottomGeom, structMat);
-                    bottomMesh.receiveShadow = false; bottomMesh.castShadow = false; // PREVENCIÓN LAG: Desactivar sombras de base estática
+                    bottomMesh.receiveShadow = true; bottomMesh.castShadow = true;
                     trackGroup.add(bottomMesh);
+
+                    const curbTex = createCurbTexture(renderer);
+                    const curbMat = new THREE.MeshStandardMaterial({ map: curbTex, roughness: 0.6, metalness: 0.05, side: THREE.DoubleSide });
+                    const curbMesh = new THREE.Mesh(curbGeom, curbMat);
+                    curbMesh.receiveShadow = true; curbMesh.castShadow = true;
+                    trackGroup.add(curbMesh);
+
+                    if (railBarrierIndices.length > 0) {
+                        const barrierGeom = new THREE.BufferGeometry();
+                        barrierGeom.setAttribute('position', new THREE.Float32BufferAttribute(railBarrierVerts, 3));
+                        barrierGeom.setIndex(railBarrierIndices);
+                        barrierGeom.computeVertexNormals();
+                        const barrierMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.35, metalness: 0.75, side: THREE.DoubleSide });
+                        const barrierMesh = new THREE.Mesh(barrierGeom, barrierMat);
+                        barrierMesh.castShadow = true; barrierMesh.receiveShadow = true;
+                        trackGroup.add(barrierMesh);
+                        trackGroup.add(guardrailPosts);
+                    }
 
                     // -----------------------------------------------------------------
 
@@ -3168,7 +3291,7 @@
                         const leftPath = new THREE.CatmullRomCurve3(leftPts);
                         const rightPath = new THREE.CatmullRomCurve3(rightPts);
 
-                        const railM = new THREE.MeshLambertMaterial({ color: 0xd0d0d0 }); 
+                        const railM = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2 }); 
                         const railRadius = w/4.5;
                         
                         // Generar Riel Izquierdo
@@ -3189,7 +3312,10 @@
                     const createMultiSegmentRailMesh = (points, color, width=0.6) => { let currentSegment = []; for (let p of points) { if (p === null) { if (currentSegment.length > 1) createRailMesh(currentSegment, color, width); currentSegment = []; } else { currentSegment.push(p); } } if (currentSegment.length > 1) createRailMesh(currentSegment, color, width); };
 
                     const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(asphaltVerts, 3)); ag.setAttribute('uv', new THREE.Float32BufferAttribute(asphaltUVs, 2)); ag.setIndex(asphaltIndices); ag.computeVertexNormals(); 
-                    const am = new THREE.Mesh(ag, new THREE.MeshLambertMaterial({ map: asphaltTexture, side: THREE.DoubleSide })); am.receiveShadow = true; trackGroup.add(am);
+                    const am = new THREE.Mesh(ag, new THREE.MeshStandardMaterial({ map: asphaltTexture, bumpMap: asphaltTexture, bumpScale: 0.18, roughness: 0.82, metalness: 0.08, side: THREE.DoubleSide })); 
+                    am.receiveShadow = true; 
+                    am.castShadow = true; // El asfalto elevado proyecta sombra real sobre la pista inferior
+                    trackGroup.add(am);
                     
                     for(let j=0; j<numLanes; j++) {
                         createMultiSegmentRailMesh(rails.lanes[j], null, 0.7); 
@@ -3249,6 +3375,14 @@
                         trackSizeRef.current.copy(size);
                         trackGroup.position.sub(center); 
                         trackGroup.position.y = 0; 
+
+                        // Ajustar la cámara de sombras del sol al tamaño exacto del circuito para máxima nitidez en los puentes
+                        const maxExtent = Math.max(size.x, size.z) * 0.65 + 40;
+                        dl.shadow.camera.left = -maxExtent;
+                        dl.shadow.camera.right = maxExtent;
+                        dl.shadow.camera.top = maxExtent;
+                        dl.shadow.camera.bottom = -maxExtent;
+                        dl.shadow.camera.updateProjectionMatrix();
                         
                         // --- IA: GENERACIÓN AUTOMÁTICA DE TABLERO DE JUEGO ---
                         const margin = 40; // Margen extra de tapete
@@ -3256,14 +3390,14 @@
                         const boardD = size.z + margin;
                         const boardH = 2.0;
 
-                        // Textura asfalto verde (Material granular exacto de Ninco aplicado al tablero)
-                        const greenAsphaltTex = createAsphaltTexture(renderer, '#021a08'); // Verde tapete AÚN MÁS oscuro
-                        greenAsphaltTex.repeat.set(boardW / 10, boardD / 10); // Misma escala de grano que la pista original
+                        // Textura césped realista para el tablero de maqueta
+                        const greenAsphaltTex = createAsphaltTexture(renderer, '#0b2914');
+                        greenAsphaltTex.repeat.set(boardW / 14, boardD / 14);
 
                         // Materiales para cada cara del cubo (Multi-material)
-                        const topMat = new THREE.MeshLambertMaterial({ map: greenAsphaltTex });
-                        const sideMat = new THREE.MeshLambertMaterial({ color: 0x2d1a11 }); // Madera rústica para los bordes
-                        const bottomMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+                        const topMat = new THREE.MeshStandardMaterial({ map: greenAsphaltTex, bumpMap: greenAsphaltTex, bumpScale: 0.25, roughness: 0.92, metalness: 0.02 });
+                        const sideMat = new THREE.MeshStandardMaterial({ color: 0x3e2415, roughness: 0.7 }); // Madera de maqueta para los bordes
+                        const bottomMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.9 });
                         
                         // Orden: Derecha, Izquierda, Arriba, Abajo, Frente, Atrás
                         const boardMaterials = [sideMat, sideMat, topMat, bottomMat, sideMat, sideMat];
@@ -5107,10 +5241,8 @@
                         </div>
 
                         <div className="mac-window w-full overflow-hidden flex flex-col">
-                            <div className="mac-header px-4 py-3 flex items-center justify-between">
-                                <MacTrafficLights />
+                            <div className="mac-header px-4 py-3 flex items-center justify-center">
                                 <span className="text-xs font-medium text-gray-300">Seleccionar Proyecto</span>
-                                <div className="w-12"></div>
                             </div>
 
                             <div className="p-10 flex flex-col items-center gap-6 w-full">
