@@ -204,7 +204,7 @@
         
         <div class="text-center mb-8 md:mb-10 mt-4 w-full">
             <!-- Título Principal (Único sitio con &) -->
-            <h1 class="text-3xl md:text-5xl font-black tracking-tighter neon-text-gradient uppercase">TRACKS & TELEMETRY V2.0</h1>
+            <h1 class="text-3xl md:text-5xl font-black tracking-tighter neon-text-gradient uppercase">TRACKS & TELEMETRY PRO</h1>
             
             <!-- Separador "Currado" -->
             <div class="laser-separator"></div>
@@ -333,8 +333,8 @@
         
         function updateMailLink() {
             const userEmail = emailInput.value || "";
-            const subject = "Interés Licencia TRACKSTELEMETRY";
-            const body = `Hola, equipo de SLOTSOFTWARE,%0D%0A%0D%0AEstoy interesado en adquirir la licencia de TRACKSTELEMETRY PRO por el Precio de 20 Euros%0D%0A%0D%0AQuedo a la espera de sus instrucciones para proceder con el pago.%0D%0A%0D%0AGracias y un saludo.`;
+            const subject = "Interés Licencia TRACKS TELEMETRY PRO";
+            const body = `Hola, equipo de SLOTSOFTWARE,%0D%0A%0D%0AEstoy interesado en adquirir la licencia de TRACKS TELEMETRY PRO por el Precio de 20 Euros%0D%0A%0D%0AQuedo a la espera de sus instrucciones para proceder con el pago.%0D%0A%0D%0AGracias y un saludo.`;
             mailLink.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
         }
         emailInput.addEventListener('input', updateMailLink);
