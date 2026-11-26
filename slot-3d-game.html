@@ -1829,9 +1829,9 @@
                     
                     const qSettings = getQualitySettings(qualityMode);
                     camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.5, 10000); 
-                    renderer = new THREE.WebGLRenderer({ antialias: qSettings.aa, powerPreference: "high-performance", precision: "highp" }); 
-                    renderer.setPixelRatio(Math.min(qSettings.pr, 1.5)); renderer.setSize(window.innerWidth, window.innerHeight); 
-                    renderer.shadowMap.enabled = qSettings.shadow; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                    renderer = new THREE.WebGLRenderer({ antialias: qSettings.aa, powerPreference: "high-performance", precision: "mediump" }); 
+                    renderer.setPixelRatio(Math.min(qSettings.pr, 1.25)); renderer.setSize(window.innerWidth, window.innerHeight); 
+                    renderer.shadowMap.enabled = qSettings.shadow; renderer.shadowMap.type = THREE.PCFBasicShadowMap;
                     renderer.outputEncoding = THREE.sRGBEncoding;
                     // ACESFilmicToneMapping estilo PS4 / Gran Turismo Sport
                     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1844,7 +1844,7 @@
                     composer = new THREE.EffectComposer(renderer);
                     composer.addPass(renderScene);
 
-                    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), qualityMode === 'PS4' ? 0.55 : 0.75, 0.45, 0.82);
+                    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth / 4, window.innerHeight / 4), qualityMode === 'PS4' ? 0.55 : 0.75, 0.45, 0.82);
                     composer.addPass(bloomPass);
                     scene.userData.bloomPass = bloomPass;
 
@@ -1859,7 +1859,7 @@
 
                     const dl = new THREE.DirectionalLight(0xfff1d6, isNightModeRef.current ? 0.22 : 0.82);
                     dl.position.set(220, 260, -220);
-                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1536; dl.shadow.mapSize.height = 1536;
+                    dl.castShadow = qSettings.shadow; dl.shadow.mapSize.width = 1024; dl.shadow.mapSize.height = 1024;
                     dl.shadow.camera.near = 10; dl.shadow.camera.far = 1200; dl.shadow.camera.left = -350; dl.shadow.camera.right = 350; dl.shadow.camera.top = 350; dl.shadow.camera.bottom = -350; dl.shadow.bias = -0.001; scene.add(dl);
                     dirLightRef.current = dl;
                     
@@ -3171,12 +3171,12 @@
                         const holdingTrigger = isHoldingTriggerRef.current || isKeyHoldingTriggerRef.current;
 
                         if (holdingTrigger) {
-                            const followRate = isKeyHoldingTriggerRef.current ? 18 : 38;
+                            const followRate = isKeyHoldingTriggerRef.current ? 28 : 55;
                             manualThrottleRef.current += (targetThrottleRef.current - manualThrottleRef.current) * (1 - Math.exp(-followRate * dt));
                             triggerVelocityRef.current = 0;
                         } else {
-                            const returnStiffness = 280;
-                            const returnDamping = 32;
+                            const returnStiffness = 380;
+                            const returnDamping = 38;
                             const force = (0 - manualThrottleRef.current) * returnStiffness - triggerVelocityRef.current * returnDamping;
                             triggerVelocityRef.current += force * dt;
                             manualThrottleRef.current += triggerVelocityRef.current * dt;
@@ -3248,18 +3248,18 @@
                             const cas = carAssetsRef.current[ci + 1];
                             const setup = cas?.setup;
 
-                            let maxSpeed = 380;
-                            let accelRate = 300;
-                            let brakeRate = 420;
+                            let maxSpeed = 620;
+                            let accelRate = 680;
+                            let brakeRate = 780;
 
                             if (setup) {
                                 const speedFactor = (setup.motorRPM / 20000) * (2.5 / setup.gearRatio);
-                                maxSpeed = 380 * speedFactor;
+                                maxSpeed = 620 * speedFactor;
 
                                 const accelFactor = (setup.motorTorque / 300) * (80 / setup.weight) * (setup.gearRatio / 2.5);
-                                accelRate = 300 * accelFactor;
+                                accelRate = 680 * accelFactor;
 
-                                brakeRate = 420 * (setup.tireGrip / 80) * (80 / setup.weight);
+                                brakeRate = 780 * (setup.tireGrip / 80) * (80 / setup.weight);
                             }
 
                             const isLocalAI = (!multiplayerSession && aiDifficultyRef.current > 0 && ci === rivalIdx);
@@ -3276,8 +3276,17 @@
                                     } else {
                                         const rawNorm = manualThrottleRef.current / 100.0;
                                         let curvedNorm = rawNorm;
-                                        if (controllerCurveRef.current === 'SOFT') curvedNorm = Math.pow(rawNorm, 1.65);
-                                        else if (controllerCurveRef.current === 'AGGR') curvedNorm = Math.pow(rawNorm, 0.65);
+                                        if (controllerCurveRef.current === 'SOFT') {
+                                            // Modo SUAVE: tacto muy progresivo y controlado para curvas cerradas (tope 75%)
+                                            curvedNorm = Math.pow(rawNorm, 2.4) * 0.75;
+                                        } else if (controllerCurveRef.current === 'LIN') {
+                                            // Modo LIN: respuesta directa 1:1 equilibrada
+                                            curvedNorm = rawNorm;
+                                        } else if (controllerCurveRef.current === 'AGGR') {
+                                            // Modo AGRES / PRO: entrega explosiva desde el primer toque y +25% de sobrepotencia
+                                            curvedNorm = Math.pow(rawNorm, 0.35) * 1.25;
+                                            accelRate *= 1.65;
+                                        }
                                         targetSpeed = maxSpeed * curvedNorm;
                                     }
                                 } else if (multiplayerSession) {
@@ -3289,15 +3298,15 @@
                                         const diffLevel = aiDifficultyRef.current;
                                         const diffFactors = [0, 0.55, 0.70, 0.85, 0.95, 1.05]; 
                                         
-                                        const lookAheadDist = car.speed > 180 ? 55 : (car.speed > 90 ? 30 : 15);
+                                        const lookAheadDist = car.speed > 260 ? 65 : (car.speed > 130 ? 35 : 18);
                                         const currentP = getPieceFast(car.distance);
                                         let nextDist = (car.distance + lookAheadDist) % currentTrackLen;
                                         const nextP = getPieceFast(nextDist);
 
                                         const gripFactor = (setup?.tireGrip || 80) / 80.0;
                                         const evalPiece = (p) => {
-                                            if (p && p.type === 'curve') return Math.sqrt(Math.abs(p.radius || 20)) * gripFactor * 32.0;
-                                            if (p && (p.type === 'rotonda' || p.subtype === 'rotonda')) return Math.sqrt(15) * gripFactor * 32.0;
+                                            if (p && p.type === 'curve') return Math.sqrt(Math.abs(p.radius || 20)) * gripFactor * 52.0;
+                                            if (p && (p.type === 'rotonda' || p.subtype === 'rotonda')) return Math.sqrt(15) * gripFactor * 52.0;
                                             return maxSpeed;
                                         };
 
@@ -3631,9 +3640,9 @@
                                         if (currentPiece && currentPiece.type === 'curve') {
                                             const r = Math.abs(currentPiece.radius || 20);
                                             const gripFactor = (setup?.tireGrip || 80) / 80.0;
-                                            const maxV = Math.sqrt(r) * gripFactor * 32.0; 
+                                            const maxV = Math.sqrt(r) * gripFactor * 52.0; 
                                             
-                                            if (car.speed > maxV + 15) { 
+                                            if (car.speed > maxV + 25) { 
                                                 car.crashed = true;
                                                 car.crashTimer = 1.5;
                                                 
@@ -3675,7 +3684,7 @@
                                 _worldP1.copy(pg.position).add(trackGroup.position);
                                 _worldP2.copy(p2).add(trackGroup.position);
 
-                                const targetFov = 52 + Math.min(6, (car.speed / 380) * 6);
+                                const targetFov = 54 + Math.min(12, (car.speed / 620) * 12);
                                 if (Math.abs(camera.fov - targetFov) > 0.1) {
                                     camera.fov += (targetFov - camera.fov) * (1 - Math.exp(-8 * dt));
                                     camera.updateProjectionMatrix();
@@ -3768,8 +3777,30 @@
                                     vg.userData.tailLight.intensity = isNightModeRef.current ? (carBraking ? 1.35 : 0.55) : (carBraking ? 0.6 : 0);
                                 }
                             } else if (vg && car.crashed) {
-                                 vg.rotation.set(0,0,0);
-                                 vg.position.set(0,0,0);
+                                vg.rotation.set(0,0,0);
+                                vg.position.set(0,0,0);
+                            }
+                        }
+
+                        // Desplazamiento suave de nubes 3D y orientación hacia cámara (actualizado cada 3 fotogramas para mayor FPS)
+                        if (sceneRef.current && sceneRef.current.userData.clouds && camera) {
+                            const cObj = sceneRef.current.userData.clouds;
+                            cObj.frameSkip = ((cObj.frameSkip || 0) + 1) % 3;
+                            if (cObj.frameSkip === 0) {
+                                const cMesh = cObj.mesh;
+                                const cData = cObj.data;
+                                const cloudDt = dt * 3;
+                                for (let ci = 0; ci < cData.length; ci++) {
+                                    const cd = cData[ci];
+                                    cd.x += cd.speed * cloudDt;
+                                    if (cd.x > cd.spread * 0.5) cd.x = -cd.spread * 0.5;
+                                    _dummyCloud.position.set(cd.x, cd.y, cd.z);
+                                    _dummyCloud.lookAt(camera.position.x, cd.y, camera.position.z);
+                                    _dummyCloud.scale.set(cd.scale, cd.scale * 0.85, 1);
+                                    _dummyCloud.updateMatrix();
+                                    cMesh.setMatrixAt(ci, _dummyCloud.matrix);
+                                }
+                                cMesh.instanceMatrix.needsUpdate = true;
                             }
                         }
 
@@ -3778,25 +3809,8 @@
                             scene.userData.moonMesh.position.set(
                                 camera.position.x - 520,
                                 Math.max(210, camera.position.y + 155),
-                                camera.position.z - 980
+                                camera.position.z - 1050
                             );
-                        }
-
-                        // Desplazamiento suave de nubes 3D y orientación hacia cámara
-                        if (sceneRef.current && sceneRef.current.userData.clouds && camera) {
-                            const cMesh = sceneRef.current.userData.clouds.mesh;
-                            const cData = sceneRef.current.userData.clouds.data;
-                            for (let ci = 0; ci < cData.length; ci++) {
-                                const cd = cData[ci];
-                                cd.x += cd.speed * dt;
-                                if (cd.x > cd.spread * 0.5) cd.x = -cd.spread * 0.5;
-                                _dummyCloud.position.set(cd.x, cd.y, cd.z);
-                                _dummyCloud.lookAt(camera.position.x, cd.y, camera.position.z);
-                                _dummyCloud.scale.set(cd.scale, cd.scale * 0.85, 1);
-                                _dummyCloud.updateMatrix();
-                                cMesh.setMatrixAt(ci, _dummyCloud.matrix);
-                            }
-                            cMesh.instanceMatrix.needsUpdate = true;
                         }
 
                         if (peerConn && peerConn.open) {
@@ -3828,28 +3842,32 @@
 
                         const avgRaceTime = raceStateRef.current.laps > 0 ? (raceStateRef.current.completedLapsTotalTime / raceStateRef.current.laps) : 0;
 
-                        if (sceneRef.current && sceneRef.current.userData.birds) {
-                            const bMesh = sceneRef.current.userData.birds.mesh;
-                            const bData = sceneRef.current.userData.birds.data;
-                            
-                            for(let i=0; i<bData.length; i++) {
-                                const bd = bData[i];
-                                const angle = nowTime * bd.speed + bd.offset;
-                                const bx = bd.cx + Math.cos(angle) * bd.radius;
-                                const bz = bd.cz + Math.sin(angle) * bd.radius;
-                                const by = bd.cy + Math.sin(nowTime * 4 + bd.offset) * 1.5; 
+                        if (sceneRef.current && sceneRef.current.userData.birds && sceneRef.current.userData.birds.mesh.visible) {
+                            const bObj = sceneRef.current.userData.birds;
+                            bObj.frameSkip = ((bObj.frameSkip || 0) + 1) % 2;
+                            if (bObj.frameSkip === 0) {
+                                const bMesh = bObj.mesh;
+                                const bData = bObj.data;
                                 
-                                const nx = bd.cx + Math.cos(angle + 0.1) * bd.radius;
-                                const nz = bd.cz + Math.sin(angle + 0.1) * bd.radius;
-                                
-                                _dummyBird.position.set(bx, by, bz);
-                                _dummyBird.lookAt(nx, by, nz);
-                                _dummyBird.rotateZ(Math.sin(nowTime * 8 + bd.offset) * 0.3 - 0.2); 
-                                
-                                _dummyBird.updateMatrix();
-                                bMesh.setMatrixAt(i, _dummyBird.matrix);
+                                for(let i=0; i<bData.length; i++) {
+                                    const bd = bData[i];
+                                    const angle = nowTime * bd.speed + bd.offset;
+                                    const bx = bd.cx + Math.cos(angle) * bd.radius;
+                                    const bz = bd.cz + Math.sin(angle) * bd.radius;
+                                    const by = bd.cy + Math.sin(nowTime * 4 + bd.offset) * 1.5; 
+                                    
+                                    const nx = bd.cx + Math.cos(angle + 0.1) * bd.radius;
+                                    const nz = bd.cz + Math.sin(angle + 0.1) * bd.radius;
+                                    
+                                    _dummyBird.position.set(bx, by, bz);
+                                    _dummyBird.lookAt(nx, by, nz);
+                                    _dummyBird.rotateZ(Math.sin(nowTime * 8 + bd.offset) * 0.3 - 0.2); 
+                                    
+                                    _dummyBird.updateMatrix();
+                                    bMesh.setMatrixAt(i, _dummyBird.matrix);
+                                }
+                                bMesh.instanceMatrix.needsUpdate = true;
                             }
-                            bMesh.instanceMatrix.needsUpdate = true;
                         }
 
                         displaySpeedHUD += ((myCarForHUD.speed * 1.1) - displaySpeedHUD) * 15.0 * dt;
@@ -3872,7 +3890,7 @@
                             if (telemetryRefs.speed.current) telemetryRefs.speed.current.textContent = Math.floor(displaySpeedHUD).toString().padStart(3, '0');
                             
                             const currentSetup = carAssetsRef.current[1]?.setup;
-                            const maxDisplaySpeed = currentSetup ? (380 * (currentSetup.motorRPM / 20000) * (2.5 / currentSetup.gearRatio)) : 380;
+                            const maxDisplaySpeed = currentSetup ? (620 * (currentSetup.motorRPM / 20000) * (2.5 / currentSetup.gearRatio)) : 620;
                             if (telemetryRefs.rpmBar.current) telemetryRefs.rpmBar.current.style.width = `${Math.min(100, (myCarForHUD.speed / maxDisplaySpeed) * 100).toFixed(1)}%`;
                             
                             if (isDigitalCircuit) {
@@ -3931,7 +3949,7 @@
                             if (telemetryRefs.bestTime.current) telemetryRefs.bestTime.current.textContent = raceStateRef.current.bestTime < 999999 ? formatTime(raceStateRef.current.bestTime) : '--.--';
                         }
                         
-                        if (qualityMode === 'ULTRA' || qualityMode === 'PS4') {
+                        if (qualityMode === 'ULTRA') {
                             composer.render();
                         } else {
                             renderer.render(scene, camera);
@@ -4507,11 +4525,19 @@
                 <div className="absolute inset-0 z-50 bg-[#3b5f7d] text-white font-sans overflow-hidden animate-in"> 
                     <div ref={containerRef} className="absolute inset-0 w-full h-full" /> 
                     
-                    {/* INDICADOR MINIMALISTA DE SALIDA EN PANTALLA (SIN TAPAR EL SEMÁFORO 3D) */}
-                    {countdown === 0 && (
-                        <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                            <div className="font-sans text-[110px] md:text-[170px] leading-none text-white font-black tracking-[0.12em] drop-shadow-[0_0_50px_rgba(57,255,20,0.9)] animate-in zoom-in duration-300">
-                                GO!
+                    {/* SEMÁFORO DE SALIDA (5 LUCES ROJAS -> APAGADO EN SALIDA, SIN TEXTO GO) */}
+                    {countdown !== null && countdown > 0 && (
+                        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center pointer-events-none transition-all duration-300">
+                            <div className="flex gap-4 md:gap-6 px-6 py-4 md:px-10 md:py-6 bg-black/75 backdrop-blur-xl border border-white/20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                                {[1, 2, 3, 4, 5].map(num => {
+                                    const isRed = (6 - countdown) >= num;
+                                    return (
+                                        <div key={num} className="flex flex-col gap-2 bg-zinc-950 p-2 rounded-2xl border border-white/10 shadow-inner">
+                                            <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full transition-all duration-150 border-2 ${isRed ? 'bg-red-500 border-red-200 shadow-[0_0_30px_rgba(239,68,68,1)] scale-105' : 'bg-zinc-900 border-white/10'}`} />
+                                            <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full transition-all duration-150 border-2 ${isRed ? 'bg-red-500 border-red-200 shadow-[0_0_30px_rgba(239,68,68,1)] scale-105' : 'bg-zinc-900 border-white/10'}`} />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -6284,4 +6310,4 @@
         root.render(<Slot3DPlayer />);
     </script>
 </body>
-</html> 
+</html>
